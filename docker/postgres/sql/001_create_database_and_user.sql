@@ -6,41 +6,41 @@
 -- 2. Reconnect Query Tool to the money_snapshot database.
 -- 3. Run section 2.
 --
--- The credentials match the default Spring Boot configuration:
--- DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
--- DB_USERNAME=money_snapshot
--- DB_PASSWORD=money_snapshot
+-- The Docker init script passes database, user, and password values from .env
+-- as psql variables: app_database, app_user, and app_password.
 
 -- Section 1: database and application user.
 
-do
-$$
-begin
-    if not exists (
-        select 1
-        from pg_catalog.pg_roles
-        where rolname = 'money_snapshot'
-    ) then
-        create user money_snapshot with password 'money_snapshot';
-    end if;
-end
-$$;
+select format('create user %I with password %L', :'app_user', :'app_password')
+where not exists (
+    select 1
+    from pg_catalog.pg_roles
+    where rolname = :'app_user'
+)
+\gexec
 
-create database money_snapshot
-    with
-    owner = money_snapshot
-    encoding = 'UTF8'
-    connection limit = -1;
+select format(
+    'create database %I with owner = %I encoding = %L connection limit = -1',
+    :'app_database',
+    :'app_user',
+    'UTF8'
+)
+where not exists (
+    select 1
+    from pg_catalog.pg_database
+    where datname = :'app_database'
+)
+\gexec
 
 -- Section 2: run after reconnecting Query Tool to the money_snapshot database.
 
-grant connect on database money_snapshot to money_snapshot;
-grant usage, create on schema public to money_snapshot;
-grant all privileges on all tables in schema public to money_snapshot;
-grant all privileges on all sequences in schema public to money_snapshot;
+grant connect on database :"app_database" to :"app_user";
+grant usage, create on schema public to :"app_user";
+grant all privileges on all tables in schema public to :"app_user";
+grant all privileges on all sequences in schema public to :"app_user";
 
 alter default privileges in schema public
-    grant all privileges on tables to money_snapshot;
+    grant all privileges on tables to :"app_user";
 
 alter default privileges in schema public
-    grant all privileges on sequences to money_snapshot;
+    grant all privileges on sequences to :"app_user";

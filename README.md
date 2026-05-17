@@ -24,6 +24,14 @@ The repository includes a Docker Compose setup with:
 - `money-snapshot-postgres-data` - persistent PostgreSQL data volume.
 - `money-snapshot-maven-cache` - Maven dependency cache volume.
 
+Create a local `.env` file before starting Docker Compose:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` and set the local database credentials. The `.env` file is ignored by Git and should not be committed.
+
 Start the full stack:
 
 ```bash
@@ -43,9 +51,9 @@ PostgreSQL is available from the host at:
 ```text
 host: localhost
 port: 5455
-database: money_snapshot
-user: money_snapshot
-password: money_snapshot
+database: value from DB_URL in .env
+user: value from DB_USERNAME in .env
+password: value from DB_PASSWORD in .env
 ```
 
 Inside the Docker network, the application connects to PostgreSQL at `postgres:5432`.
@@ -155,7 +163,7 @@ The script creates:
 
 - database `money_snapshot`
 - user `money_snapshot`
-- password `money_snapshot`
+- password selected by the local operator
 - privileges required by the application and Flyway migrations
 
 The initial application schema is defined by Flyway migrations in `src/main/resources/db/migration`.
@@ -166,7 +174,7 @@ Provide credentials through environment variables if they differ from defaults:
 ```bash
 export DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
 export DB_USERNAME=money_snapshot
-export DB_PASSWORD=money_snapshot
+export DB_PASSWORD='<application-database-password>'
 ```
 
 Alternatively, create a local `.env` file in the project root. It is loaded automatically when present:
@@ -174,7 +182,7 @@ Alternatively, create a local `.env` file in the project root. It is loaded auto
 ```properties
 DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
 DB_USERNAME=money_snapshot
-DB_PASSWORD=money_snapshot
+DB_PASSWORD=<application-database-password>
 SERVER_PORT=5081
 ```
 

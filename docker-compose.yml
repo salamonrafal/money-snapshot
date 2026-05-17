@@ -7,12 +7,12 @@ services:
     working_dir: /app
     command: mvn spring-boot:run
     ports:
-      - "5081:5081"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/money_snapshot
-      DB_USERNAME: money_snapshot
-      DB_PASSWORD: money_snapshot
-      SERVER_PORT: 5081
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      SERVER_PORT: ${SERVER_PORT}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
@@ -30,15 +30,18 @@ services:
     ports:
       - "5455:5432"
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql
       - ./docker/postgres/sql/001_create_database_and_user.sql:/docker-init-source/001_create_database_and_user.sql:ro
       - ./docker/postgres/initdb/001_create_database_and_user.sh:/docker-entrypoint-initdb.d/001_create_database_and_user.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U money_snapshot -d money_snapshot"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_USERNAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
