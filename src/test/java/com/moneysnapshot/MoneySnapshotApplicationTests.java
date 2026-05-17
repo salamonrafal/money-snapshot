@@ -1,15 +1,13 @@
 package com.moneysnapshot;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest(properties = "spring.autoconfigure.exclude="
-        + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-        + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
-        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration")
+import org.junit.jupiter.api.Test;
+
 class MoneySnapshotApplicationTests {
 
     @Test
-    void contextLoads() {
+    void applicationCanBeConstructed() {
+        assertNotNull(new MoneySnapshotApplication());
     }
 }

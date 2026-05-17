@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Użytkownicy | Money Snapshot', 'users.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('users')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="users.heading.eyebrow">Administracja</p>
+        <h1 data-i18n="users.heading.title">Użytkownicy</h1>
+        <p data-i18n="users.heading.subtitle">Zarządzaj kontami użytkowników, rolami i statusem dostępu.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide" aria-labelledby="users-list-title">
+            <div class="section-header">
+                <h2 id="users-list-title" data-i18n="users.table.title">Lista użytkowników</h2>
+                <div class="section-actions">
+                    <a class="button primary compact" href="/users/new.html" data-i18n="users.actions.add">Dodaj użytkownika</a>
+                    <button type="button" class="button secondary compact" id="refresh-users" data-i18n="users.actions.refresh">Odśwież</button>
+                </div>
+            </div>
+            <p class="form-message" id="users-list-message" role="status"></p>
+            <div class="table-wrap users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="users.table.email">E-mail</th>
+                        <th data-i18n="users.table.name">Imię i nazwisko</th>
+                        <th data-i18n="users.table.role">Rola</th>
+                        <th data-i18n="users.table.status">Status</th>
+                        <th data-i18n="users.table.updatedAt">Edytowano</th>
+                        <th data-i18n="users.table.actions">Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                    <tr>
+                        <td colspan="6" data-i18n="users.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+    </section>
+</main>
+
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-user-modal',
+        'delete-user-title',
+        'users.delete.title',
+        'users.delete.message',
+        'delete-user-name',
+        'confirm-delete-user',
+        'cancel-delete-user')}"></div>
+</body>
+</html>

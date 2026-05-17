@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Migawki | Money Snapshot', 'snapshots.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('home')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="snapshots.heading.eyebrow">Rejestr migawek</p>
+        <h1 data-i18n="snapshots.heading.title">Migawki</h1>
+        <p data-i18n="snapshots.heading.subtitle">Przeglądaj zapisane salda kont według daty.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide" aria-labelledby="snapshot-list-title">
+        <div class="section-header">
+            <h2 id="snapshot-list-title" data-i18n="snapshots.table.title">Lista migawek</h2>
+            <div class="section-actions">
+                <a href="/snapshots/new.html" class="button primary compact" data-i18n="snapshots.actions.add">Dodaj migawkę</a>
+                <button type="button" class="button secondary compact" id="refresh-snapshots" data-i18n="snapshots.actions.refresh">Odśwież</button>
+            </div>
+        </div>
+        <p class="form-message" id="snapshots-list-message" role="status"></p>
+        <div class="snapshot-list-controls">
+            <label class="compact-field snapshots-account-filter">
+                <span data-i18n="snapshots.filter.account">Konto</span>
+                <select id="snapshots-account-filter">
+                    <option value="" data-i18n="snapshots.filter.allAccounts">Wszystkie konta</option>
+                </select>
+            </label>
+        </div>
+        <div class="pagination-bar" aria-label="Stronicowanie migawek">
+            <button type="button" class="button secondary compact" id="snapshots-prev-page" data-i18n="snapshots.pagination.previous">Poprzednia</button>
+            <span id="snapshots-page-info">-</span>
+            <button type="button" class="button secondary compact" id="snapshots-next-page" data-i18n="snapshots.pagination.next">Następna</button>
+            <label class="compact-field pagination-size">
+                <span data-i18n="snapshots.pagination.size">Na stronę</span>
+                <select id="snapshots-page-size">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
+        </div>
+        <div class="table-wrap">
+            <table class="snapshots-table">
+                <thead>
+                <tr>
+                    <th data-i18n="snapshots.table.account">Konto</th>
+                    <th data-i18n="snapshots.table.date">Data</th>
+                    <th data-i18n="snapshots.table.balance">Saldo</th>
+                    <th data-i18n="snapshots.table.note">Notatka</th>
+                    <th data-i18n="snapshots.table.createdAt">Dodano</th>
+                    <th data-i18n="snapshots.table.actions">Akcje</th>
+                </tr>
+                </thead>
+                <tbody id="snapshots-table-body">
+                <tr>
+                    <td colspan="6" data-i18n="snapshots.loading">Ładowanie...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-snapshot-modal',
+        'delete-snapshot-title',
+        'snapshots.delete.title',
+        'snapshots.delete.message',
+        'delete-snapshot-name',
+        'confirm-delete-snapshot',
+        'cancel-delete-snapshot')}"></div>
+</body>
+</html>

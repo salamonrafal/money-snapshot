@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title, pageScript)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title}">Money Snapshot</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260516-auth-users')}">
+    <script defer th:src="@{/js/i18n.js(v='20260516-auth-users')}"></script>
+    <script defer th:src="@{/js/shared-ui.js(v='20260516-auth-users')}"></script>
+    <script defer th:src="@{/js/{script}(script=${pageScript},v='20260516-auth-users')}"></script>
+</head>
+<body>
+<header class="topbar" th:fragment="header(activePage)">
+    <a class="brand" href="/" aria-label="Money Snapshot">
+        <span class="brand-mark">MS</span>
+        <span data-i18n="app.name">Money Snapshot</span>
+    </a>
+    <div class="topbar-actions">
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="/"
+               th:attr="aria-current=${activePage == 'home' ? 'page' : null}"
+               data-i18n="common.nav.home">Start</a>
+            <a href="/banks.html"
+               th:attr="aria-current=${activePage == 'banks' ? 'page' : null}"
+               data-i18n="common.nav.banks">Banki</a>
+            <a href="/accounts.html"
+               th:attr="aria-current=${activePage == 'accounts' ? 'page' : null}"
+               data-i18n="common.nav.accounts">Konta</a>
+            <a href="/reports.html"
+               th:attr="aria-current=${activePage == 'reports' ? 'page' : null}"
+               data-i18n="common.nav.reports">Raporty</a>
+            <a href="/users.html"
+               sec:authorize="hasRole('ADMINISTRATOR')"
+               th:attr="aria-current=${activePage == 'users' ? 'page' : null}"
+               data-i18n="common.nav.users">Użytkownicy</a>
+            <a href="/profile.html"
+               th:attr="aria-current=${activePage == 'profile' ? 'page' : null}"
+               data-i18n="common.nav.profile">Profil</a>
+            <a href="/settings.html"
+               th:attr="aria-current=${activePage == 'settings' ? 'page' : null}"
+               data-i18n="common.nav.settings">Ustawienia</a>
+        </nav>
+        <label class="language-switcher">
+            <span data-i18n="common.nav.language">Język</span>
+            <select id="language-select" aria-label="Language">
+                <option value="pl">PL</option>
+                <option value="en">EN</option>
+            </select>
+        </label>
+        <form class="logout-form" action="/logout" method="post">
+            <button type="submit" class="button secondary compact" data-i18n="common.nav.logout">Wyloguj</button>
+        </form>
+    </div>
+</header>
+
+<div class="modal-backdrop"
+     th:fragment="confirmDeleteModal(modalId, titleId, titleKey, messageKey, subjectId, confirmId, cancelId)"
+     th:id="${modalId}"
+     hidden>
+    <div class="modal" role="dialog" aria-modal="true" th:attr="aria-labelledby=${titleId}">
+        <h2 th:id="${titleId}" th:attr="data-i18n=${titleKey}">Usuń</h2>
+        <p th:attr="data-i18n=${messageKey}">Czy na pewno chcesz wykonać nieodwracalną akcję usunięcia?</p>
+        <p class="modal-subject" th:id="${subjectId}"></p>
+        <div class="modal-actions">
+            <button type="button" class="button danger" th:id="${confirmId}" data-i18n="common.delete.confirm">Tak</button>
+            <button type="button" class="button secondary" th:id="${cancelId}" data-i18n="common.delete.cancel">Anuluj</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

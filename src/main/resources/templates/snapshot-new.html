@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Nowa migawka | Money Snapshot', 'snapshot-form.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('home')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="snapshots.form.eyebrow">Rejestracja migawki</p>
+        <h1 data-i18n="snapshots.form.title">Nowa migawka</h1>
+        <p data-i18n="snapshots.form.subtitle">Wybierz konto, datę i zapisz saldo z opcjonalną notatką.</p>
+    </section>
+
+    <section class="editor-panel account-form-panel">
+        <form id="snapshot-form" data-mode="create">
+            <div class="form-grid">
+                <label class="field">
+                    <span data-i18n="snapshots.form.account">Konto</span>
+                    <select id="snapshot-account" name="accountId" required>
+                        <option value="" data-i18n="snapshots.form.accountPlaceholder">Wybierz konto</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span data-i18n="snapshots.form.date">Data migawki</span>
+                    <input id="snapshot-date" name="snapshotDate" type="date" required>
+                </label>
+                <label class="field">
+                    <span data-i18n="snapshots.form.balance">Saldo</span>
+                    <input id="snapshot-balance" name="balance" type="number" step="0.0001" required>
+                </label>
+            </div>
+            <label class="field">
+                <span data-i18n="snapshots.form.note">Notatka</span>
+                <textarea id="snapshot-note" name="note" maxlength="500" rows="5"></textarea>
+            </label>
+            <label class="checkbox-field">
+                <input id="remember-snapshot-account" type="checkbox">
+                <span data-i18n="snapshots.form.rememberAccount">Zapamiętaj wybrane konto na następne dodanie migawki</span>
+            </label>
+            <div class="snapshot-last-summary" id="snapshot-last-summary" hidden>
+                <span data-i18n="snapshots.form.lastSnapshot">Ostatni wpis</span>
+                <strong id="snapshot-last-summary-value">-</strong>
+            </div>
+            <div class="form-actions split-actions">
+                <button type="submit" class="button primary" data-i18n="snapshots.form.submit">Zapisz migawkę</button>
+                <a href="/" class="button secondary" data-i18n="snapshots.form.cancel">Anuluj</a>
+            </div>
+            <p class="form-message" id="snapshot-form-message" role="status"></p>
+        </form>
+    </section>
+</main>
+</body>
+</html>

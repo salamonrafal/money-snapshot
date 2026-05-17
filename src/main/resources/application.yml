@@ -24,3 +24,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:5081}
+
+app:
+  admin:
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
+    first-name: ${ADMIN_FIRST_NAME:Admin}
+    last-name: ${ADMIN_LAST_NAME:User}

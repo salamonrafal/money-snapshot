@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Ustawienia | Money Snapshot', 'settings.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('settings')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="settings.heading.eyebrow">Konfiguracja</p>
+        <h1 data-i18n="settings.heading.title">Ustawienia</h1>
+        <p data-i18n="settings.heading.subtitle">Dostosuj walutę bazową oraz format dat i wartości pieniężnych.</p>
+    </section>
+
+    <section class="management-layout single-column" aria-label="Ustawienia aplikacji">
+        <form class="editor-panel wide-panel" id="settings-form">
+            <label class="field">
+                <span data-i18n="settings.form.defaultCurrency">Waluta</span>
+                <select id="settings-default-currency">
+                    <option value="PLN">PLN</option>
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                </select>
+            </label>
+            <label class="field">
+                <span data-i18n="settings.form.dateTimeFormat">Format daty</span>
+                <input id="settings-date-time-format" type="text" maxlength="80" autocomplete="off">
+            </label>
+            <label class="field">
+                <span data-i18n="settings.form.moneyFormat">Format wartości pieniężnych</span>
+                <input id="settings-money-format" type="text" maxlength="120" autocomplete="off">
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="button primary" data-i18n="settings.form.submit">Zapisz ustawienia</button>
+            </div>
+            <p class="form-message" id="settings-form-message" role="status"></p>
+        </form>
+    </section>
+</main>
+</body>
+</html>

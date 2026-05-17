@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Banki | Money Snapshot', 'banks.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('banks')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="banks.heading.eyebrow">Rejestr banków</p>
+        <h1 data-i18n="banks.heading.title">Banki</h1>
+        <p data-i18n="banks.heading.subtitle">Dodawaj i porządkuj banki używane przy kontach.</p>
+    </section>
+
+    <section class="management-layout" aria-label="Zarządzanie bankami">
+        <form class="editor-panel" id="bank-form">
+            <h2 data-i18n="banks.form.title">Nowy bank</h2>
+            <label class="field">
+                <span data-i18n="banks.form.name">Nazwa banku</span>
+                <input id="bank-name" name="name" type="text" maxlength="120" autocomplete="organization" required>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="button primary" data-i18n="banks.form.add">Dodaj bank</button>
+            </div>
+            <p class="form-message" id="bank-form-message" role="status"></p>
+        </form>
+
+        <section class="table-panel" aria-labelledby="bank-list-title">
+            <div class="section-header">
+                <h2 id="bank-list-title" data-i18n="banks.table.title">Lista banków</h2>
+                <button type="button" class="button secondary compact" id="refresh-banks" data-i18n="banks.actions.refresh">Odśwież</button>
+            </div>
+            <div class="table-wrap banks-table-wrap">
+                <table class="banks-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="banks.table.name">Nazwa</th>
+                        <th data-i18n="banks.table.normalizedName">Normalizacja</th>
+                        <th data-i18n="banks.table.createdAt">Dodano</th>
+                        <th data-i18n="banks.table.updatedAt">Edytowano</th>
+                        <th data-i18n="banks.table.actions">Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody id="banks-table-body">
+                    <tr>
+                        <td colspan="5" data-i18n="banks.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</main>
+
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-bank-modal',
+        'delete-bank-title',
+        'banks.delete.title',
+        'banks.delete.message',
+        'delete-bank-name',
+        'confirm-delete-bank',
+        'cancel-delete-bank')}"></div>
+</body>
+</html>

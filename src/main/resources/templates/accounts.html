@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Konta | Money Snapshot', 'accounts.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('accounts')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="accounts.heading.eyebrow">Panel kont</p>
+        <h1 data-i18n="accounts.heading.title">Konta</h1>
+        <p data-i18n="accounts.heading.subtitle">Przeglądaj konta wraz z bankiem, walutą i statusem.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide" aria-labelledby="account-list-title">
+        <div class="section-header">
+            <h2 id="account-list-title" data-i18n="accounts.table.title">Lista kont</h2>
+            <div class="section-actions">
+                <a href="/accounts/new.html" class="button primary compact" data-i18n="accounts.actions.add">Dodaj konto</a>
+                <button type="button" class="button secondary compact" id="refresh-accounts" data-i18n="accounts.actions.refresh">Odśwież</button>
+            </div>
+        </div>
+        <p class="form-message" id="accounts-list-message" role="status"></p>
+        <div class="table-wrap">
+            <table class="accounts-table">
+                <thead>
+                <tr>
+                    <th data-i18n="accounts.table.name">Nazwa</th>
+                    <th data-i18n="accounts.table.bank">Bank</th>
+                    <th data-i18n="accounts.table.accountType">Typ</th>
+                    <th data-i18n="accounts.table.currency">Waluta</th>
+                    <th data-i18n="accounts.table.status">Status</th>
+                    <th data-i18n="accounts.table.createdAt">Dodano</th>
+                    <th data-i18n="accounts.table.updatedAt">Edytowano</th>
+                    <th data-i18n="accounts.table.actions">Akcje</th>
+                </tr>
+                </thead>
+                <tbody id="accounts-table-body">
+                <tr>
+                    <td colspan="8" data-i18n="accounts.loading">Ładowanie...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-account-modal',
+        'delete-account-title',
+        'accounts.delete.title',
+        'accounts.delete.message',
+        'delete-account-name',
+        'confirm-delete-account',
+        'cancel-delete-account')}"></div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Raporty | Money Snapshot', 'reports.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('reports')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="reports.heading.eyebrow">Analiza zmian</p>
+        <h1 data-i18n="reports.heading.title">Raporty zmian</h1>
+        <p data-i18n="reports.heading.subtitle">Porównuj salda kont, banków i całego portfela w wybranych okresach.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide report-panel" aria-labelledby="reports-title">
+        <div class="section-header">
+            <h2 id="reports-title" data-i18n="reports.table.title">Zestawienie zmian</h2>
+            <div class="section-actions report-controls">
+                <div class="report-tabs" role="tablist" aria-label="Widok raportu">
+                    <button type="button" class="report-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
+                    <button type="button" class="report-tab" role="tab" aria-selected="false" data-scope="total" data-i18n="reports.scope.total">Wszystkie konta</button>
+                    <button type="button" class="report-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
+                </div>
+                <label class="compact-field">
+                    <span data-i18n="reports.controls.period">Okres</span>
+                    <select id="report-period">
+                        <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
+                        <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
+                        <option value="1y" data-i18n="reports.period.1y">1 rok</option>
+                        <option value="2y" data-i18n="reports.period.2y">2 lata</option>
+                        <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
+                    </select>
+                </label>
+                <label class="compact-field custom-period-field" hidden>
+                    <span data-i18n="reports.controls.from">Od</span>
+                    <input type="date" id="report-date-from">
+                </label>
+                <label class="compact-field custom-period-field" hidden>
+                    <span data-i18n="reports.controls.to">Do</span>
+                    <input type="date" id="report-date-to">
+                </label>
+                <button type="button" class="button secondary compact" id="refresh-reports" data-i18n="reports.actions.refresh">Odśwież</button>
+            </div>
+        </div>
+        <p class="form-message" id="reports-message" role="status"></p>
+        <div class="report-chart" id="reports-chart" aria-label="Wykres zmian sald"></div>
+        <div class="table-wrap">
+            <table class="reports-table">
+                <thead>
+                <tr>
+                    <th data-i18n="reports.table.name">Nazwa</th>
+                    <th data-i18n="reports.table.currency">Waluta</th>
+                    <th data-i18n="reports.table.start">Saldo początkowe</th>
+                    <th data-i18n="reports.table.end">Saldo końcowe</th>
+                    <th data-i18n="reports.table.change">Zmiana</th>
+                    <th data-i18n="reports.table.percent">Zmiana %</th>
+                </tr>
+                </thead>
+                <tbody id="reports-table-body">
+                <tr>
+                    <td colspan="6" data-i18n="reports.loading">Ładowanie...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Edycja konta | Money Snapshot', 'account-form.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('accounts')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="accounts.form.edit.eyebrow">Edycja konta</p>
+        <h1 data-i18n="accounts.form.edit.title">Edytuj konto</h1>
+        <p data-i18n="accounts.form.edit.subtitle">Zmień dane konta, bank, walutę, status i opis.</p>
+    </section>
+
+    <section class="editor-panel account-form-panel">
+        <form id="account-form" data-mode="edit" th:attr="data-account-id=${accountId}">
+            <div class="form-grid">
+                <label class="field">
+                    <span data-i18n="accounts.form.name">Nazwa konta</span>
+                    <input id="account-name" name="accountName" type="text" maxlength="120" required>
+                </label>
+                <label class="field">
+                    <span data-i18n="accounts.form.bank">Bank</span>
+                    <select id="account-bank" name="bankName" required>
+                        <option value="" data-i18n="accounts.form.bankPlaceholder">Wybierz bank</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span data-i18n="accounts.form.accountType">Typ konta</span>
+                    <select id="account-type" name="accountTypeCode" required>
+                        <option value="BANK_ACCOUNT" data-i18n="accounts.accountType.BANK_ACCOUNT">Konto bankowe</option>
+                        <option value="CASH" data-i18n="accounts.accountType.CASH">Gotówka</option>
+                        <option value="SAVINGS" data-i18n="accounts.accountType.SAVINGS">Oszczędnościowe</option>
+                        <option value="INVESTMENT" data-i18n="accounts.accountType.INVESTMENT">Inwestycyjne</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span data-i18n="accounts.form.currency">Waluta</span>
+                    <select id="account-currency" name="currencyCode" required>
+                        <option value="PLN">PLN</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span data-i18n="accounts.form.status">Status</span>
+                    <select id="account-status" name="status" required>
+                        <option value="ACTIVE" data-i18n="accounts.status.ACTIVE">Aktywne</option>
+                        <option value="CLOSED" data-i18n="accounts.status.CLOSED">Zamknięte</option>
+                        <option value="SUSPENDED" data-i18n="accounts.status.SUSPENDED">Zawieszone</option>
+                    </select>
+                </label>
+            </div>
+            <label class="field">
+                <span data-i18n="accounts.form.description">Opis konta</span>
+                <textarea id="account-description" name="description" maxlength="500" rows="5"></textarea>
+            </label>
+            <div class="form-actions split-actions">
+                <button type="submit" class="button primary" data-i18n="accounts.form.update">Zapisz zmiany</button>
+                <a href="/accounts.html" class="button secondary" data-i18n="accounts.form.cancel">Anuluj</a>
+            </div>
+            <p class="form-message" id="account-form-message" role="status"></p>
+        </form>
+    </section>
+</main>
+</body>
+</html>
