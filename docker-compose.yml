@@ -1,0 +1,51 @@
+name: money-snapshot
+
+services:
+  web:
+    container_name: money-snapshot-web
+    image: maven:3.9-eclipse-temurin-17
+    working_dir: /app
+    command: mvn spring-boot:run
+    ports:
+      - "5081:5081"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/money_snapshot
+      DB_USERNAME: money_snapshot
+      DB_PASSWORD: money_snapshot
+      SERVER_PORT: 5081
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
+    volumes:
+      - .:/app
+      - maven_cache:/root/.m2
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    container_name: money-snapshot-postgres
+    image: postgres:latest
+    ports:
+      - "5455:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./docker/postgres/sql/001_create_database_and_user.sql:/docker-init-source/001_create_database_and_user.sql:ro
+      - ./docker/postgres/initdb/001_create_database_and_user.sh:/docker-entrypoint-initdb.d/001_create_database_and_user.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U money_snapshot -d money_snapshot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    name: money-snapshot-postgres-data
+  maven_cache:
+    name: money-snapshot-maven-cache
