@@ -6,10 +6,12 @@
 -- 2. Reconnect Query Tool to the money_snapshot database.
 -- 3. Run section 2.
 --
--- The credentials match the default Spring Boot configuration:
+-- Replace <application-database-password> with the application database
+-- password before running this script.
+--
+-- The remaining credentials match the local Spring Boot defaults:
 -- DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
 -- DB_USERNAME=money_snapshot
--- DB_PASSWORD=money_snapshot
 
 -- Section 1: database and application user.
 
@@ -21,7 +23,7 @@ begin
         from pg_catalog.pg_roles
         where rolname = 'money_snapshot'
     ) then
-        create user money_snapshot with password 'money_snapshot';
+        create user money_snapshot with password '<application-database-password>';
     end if;
 end
 $$;
