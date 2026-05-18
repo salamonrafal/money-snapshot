@@ -1,13 +1,15 @@
--- Run this script in pgAdmin as a PostgreSQL administrator, for example the
--- postgres user. PgAdmin does not support psql commands such as \connect, so:
+-- Run this script with psql as a PostgreSQL administrator, for example the
+-- postgres user. It uses psql variables and \gexec, so it is not compatible
+-- with pgAdmin Query Tool as-is.
 --
--- 1. Run section 1 while connected to an administrative database, for example
---    postgres.
--- 2. Reconnect Query Tool to the money_snapshot database.
+-- 1. Run section 1 with psql connected to an administrative database, for
+--    example postgres.
+-- 2. Reconnect psql to the application database.
 -- 3. Run section 2.
 --
 -- The Docker init script passes database, user, and password values from .env
--- as psql variables: app_database, app_user, and app_password.
+-- as psql variables: app_database, app_user, and app_password. The database
+-- value comes from APP_DB_NAME, falling back to the database segment of DB_URL.
 
 -- Section 1: database and application user.
 
@@ -32,7 +34,7 @@ where not exists (
 )
 \gexec
 
--- Section 2: run after reconnecting Query Tool to the money_snapshot database.
+-- Section 2: run after reconnecting psql to the application database.
 
 grant connect on database :"app_database" to :"app_user";
 grant usage, create on schema public to :"app_user";

@@ -32,7 +32,7 @@ docker compose up -d postgres
 
 echo "Waiting for postgres to accept connections..."
 for attempt in {1..60}; do
-  if docker compose exec -T postgres pg_isready -U money_snapshot -d money_snapshot > /dev/null 2>&1; then
+  if docker compose exec -T postgres sh -c 'app_db_name="${APP_DB_NAME:-${DB_URL##*/}}"; app_db_name="${app_db_name%%\?*}"; pg_isready -U "$DB_USERNAME" -d "$app_db_name"' > /dev/null 2>&1; then
     break
   fi
 
@@ -45,11 +45,7 @@ for attempt in {1..60}; do
 done
 
 echo "Restoring database from: $dump_file"
-docker compose exec -T postgres pg_restore \
-  -U postgres \
-  -d money_snapshot \
-  --clean \
-  --if-exists \
+docker compose exec -T postgres sh -c 'app_db_name="${APP_DB_NAME:-${DB_URL##*/}}"; app_db_name="${app_db_name%%\?*}"; pg_restore -U postgres -d "$app_db_name" --clean --if-exists' \
   < "$dump_file"
 
 echo "Starting full application stack..."

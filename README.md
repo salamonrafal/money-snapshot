@@ -7,7 +7,7 @@ Store and visualize financial changes across your accounts.
 - Java 17
 - Spring Boot 3
 - Maven
-- PostgreSQL
+- PostgreSQL 18.4
 - Flyway database migrations
 - CSS and plain JavaScript frontend
 
@@ -20,7 +20,7 @@ Start PostgreSQL and create a database named `money_snapshot`.
 The repository includes a Docker Compose setup with:
 
 - `web` - Spring Boot application started with Maven.
-- `postgres` - PostgreSQL exposed on the host as `localhost:5455`.
+- `postgres` - PostgreSQL 18.4 exposed on the host as `localhost:5455`.
 - `money-snapshot-postgres-data` - persistent PostgreSQL data volume.
 - `money-snapshot-maven-cache` - Maven dependency cache volume.
 
@@ -51,7 +51,7 @@ PostgreSQL is available from the host at:
 ```text
 host: localhost
 port: 5455
-database: value from DB_URL in .env
+database: value from APP_DB_NAME in .env
 user: value from DB_USERNAME in .env
 password: value from DB_PASSWORD in .env
 ```
@@ -92,24 +92,15 @@ Use `docker compose down -v` only when you want to delete the local database dat
 
 PostgreSQL first-run initialization is configured under `docker/postgres`. The init script reads `docker/postgres/sql/001_create_database_and_user.sql`, creates the `money_snapshot` database and user, and grants privileges required by the application and Flyway migrations.
 
-The Compose file uses `postgres:latest`. PostgreSQL 18+ expects the persistent volume to be mounted at `/var/lib/postgresql`, not `/var/lib/postgresql/data`. If Docker reports old data in `/var/lib/postgresql/data`, you are using a volume created with an older image layout. For a local database that can be deleted, run:
-
-```bash
-docker compose down -v
-docker compose up
-```
-
-If the old volume contains data you need, create a dump with the older PostgreSQL image before deleting the volume, then restore it into the fresh volume.
+Docker Compose pins PostgreSQL to `postgres:18.4`, matching the current official `postgres:latest` release line. Treat any major-version change as a database upgrade: create a dump or backup first, update the image tag intentionally, then recreate and restore the local volume as needed.
 
 ### Docker Compose database backup and restore
 
 Create a database dump before deleting the PostgreSQL volume:
 
 ```bash
-docker compose exec -T postgres pg_dump \
-  -U money_snapshot \
-  -d money_snapshot \
-  --format=custom \
+docker compose exec -T postgres sh -c \
+  'app_db_name="${APP_DB_NAME:-${DB_URL##*/}}"; app_db_name="${app_db_name%%\?*}"; pg_dump -U "$DB_USERNAME" -d "$app_db_name" --format=custom' \
   > money_snapshot.dump
 ```
 
@@ -130,15 +121,12 @@ docker compose up -d postgres
 Restore the dump:
 
 ```bash
-docker compose exec -T postgres pg_restore \
-  -U postgres \
-  -d money_snapshot \
-  --clean \
-  --if-exists \
+docker compose exec -T postgres sh -c \
+  'app_db_name="${APP_DB_NAME:-${DB_URL##*/}}"; app_db_name="${app_db_name%%\?*}"; pg_restore -U postgres -d "$app_db_name" --clean --if-exists' \
   < money_snapshot.dump
 ```
 
-The restore uses the administrative `postgres` role because the dump can contain ownership and default-privilege statements for that role. Restoring the same dump as `money_snapshot` can fail with `permission denied to change default privileges`.
+The restore uses the administrative `postgres` role because the dump can contain ownership and default-privilege statements for that role. Restoring the same dump as the application user can fail with `permission denied to change default privileges`.
 
 Start the full stack after the restore:
 
@@ -150,14 +138,35 @@ Make sure the dump file is stored on the host before running `docker compose dow
 
 ## Database setup
 
-The administrative SQL script is in `database/001_create_database_and_user.sql`.
+The administrative SQL script is in `docker/postgres/sql/001_create_database_and_user.sql`.
 
-Use it in pgAdmin as a PostgreSQL administrator, for example `postgres`:
+The Docker init script runs it with `psql` and passes `app_database`, `app_user`, and `app_password` variables from `.env`. Run the file with `psql` as a PostgreSQL administrator if you need to apply it manually; it uses `psql` variables and `\gexec`, so it is not compatible with pgAdmin Query Tool as-is.
+
+For pgAdmin, use the compatible script in `database/001_create_database_and_user.sql`, or run equivalent literal SQL. Replace `<application-database-password>` with the password selected for the local application database before running it.
 
 1. Open Query Tool connected to an administrative database, for example `postgres`.
-2. Run section `Section 1: database and application user`.
+2. Create the application role and database:
+
+```sql
+create user money_snapshot with password '<application-database-password>';
+create database money_snapshot with owner = money_snapshot encoding = 'UTF8' connection limit = -1;
+```
+
 3. Reconnect Query Tool to the new `money_snapshot` database.
-4. Run section `Section 2: run after reconnecting Query Tool to the money_snapshot database`.
+4. Grant privileges:
+
+```sql
+grant connect on database money_snapshot to money_snapshot;
+grant usage, create on schema public to money_snapshot;
+grant all privileges on all tables in schema public to money_snapshot;
+grant all privileges on all sequences in schema public to money_snapshot;
+
+alter default privileges in schema public
+    grant all privileges on tables to money_snapshot;
+
+alter default privileges in schema public
+    grant all privileges on sequences to money_snapshot;
+```
 
 The script creates:
 
@@ -173,6 +182,7 @@ Provide credentials through environment variables if they differ from defaults:
 
 ```bash
 export DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
+export APP_DB_NAME=money_snapshot
 export DB_USERNAME=money_snapshot
 export DB_PASSWORD='<application-database-password>'
 ```
@@ -181,6 +191,7 @@ Alternatively, create a local `.env` file in the project root. It is loaded auto
 
 ```properties
 DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
+APP_DB_NAME=money_snapshot
 DB_USERNAME=money_snapshot
 DB_PASSWORD=<application-database-password>
 SERVER_PORT=5081

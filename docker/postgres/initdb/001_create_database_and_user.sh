@@ -6,6 +6,7 @@ section_1_sql="$(mktemp)"
 section_2_sql="$(mktemp)"
 app_database="${DB_URL##*/}"
 app_database="${app_database%%\?*}"
+app_database="${APP_DB_NAME:-$app_database}"
 
 awk '
   /^-- Section 1:/ { in_section = 1; next }

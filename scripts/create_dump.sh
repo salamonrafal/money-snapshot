@@ -20,10 +20,7 @@ fi
 
 mkdir -p "$backup_dir"
 
-docker compose exec -T postgres pg_dump \
-  -U money_snapshot \
-  -d money_snapshot \
-  --format=custom \
+docker compose exec -T postgres sh -c 'app_db_name="${APP_DB_NAME:-${DB_URL##*/}}"; app_db_name="${app_db_name%%\?*}"; pg_dump -U "$DB_USERNAME" -d "$app_db_name" --format=custom' \
   > "$dump_file"
 
 echo "Database dump created: $dump_file"
