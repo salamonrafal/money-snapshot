@@ -7,7 +7,7 @@ Store and visualize financial changes across your accounts.
 - Java 17
 - Spring Boot 3
 - Maven
-- PostgreSQL 18.4
+- PostgreSQL
 - Flyway database migrations
 - CSS and plain JavaScript frontend
 
@@ -20,9 +20,10 @@ Start PostgreSQL and create a database named `money_snapshot`.
 The repository includes a Docker Compose setup with:
 
 - `web` - Spring Boot application started with Maven.
-- `postgres` - PostgreSQL 18.4 exposed on the host as `localhost:5455`.
+- `postgres` - PostgreSQL from the pinned `postgres:18.4` image, exposed on the host as `localhost:5455`.
 - `money-snapshot-postgres-data` - persistent PostgreSQL data volume.
 - `money-snapshot-maven-cache` - Maven dependency cache volume.
+- `money-snapshot-maven-target` - Maven build output volume, mounted at `/app/target` so Docker does not create root-owned `target/` files in the working tree.
 
 Create a local `.env` file before starting Docker Compose:
 
@@ -92,7 +93,11 @@ Use `docker compose down -v` only when you want to delete the local database dat
 
 PostgreSQL first-run initialization is configured under `docker/postgres`. The init script reads `docker/postgres/sql/001_create_database_and_user.sql`, creates the `money_snapshot` database and user, and grants privileges required by the application and Flyway migrations.
 
-Docker Compose pins PostgreSQL to `postgres:18.4`, matching the current official `postgres:latest` release line. Treat any major-version change as a database upgrade: create a dump or backup first, update the image tag intentionally, then recreate and restore the local volume as needed.
+Docker Compose pins the database image to `postgres:18.4`, a specific official Postgres image tag known to work with this local setup. Update the image tag intentionally rather than switching to `latest`. Treat any major-version change as a database upgrade: create a dump or backup first, update the image tag, then recreate and restore the local volume as needed.
+
+For PostgreSQL 18, the official image stores `PGDATA` in a version-specific child directory under `/var/lib/postgresql`, for example `/var/lib/postgresql/18/docker`. The Compose volume is mounted at `/var/lib/postgresql` intentionally so the named volume contains the active `PGDATA` directory used by this image line.
+
+The PostgreSQL healthcheck probes the admin database configured by `POSTGRES_DB` and `POSTGRES_USER`. This checks server readiness without depending on the application database or application user during first-run initialization.
 
 ### Docker Compose database backup and restore
 

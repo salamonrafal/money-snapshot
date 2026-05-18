@@ -19,6 +19,7 @@ services:
       ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
     volumes:
       - .:/app
+      - maven_target:/app/target
       - maven_cache:/root/.m2
     depends_on:
       postgres:
@@ -38,18 +39,22 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
     volumes:
+      # postgres:18 stores PGDATA in a version-specific child directory under
+      # /var/lib/postgresql, so the parent directory is the supported mount.
       - postgres_data:/var/lib/postgresql
       - ./docker/postgres/sql/001_create_database_and_user.sql:/docker-init-source/001_create_database_and_user.sql:ro
       - ./docker/postgres/initdb/001_create_database_and_user.sh:/docker-entrypoint-initdb.d/001_create_database_and_user.sh:ro
     healthcheck:
-      test: ['CMD-SHELL', 'app_db_name="$${APP_DB_NAME:-$${DB_URL##*/}}"; app_db_name="$${app_db_name%%\?*}"; pg_isready -U "$${DB_USERNAME}" -d "$${app_db_name}"']
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
 volumes:
   postgres_data:
     name: money-snapshot-postgres-data
   maven_cache:
     name: money-snapshot-maven-cache
+  maven_target:
+    name: money-snapshot-maven-target
