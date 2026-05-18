@@ -4,6 +4,7 @@ set -euo pipefail
 source_sql="/docker-init-source/001_create_database_and_user.sql"
 section_1_sql="$(mktemp)"
 section_2_sql="$(mktemp)"
+trap 'rm -f "$section_1_sql" "$section_2_sql"' EXIT
 app_database="${DB_URL##*/}"
 app_database="${app_database%%\?*}"
 app_database="${APP_DB_NAME:-$app_database}"
