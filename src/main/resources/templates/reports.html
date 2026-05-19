@@ -11,14 +11,16 @@
         <p data-i18n="reports.heading.subtitle">Porównuj salda kont, banków i całego portfela w wybranych okresach.</p>
     </section>
 
-    <section class="table-panel table-panel-wide report-panel" aria-labelledby="reports-title">
+    <div class="reports-layout">
+        <div class="reports-main">
+    <section class="table-panel table-panel-wide report-panel" id="reports-summary-section" aria-labelledby="reports-title">
         <div class="section-header">
             <h2 id="reports-title" data-i18n="reports.table.title">Zestawienie zmian</h2>
             <div class="section-actions report-controls">
-                <div class="report-tabs" role="tablist" aria-label="Widok raportu">
-                    <button type="button" class="report-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
-                    <button type="button" class="report-tab" role="tab" aria-selected="false" data-scope="total" data-i18n="reports.scope.total">Wszystkie konta</button>
-                    <button type="button" class="report-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
+                <div class="report-tabs" id="report-scope-tabs" role="tablist" aria-label="Widok raportu">
+                    <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
+                    <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="total" data-i18n="reports.scope.total">Wszystkie konta</button>
+                    <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
                 </div>
                 <label class="compact-field">
                     <span data-i18n="reports.controls.period">Okres</span>
@@ -42,27 +44,129 @@
             </div>
         </div>
         <p class="form-message" id="reports-message" role="status"></p>
-        <div class="report-chart" id="reports-chart" aria-label="Wykres zmian sald"></div>
-        <div class="table-wrap">
-            <table class="reports-table">
+        <div class="report-content">
+            <div class="report-chart" id="reports-chart" aria-label="Wykres zmian sald"></div>
+            <div class="table-wrap">
+                <table class="reports-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="reports.table.name">Nazwa</th>
+                        <th data-i18n="reports.table.currency">Waluta</th>
+                        <th data-i18n="reports.table.start">Saldo początkowe</th>
+                        <th data-i18n="reports.table.end">Saldo końcowe</th>
+                        <th data-i18n="reports.table.change">Zmiana</th>
+                        <th data-i18n="reports.table.percent">Zmiana %</th>
+                    </tr>
+                    </thead>
+                    <tbody id="reports-table-body">
+                    <tr>
+                        <td colspan="6" data-i18n="reports.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-panel table-panel-wide report-panel" id="reports-overview-section" aria-labelledby="overview-title">
+        <div class="section-header">
+            <h2 id="overview-title" data-i18n="reports.overview.title">Przegląd sald</h2>
+            <div class="section-actions report-controls">
+                <div class="report-tabs" id="overview-scope-tabs" role="tablist" aria-label="Widok przeglądu sald">
+                    <button type="button" class="report-tab overview-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
+                    <button type="button" class="report-tab overview-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
+                </div>
+            </div>
+        </div>
+        <div class="report-content overview-content">
+            <div class="report-chart" id="overview-chart" aria-label="Wykres kołowy sald"></div>
+            <div class="table-wrap">
+                <table class="reports-table overview-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="reports.table.name">Nazwa</th>
+                        <th data-i18n="reports.table.currency">Waluta</th>
+                        <th data-i18n="reports.overview.balance">Saldo</th>
+                        <th data-i18n="reports.overview.share">Udział %</th>
+                    </tr>
+                    </thead>
+                    <tbody id="overview-table-body">
+                    <tr>
+                        <td colspan="4" data-i18n="reports.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-panel table-panel-wide report-panel" id="reports-history-section" aria-labelledby="history-title">
+        <div class="section-header">
+            <h2 id="history-title" data-i18n="reports.history.title">Historia środków</h2>
+            <div class="section-actions report-controls">
+                <label class="compact-field">
+                    <span data-i18n="reports.controls.period">Okres</span>
+                    <select id="history-period">
+                        <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
+                        <option value="2m" data-i18n="reports.period.2m">2 miesiące</option>
+                        <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
+                        <option value="6m" data-i18n="reports.period.6m">6 miesięcy</option>
+                        <option value="1y" data-i18n="reports.period.1y">1 rok</option>
+                        <option value="2y" data-i18n="reports.period.2y">2 lata</option>
+                        <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
+                    </select>
+                </label>
+                <label class="compact-field history-custom-period-field" hidden>
+                    <span data-i18n="reports.controls.from">Od</span>
+                    <input type="date" id="history-date-from">
+                </label>
+                <label class="compact-field history-custom-period-field" hidden>
+                    <span data-i18n="reports.controls.to">Do</span>
+                    <input type="date" id="history-date-to">
+                </label>
+                <button type="button" class="button secondary compact" id="refresh-history" data-i18n="reports.actions.refresh">Odśwież</button>
+            </div>
+        </div>
+        <p class="form-message" id="history-message" role="status"></p>
+        <div class="pagination-bar" id="history-pagination" aria-label="Stronicowanie historii środków">
+            <button type="button" class="button secondary compact" id="history-prev-page" data-i18n="reports.history.pagination.previous">Poprzednia</button>
+            <span id="history-page-info">-</span>
+            <button type="button" class="button secondary compact" id="history-next-page" data-i18n="reports.history.pagination.next">Następna</button>
+            <label class="compact-field pagination-size">
+                <span data-i18n="reports.history.pagination.size">Na stronę</span>
+                <select id="history-page-size">
+                    <option value="7">7</option>
+                    <option value="14" selected>14</option>
+                    <option value="31">31</option>
+                </select>
+            </label>
+        </div>
+        <div class="table-wrap history-table-wrap">
+            <table class="reports-table history-table">
                 <thead>
-                <tr>
-                    <th data-i18n="reports.table.name">Nazwa</th>
-                    <th data-i18n="reports.table.currency">Waluta</th>
-                    <th data-i18n="reports.table.start">Saldo początkowe</th>
-                    <th data-i18n="reports.table.end">Saldo końcowe</th>
-                    <th data-i18n="reports.table.change">Zmiana</th>
-                    <th data-i18n="reports.table.percent">Zmiana %</th>
+                <tr id="history-table-head-row">
+                    <th data-i18n="reports.history.date">Data</th>
                 </tr>
                 </thead>
-                <tbody id="reports-table-body">
+                <tbody id="history-table-body">
                 <tr>
-                    <td colspan="6" data-i18n="reports.loading">Ładowanie...</td>
+                    <td colspan="1" data-i18n="reports.loading">Ładowanie...</td>
                 </tr>
                 </tbody>
             </table>
         </div>
     </section>
+        </div>
+
+        <aside class="table-panel reports-nav-panel" aria-labelledby="reports-nav-title">
+            <h2 id="reports-nav-title" data-i18n="reports.nav.title">Odnośniki</h2>
+            <nav class="reports-nav" aria-label="Raporty">
+                <a href="#reports-summary-section" data-target="reports-summary-section" data-i18n="reports.table.title">Zestawienie zmian</a>
+                <a href="#reports-overview-section" data-target="reports-overview-section" data-i18n="reports.overview.title">Przegląd sald</a>
+                <a href="#reports-history-section" data-target="reports-history-section" data-i18n="reports.history.title">Historia środków</a>
+            </nav>
+        </aside>
+    </div>
 </main>
 </body>
 </html>

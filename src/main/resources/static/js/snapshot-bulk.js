@@ -132,6 +132,77 @@ function dateCell() {
     return cell;
 }
 
+function createBalanceInputCell(account, previousAccount, compact = false) {
+    const cell = document.createElement("td");
+    const spacer = document.createElement("span");
+    const balanceInput = document.createElement("input");
+    const error = document.createElement("span");
+    const lastBalance = document.createElement("span");
+
+    cell.className = `bulk-balance-cell bulk-value-cell${compact ? " bulk-compact-value-cell" : ""}`;
+    spacer.className = "bulk-balance-spacer";
+    spacer.setAttribute("aria-hidden", "true");
+    spacer.textContent = messages["snapshots.form.date"] ?? "Data migawki";
+    balanceInput.className = "table-input";
+    balanceInput.type = "number";
+    balanceInput.step = "0.0001";
+    balanceInput.dataset.role = "balance";
+    balanceInput.dataset.accountId = account.id;
+    balanceInput.inputMode = "decimal";
+    balanceInput.value = previousAccount?.balance ?? "";
+    balanceInput.setAttribute("aria-label", `${messages["snapshots.table.balance"] ?? ""}: ${formatAccountInputLabel(account)}`);
+    balanceInput.addEventListener("input", () => clearInputError(balanceInput, error));
+    error.id = validationErrorId(account.id);
+    error.className = "bulk-input-error";
+    error.dataset.role = "validation-error";
+    error.setAttribute("aria-live", "polite");
+    error.hidden = true;
+    lastBalance.className = "bulk-last-balance";
+    lastBalance.textContent = formatLastSnapshot(account);
+    cell.append(spacer, balanceInput, error, lastBalance);
+    return cell;
+}
+
+function isCompactBulkLayout() {
+    return window.matchMedia("(max-width: 1024px)").matches;
+}
+
+function renderCompactAccounts(previousAccounts) {
+    const dateRow = document.createElement("tr");
+    const dateHeading = labelCell("snapshots.form.date", "Data migawki");
+    const dateValueCell = document.createElement("td");
+    const dateInputCell = dateCell();
+    const dateInput = dateInputCell.querySelector("input");
+    const dateError = dateInputCell.querySelector(".bulk-input-error");
+
+    dateValueCell.className = "bulk-compact-date-cell";
+    if (dateInput) {
+        dateValueCell.append(dateInput);
+    }
+    if (dateError) {
+        dateValueCell.append(dateError);
+    }
+    dateRow.append(dateHeading, dateValueCell);
+
+    const accountRows = accounts.map((account) => {
+        const row = document.createElement("tr");
+        const heading = document.createElement("th");
+        heading.scope = "row";
+        heading.className = "bulk-row-heading bulk-compact-heading";
+        const name = document.createElement("span");
+        const meta = document.createElement("span");
+        name.className = "bulk-account-name";
+        name.textContent = formatAccountName(account);
+        meta.className = "bulk-account-meta";
+        meta.textContent = formatAccountMeta(account);
+        heading.append(name, meta);
+        row.append(heading, createBalanceInputCell(account, previousAccounts.get(account.id), true));
+        return row;
+    });
+
+    tableBody.replaceChildren(dateRow, ...accountRows);
+}
+
 function renderAccounts() {
     if (accounts.length === 0) {
         renderEmpty(messages["snapshots.bulk.empty"] ?? "");
@@ -148,42 +219,21 @@ function renderAccounts() {
         ];
     }));
 
+    const table = tableBody.closest(".bulk-snapshot-table");
+    table?.classList.toggle("bulk-snapshot-table-compact", isCompactBulkLayout());
+
+    if (isCompactBulkLayout()) {
+        renderCompactAccounts(previousAccounts);
+        return;
+    }
+
     const accountRow = document.createElement("tr");
     accountRow.append(labelCell("snapshots.table.account", "Konto"), ...accounts.map(accountHeaderCell));
 
     const balanceRow = document.createElement("tr");
     balanceRow.append(
             dateCell(),
-            ...accounts.map((account) => {
-                const previousAccount = previousAccounts.get(account.id);
-                const cell = document.createElement("td");
-                const spacer = document.createElement("span");
-                const balanceInput = document.createElement("input");
-                const error = document.createElement("span");
-                const lastBalance = document.createElement("span");
-                cell.className = "bulk-balance-cell bulk-value-cell";
-                spacer.className = "bulk-balance-spacer";
-                spacer.setAttribute("aria-hidden", "true");
-                spacer.textContent = messages["snapshots.form.date"] ?? "Data migawki";
-                balanceInput.className = "table-input";
-                balanceInput.type = "number";
-                balanceInput.step = "0.0001";
-                balanceInput.dataset.role = "balance";
-                balanceInput.dataset.accountId = account.id;
-                balanceInput.inputMode = "decimal";
-                balanceInput.value = previousAccount?.balance ?? "";
-                balanceInput.setAttribute("aria-label", `${messages["snapshots.table.balance"] ?? ""}: ${formatAccountInputLabel(account)}`);
-                balanceInput.addEventListener("input", () => clearInputError(balanceInput, error));
-                error.id = validationErrorId(account.id);
-                error.className = "bulk-input-error";
-                error.dataset.role = "validation-error";
-                error.setAttribute("aria-live", "polite");
-                error.hidden = true;
-                lastBalance.className = "bulk-last-balance";
-                lastBalance.textContent = formatLastSnapshot(account);
-                cell.append(spacer, balanceInput, error, lastBalance);
-                return cell;
-            })
+            ...accounts.map((account) => createBalanceInputCell(account, previousAccounts.get(account.id)))
     );
 
     tableBody.replaceChildren(accountRow, balanceRow);
@@ -312,6 +362,12 @@ async function loadSnapshots() {
     snapshotsLoaded = true;
     renderAccounts();
 }
+
+window.addEventListener("resize", () => {
+    if (accounts.length > 0) {
+        renderAccounts();
+    }
+});
 
 bulkSnapshotForm.addEventListener("submit", async (event) => {
     event.preventDefault();
