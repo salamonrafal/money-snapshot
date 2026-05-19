@@ -63,6 +63,14 @@ public class AccountSnapshotController {
         return ResponseEntity.created(URI.create("/api/snapshots/" + response.id())).body(response);
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<List<AccountSnapshotResponse>> createSnapshots(@Valid @RequestBody BulkCreateAccountSnapshotsRequest request) {
+        List<AccountSnapshotResponse> response = snapshotService.createSnapshots(request.snapshots()).stream()
+                .map(AccountSnapshotResponse::from)
+                .toList();
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @PutMapping("/{id}")
     public AccountSnapshotResponse updateSnapshot(@PathVariable UUID id, @Valid @RequestBody CreateAccountSnapshotRequest request) {
         return AccountSnapshotResponse.from(snapshotService.updateSnapshot(id, request));

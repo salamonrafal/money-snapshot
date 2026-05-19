@@ -236,7 +236,7 @@ function setRememberedAccountDateFromLastSnapshot() {
     }
 
     const lastSnapshot = lastSnapshotForSelectedAccount();
-    snapshotDateInput.value = lastSnapshot?.snapshotDate ?? new Date().toISOString().slice(0, 10);
+    snapshotDateInput.value = lastSnapshot?.snapshotDate ?? MoneySnapshotUi.localIsoDate();
 }
 
 function updateLastSnapshotSummary() {
@@ -284,7 +284,7 @@ accountSelect.addEventListener("change", () => {
 
 function setDefaultSnapshotDate() {
     if (formMode !== "edit") {
-        snapshotDateInput.value = new Date().toISOString().slice(0, 10);
+        snapshotDateInput.value = MoneySnapshotUi.localIsoDate();
     }
 }
 

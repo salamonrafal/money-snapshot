@@ -38,6 +38,17 @@ function setListMessage(text, type = "") {
     listMessage.dataset.type = type;
 }
 
+function showBulkSnapshotSuccessMessage() {
+    const savedCount = window.sessionStorage.getItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
+    if (!savedCount) {
+        return;
+    }
+
+    window.sessionStorage.removeItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
+    const successMessage = messages["snapshots.bulk.success"] ?? "Saved snapshots: {count}.";
+    setListMessage(successMessage.replace("{count}", savedCount), "success");
+}
+
 function formatDate(value) {
     if (!value) {
         return "-";
@@ -285,6 +296,7 @@ MoneySnapshotI18n.init({
         .then((settings) => {
             userSettings = settings;
         })
+        .then(showBulkSnapshotSuccessMessage)
         .then(loadAccounts)
         .then(loadSnapshots)
         .catch((error) => {

@@ -75,6 +75,11 @@ public class PageController {
         return "snapshot-new";
     }
 
+    @GetMapping("/snapshots/bulk.html")
+    public String newBulkSnapshots() {
+        return "snapshot-bulk";
+    }
+
     @GetMapping("/snapshots.html")
     public String snapshots() {
         return "snapshots";

@@ -39,6 +39,8 @@ public class MessageBundleService {
             "home.feature.snapshots.description",
             "home.feature.accounts.title",
             "home.feature.accounts.description",
+            "home.feature.banks.title",
+            "home.feature.banks.description",
             "home.feature.reports.title",
             "home.feature.reports.description"
     );
@@ -155,6 +157,7 @@ public class MessageBundleService {
             "snapshots.error.notFound",
             "snapshots.error.update",
             "snapshots.actions.add",
+            "snapshots.actions.addBulk",
             "snapshots.actions.delete",
             "snapshots.actions.edit",
             "snapshots.actions.refresh",
@@ -197,7 +200,19 @@ public class MessageBundleService {
             "snapshots.table.createdAt",
             "snapshots.table.date",
             "snapshots.table.note",
-            "snapshots.table.title"
+            "snapshots.table.title",
+            "snapshots.bulk.commonNote",
+            "snapshots.bulk.empty",
+            "snapshots.bulk.eyebrow",
+            "snapshots.bulk.noLastBalance",
+            "snapshots.bulk.requiredBalance",
+            "snapshots.bulk.requiredDate",
+            "snapshots.bulk.submit",
+            "snapshots.bulk.subtitle",
+            "snapshots.bulk.success",
+            "snapshots.bulk.table.title",
+            "snapshots.bulk.title",
+            "snapshots.bulk.validationError"
     );
 
     private static final Set<String> REPORT_PAGE_KEYS = Set.of(
