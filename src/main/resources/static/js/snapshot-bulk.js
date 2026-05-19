@@ -30,6 +30,14 @@ function formatAccountMeta(account) {
     return [account.bankName, account.currencyCode].filter(Boolean).join(" · ") || "-";
 }
 
+function formatAccountInputLabel(account) {
+    return [formatAccountName(account), account.bankName, account.currencyCode].filter(Boolean).join(", ");
+}
+
+function validationErrorId(accountId) {
+    return `bulk-snapshot-balance-error-${String(accountId).replace(/[^a-z0-9_-]/gi, "-")}`;
+}
+
 function compareText(left, right) {
     return (left || "").localeCompare(right || "", undefined, {sensitivity: "base"});
 }
@@ -101,6 +109,7 @@ function dateCell() {
     const cell = document.createElement("th");
     const label = document.createElement("span");
     const input = document.createElement("input");
+    const error = document.createElement("span");
     const previousDate = snapshotDateInput?.value || new Date().toISOString().slice(0, 10);
 
     cell.scope = "row";
@@ -112,7 +121,13 @@ function dateCell() {
     input.required = true;
     input.value = previousDate;
     input.className = "table-input";
-    cell.append(label, input);
+    input.addEventListener("input", () => clearInputError(input, error));
+    error.id = "bulk-snapshot-date-error";
+    error.className = "bulk-input-error";
+    error.dataset.role = "validation-error";
+    error.setAttribute("aria-live", "polite");
+    error.hidden = true;
+    cell.append(label, input, error);
     snapshotDateInput = input;
 
     return cell;
@@ -145,6 +160,7 @@ function renderAccounts() {
                 const cell = document.createElement("td");
                 const spacer = document.createElement("span");
                 const balanceInput = document.createElement("input");
+                const error = document.createElement("span");
                 const lastBalance = document.createElement("span");
                 cell.className = "bulk-balance-cell bulk-value-cell";
                 spacer.className = "bulk-balance-spacer";
@@ -157,10 +173,16 @@ function renderAccounts() {
                 balanceInput.dataset.accountId = account.id;
                 balanceInput.inputMode = "decimal";
                 balanceInput.value = previousAccount?.balance ?? "";
-                balanceInput.setAttribute("aria-label", `${messages["snapshots.table.balance"] ?? ""}: ${formatAccountName(account)}`);
+                balanceInput.setAttribute("aria-label", `${messages["snapshots.table.balance"] ?? ""}: ${formatAccountInputLabel(account)}`);
+                balanceInput.addEventListener("input", () => clearInputError(balanceInput, error));
+                error.id = validationErrorId(account.id);
+                error.className = "bulk-input-error";
+                error.dataset.role = "validation-error";
+                error.setAttribute("aria-live", "polite");
+                error.hidden = true;
                 lastBalance.className = "bulk-last-balance";
                 lastBalance.textContent = formatLastSnapshot(account);
-                cell.append(spacer, balanceInput, lastBalance);
+                cell.append(spacer, balanceInput, error, lastBalance);
                 return cell;
             })
     );
@@ -188,6 +210,61 @@ function validateAccountPayload({payload}) {
         return messages["snapshots.bulk.requiredBalance"];
     }
     return "";
+}
+
+function clearInputError(input, error) {
+    input.removeAttribute("aria-invalid");
+    if (input.getAttribute("aria-describedby") === error.id) {
+        input.removeAttribute("aria-describedby");
+    }
+    error.textContent = "";
+    error.hidden = true;
+}
+
+function clearValidationErrors() {
+    bulkSnapshotForm.querySelectorAll("[data-role='validation-error']").forEach((error) => {
+        error.textContent = "";
+        error.hidden = true;
+    });
+    bulkSnapshotForm.querySelectorAll("[aria-invalid='true']").forEach((input) => {
+        input.removeAttribute("aria-invalid");
+        input.removeAttribute("aria-describedby");
+    });
+}
+
+function markInputError(input, error, message) {
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-describedby", error.id);
+    error.textContent = message;
+    error.hidden = false;
+}
+
+function balanceInputForAccount(accountId) {
+    return tableBody.querySelector(`[data-role='balance'][data-account-id='${accountId}']`);
+}
+
+function markValidationErrors(invalidEntries) {
+    const dateError = document.querySelector("#bulk-snapshot-date-error");
+    let firstInvalidInput = null;
+
+    if (!snapshotDateInput.value) {
+        markInputError(snapshotDateInput, dateError, invalidEntries[0].message);
+        firstInvalidInput = snapshotDateInput;
+    }
+
+    invalidEntries
+            .filter(({payload}) => payload.snapshotDate && !payload.balance)
+            .forEach(({account, message}) => {
+                const input = balanceInputForAccount(account.id);
+                const error = document.querySelector(`#${validationErrorId(account.id)}`);
+                markInputError(input, error, message);
+                if (!firstInvalidInput) {
+                    firstInvalidInput = input;
+                }
+            });
+
+    firstInvalidInput?.scrollIntoView({block: "center", inline: "center", behavior: "smooth"});
+    firstInvalidInput?.focus({preventScroll: true});
 }
 
 async function saveSnapshot(payload) {
@@ -237,6 +314,7 @@ async function loadSnapshots() {
 
 bulkSnapshotForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    clearValidationErrors();
 
     const entries = payloads();
     if (entries.length === 0) {
@@ -249,6 +327,7 @@ bulkSnapshotForm.addEventListener("submit", async (event) => {
             .filter((entry) => entry.message);
 
     if (invalidEntries.length > 0) {
+        markValidationErrors(invalidEntries);
         setFormMessage(messages["snapshots.bulk.validationError"], "error");
         return;
     }

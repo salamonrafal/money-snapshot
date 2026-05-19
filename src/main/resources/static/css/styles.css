@@ -519,6 +519,15 @@ h1 {
     outline: 3px solid rgba(15, 139, 141, 0.16);
 }
 
+.table-input[aria-invalid="true"] {
+    border-color: #b42318;
+}
+
+.table-input[aria-invalid="true"]:focus {
+    border-color: #b42318;
+    outline-color: rgba(180, 35, 24, 0.18);
+}
+
 .snapshot-last-summary {
     display: inline-flex;
     align-items: center;
@@ -958,6 +967,16 @@ td:nth-child(5) {
     font-weight: 800;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.bulk-input-error {
+    display: block;
+    margin-top: 6px;
+    color: #b42318;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.25;
+    white-space: normal;
 }
 
 .bulk-account-name,
