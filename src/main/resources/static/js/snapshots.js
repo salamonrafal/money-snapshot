@@ -12,7 +12,6 @@ const deleteModal = MoneySnapshotUi.createConfirmModal({
     confirmSelector: "#confirm-delete-snapshot",
     cancelSelector: "#cancel-delete-snapshot"
 });
-const BULK_SNAPSHOT_SUCCESS_KEY = "money-snapshot-bulk-snapshot-success-count";
 
 let currentLanguage = "pl";
 let messages = {};
@@ -40,13 +39,14 @@ function setListMessage(text, type = "") {
 }
 
 function showBulkSnapshotSuccessMessage() {
-    const savedCount = window.sessionStorage.getItem(BULK_SNAPSHOT_SUCCESS_KEY);
+    const savedCount = window.sessionStorage.getItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
     if (!savedCount) {
         return;
     }
 
-    window.sessionStorage.removeItem(BULK_SNAPSHOT_SUCCESS_KEY);
-    setListMessage(messages["snapshots.bulk.success"].replace("{count}", savedCount), "success");
+    window.sessionStorage.removeItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
+    const successMessage = messages["snapshots.bulk.success"] ?? "Saved snapshots: {count}.";
+    setListMessage(successMessage.replace("{count}", savedCount), "success");
 }
 
 function formatDate(value) {

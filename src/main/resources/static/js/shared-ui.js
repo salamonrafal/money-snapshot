@@ -1,4 +1,5 @@
 window.MoneySnapshotUi = (() => {
+    const bulkSnapshotSuccessKey = "money-snapshot-bulk-snapshot-success-count";
     const defaultSettings = {
         defaultCurrency: "PLN",
         dateTimeFormat: "Y-m-d H:m",
@@ -117,6 +118,10 @@ window.MoneySnapshotUi = (() => {
         return String(value).padStart(2, "0");
     }
 
+    function localIsoDate(date = new Date()) {
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
     function formatDateWithPattern(value, pattern, includeTime) {
         if (!value) {
             return "-";
@@ -191,6 +196,7 @@ window.MoneySnapshotUi = (() => {
     }
 
     return {
+        bulkSnapshotSuccessKey,
         clearUserSettingsCache,
         createConfirmModal,
         createEditIcon,
@@ -201,6 +207,7 @@ window.MoneySnapshotUi = (() => {
         formatDateTimeValue,
         formatMoney,
         formatMoneyValue,
+        localIsoDate,
         loadUserSettings
     };
 })();

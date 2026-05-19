@@ -205,7 +205,6 @@ public class MessageBundleService {
             "snapshots.bulk.empty",
             "snapshots.bulk.eyebrow",
             "snapshots.bulk.noLastBalance",
-            "snapshots.bulk.partialSuccess",
             "snapshots.bulk.requiredBalance",
             "snapshots.bulk.requiredDate",
             "snapshots.bulk.submit",

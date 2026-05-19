@@ -7,8 +7,12 @@ import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.snapshot.web.CreateAccountSnapshotRequest;
 import jakarta.transaction.Transactional;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -84,6 +88,40 @@ public class AccountSnapshotService {
     }
 
     @Transactional
+    public List<AccountSnapshot> createSnapshots(List<CreateAccountSnapshotRequest> requests) {
+        Set<SnapshotIdentity> requestIdentities = new HashSet<>();
+        List<AccountSnapshot> snapshots = new ArrayList<>();
+
+        for (CreateAccountSnapshotRequest request : requests) {
+            Account account = findAccountForCurrentUser(request.accountId())
+                    .orElseThrow(() -> new AccountNotFoundException(request.accountId()));
+            SnapshotIdentity identity = new SnapshotIdentity(request.accountId(), request.snapshotDate());
+
+            if (!requestIdentities.add(identity)
+                    || snapshotRepository.existsByAccountIdAndSnapshotDate(request.accountId(), request.snapshotDate())) {
+                throw new DuplicateAccountSnapshotException(request.accountId(), request.snapshotDate());
+            }
+
+            snapshots.add(new AccountSnapshot(
+                    account,
+                    resolveSnapshotOwner(account),
+                    request.snapshotDate(),
+                    request.balance(),
+                    normalizeNote(request.note())
+            ));
+        }
+
+        List<AccountSnapshot> savedSnapshots = snapshotRepository.saveAll(snapshots);
+        savedSnapshots.forEach(savedSnapshot -> eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+                savedSnapshot.getId(),
+                savedSnapshot.getAccount().getId(),
+                savedSnapshot.getSnapshotDate()
+        )));
+
+        return savedSnapshots;
+    }
+
+    @Transactional
     public AccountSnapshot updateSnapshot(UUID id, CreateAccountSnapshotRequest request) {
         AccountSnapshot snapshot = getSnapshot(id);
         Account account = findAccountForCurrentUser(request.accountId())
@@ -133,5 +171,8 @@ public class AccountSnapshotService {
         }
 
         return note.trim();
+    }
+
+    private record SnapshotIdentity(UUID accountId, LocalDate snapshotDate) {
     }
 }

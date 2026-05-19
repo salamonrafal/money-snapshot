@@ -2,7 +2,6 @@ const bulkSnapshotForm = document.querySelector("#bulk-snapshot-form");
 const noteInput = document.querySelector("#bulk-snapshot-note");
 const tableBody = document.querySelector("#bulk-snapshot-table-body");
 const formMessage = document.querySelector("#bulk-snapshot-message");
-const BULK_SNAPSHOT_SUCCESS_KEY = "money-snapshot-bulk-snapshot-success-count";
 
 let messages = {};
 let accounts = [];
@@ -110,7 +109,7 @@ function dateCell() {
     const label = document.createElement("span");
     const input = document.createElement("input");
     const error = document.createElement("span");
-    const previousDate = snapshotDateInput?.value || new Date().toISOString().slice(0, 10);
+    const previousDate = snapshotDateInput?.value || MoneySnapshotUi.localIsoDate();
 
     cell.scope = "row";
     cell.className = "bulk-row-heading bulk-date-cell bulk-value-cell";
@@ -267,13 +266,15 @@ function markValidationErrors(invalidEntries) {
     firstInvalidInput?.focus({preventScroll: true});
 }
 
-async function saveSnapshot(payload) {
-    const response = await fetch("/api/snapshots", {
+async function saveSnapshots(entries) {
+    const response = await fetch("/api/snapshots/bulk", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+            snapshots: entries.map(({payload}) => payload)
+        })
     });
 
     if (response.status === 404) {
@@ -336,30 +337,15 @@ bulkSnapshotForm.addEventListener("submit", async (event) => {
     submitButton.disabled = true;
     setFormMessage("");
 
-    let savedCount = 0;
-    let failedCount = 0;
-
-    for (const {account, payload} of entries) {
-        try {
-            await saveSnapshot(payload);
-            savedCount += 1;
-        } catch (error) {
-            console.error(`Cannot save snapshot for account ${account.id}`, error);
-            failedCount += 1;
-        }
-    }
-
-    if (failedCount > 0) {
-        setFormMessage(messages["snapshots.bulk.partialSuccess"]
-                .replace("{saved}", savedCount)
-                .replace("{failed}", failedCount), "error");
-    } else {
-        window.sessionStorage.setItem(BULK_SNAPSHOT_SUCCESS_KEY, String(savedCount));
+    try {
+        const savedSnapshots = await saveSnapshots(entries);
+        window.sessionStorage.setItem(MoneySnapshotUi.bulkSnapshotSuccessKey, String(savedSnapshots.length));
         window.location.href = "/snapshots.html";
-        return;
+    } catch (error) {
+        console.error("Cannot save bulk snapshots", error);
+        setFormMessage(error.message, "error");
+        submitButton.disabled = false;
     }
-
-    submitButton.disabled = false;
 });
 
 MoneySnapshotI18n.init({
