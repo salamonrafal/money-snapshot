@@ -642,7 +642,7 @@ function renderOverviewChart(rows) {
     const legend = rows.map((row, index) => `
         <li class="report-chart-legend-item" data-overview-index="${index}">
             <span class="report-chart-swatch" style="--chart-color: ${chartColor(index)}"></span>
-            <span class="report-chart-legend-name">${escapeHtml(currentOverviewScope === "banks" ? row.name : `${row.name} (${row.currencyCode})`)}</span>
+            <span class="report-chart-legend-name">${escapeHtml(`${row.name} (${row.currencyCode})`)}</span>
             <span class="report-chart-legend-value">${escapeHtml(formatPercent(row.sharePercent))}</span>
         </li>
     `).join("");

@@ -884,18 +884,20 @@ h1 {
     stroke-width: 1.4;
 }
 
-.overview-pie-chart path {
+.overview-pie-chart path,
+.overview-pie-chart circle {
     fill: var(--chart-color);
     stroke: rgba(255, 255, 255, 0.95);
     stroke-width: 1;
     transition: opacity 0.16s ease;
 }
 
-.overview-pie-chart path.is-active {
+.overview-pie-chart path.is-active,
+.overview-pie-chart circle.is-active {
     opacity: 1;
 }
 
-#overview-chart .overview-pie-chart:hover path:not(.is-active) {
+#overview-chart .overview-pie-chart:hover [data-overview-index]:not(.is-active) {
     opacity: 0.35;
 }
 
