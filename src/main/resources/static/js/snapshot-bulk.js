@@ -9,6 +9,10 @@ let snapshots = [];
 let userSettings = null;
 let snapshotDateInput = null;
 let snapshotsLoaded = false;
+let draftSnapshotDate = "";
+const draftBalances = new Map();
+let compactBulkLayout = isCompactBulkLayout();
+let resizeDebounceTimer = null;
 
 function handleLanguageChange(nextMessages) {
     messages = nextMessages;
@@ -109,7 +113,7 @@ function dateCell() {
     const label = document.createElement("span");
     const input = document.createElement("input");
     const error = document.createElement("span");
-    const previousDate = snapshotDateInput?.value || MoneySnapshotUi.localIsoDate();
+    const previousDate = snapshotDateInput?.value || draftSnapshotDate || MoneySnapshotUi.localIsoDate();
 
     cell.scope = "row";
     cell.className = "bulk-row-heading bulk-date-cell bulk-value-cell";
@@ -120,7 +124,10 @@ function dateCell() {
     input.required = true;
     input.value = previousDate;
     input.className = "table-input";
-    input.addEventListener("input", () => clearInputError(input, error));
+    input.addEventListener("input", () => {
+        draftSnapshotDate = input.value;
+        clearInputError(input, error);
+    });
     error.id = "bulk-snapshot-date-error";
     error.className = "bulk-input-error";
     error.dataset.role = "validation-error";
@@ -151,7 +158,10 @@ function createBalanceInputCell(account, previousAccount, compact = false) {
     balanceInput.inputMode = "decimal";
     balanceInput.value = previousAccount?.balance ?? "";
     balanceInput.setAttribute("aria-label", `${messages["snapshots.table.balance"] ?? ""}: ${formatAccountInputLabel(account)}`);
-    balanceInput.addEventListener("input", () => clearInputError(balanceInput, error));
+    balanceInput.addEventListener("input", () => {
+        draftBalances.set(account.id, balanceInput.value);
+        clearInputError(balanceInput, error);
+    });
     error.id = validationErrorId(account.id);
     error.className = "bulk-input-error";
     error.dataset.role = "validation-error";
@@ -165,6 +175,18 @@ function createBalanceInputCell(account, previousAccount, compact = false) {
 
 function isCompactBulkLayout() {
     return window.matchMedia("(max-width: 1024px)").matches;
+}
+
+function currentDraftValues() {
+    const balances = new Map(accounts.map((account) => {
+        const balanceInput = tableBody.querySelector(`[data-role='balance'][data-account-id='${account.id}']`);
+        return [account.id, balanceInput?.value ?? draftBalances.get(account.id) ?? ""];
+    }));
+
+    return {
+        snapshotDate: snapshotDateInput?.value || draftSnapshotDate || "",
+        balances
+    };
 }
 
 function renderCompactAccounts(previousAccounts) {
@@ -209,20 +231,24 @@ function renderAccounts() {
         return;
     }
 
-    const previousAccounts = new Map(accounts.map((account) => {
-        const balance = tableBody.querySelector(`[data-role='balance'][data-account-id='${account.id}']`);
-        return [
-            account.id,
-            {
-                balance: balance?.value ?? ""
-            }
-        ];
-    }));
+    const draftValues = currentDraftValues();
+    draftSnapshotDate = draftValues.snapshotDate;
+    draftValues.balances.forEach((balance, accountId) => {
+        draftBalances.set(accountId, balance);
+    });
+
+    const previousAccounts = new Map(accounts.map((account) => [
+        account.id,
+        {
+            balance: draftValues.balances.get(account.id) ?? ""
+        }
+    ]));
 
     const table = tableBody.closest(".bulk-snapshot-table");
-    table?.classList.toggle("bulk-snapshot-table-compact", isCompactBulkLayout());
+    compactBulkLayout = isCompactBulkLayout();
+    table?.classList.toggle("bulk-snapshot-table-compact", compactBulkLayout);
 
-    if (isCompactBulkLayout()) {
+    if (compactBulkLayout) {
         renderCompactAccounts(previousAccounts);
         return;
     }
@@ -364,9 +390,17 @@ async function loadSnapshots() {
 }
 
 window.addEventListener("resize", () => {
-    if (accounts.length > 0) {
-        renderAccounts();
-    }
+    window.clearTimeout(resizeDebounceTimer);
+    resizeDebounceTimer = window.setTimeout(() => {
+        if (accounts.length === 0) {
+            return;
+        }
+
+        const nextCompactLayout = isCompactBulkLayout();
+        if (nextCompactLayout !== compactBulkLayout) {
+            renderAccounts();
+        }
+    }, 150);
 });
 
 bulkSnapshotForm.addEventListener("submit", async (event) => {

@@ -22,19 +22,14 @@ const historyPreviousPageButton = document.querySelector("#history-prev-page");
 const historyNextPageButton = document.querySelector("#history-next-page");
 const historyPageInfo = document.querySelector("#history-page-info");
 const historyPageSizeSelect = document.querySelector("#history-page-size");
+const historyPaginationElement = document.querySelector("#history-pagination");
 const historyTableHeadRow = document.querySelector("#history-table-head-row");
 const historyTableBody = document.querySelector("#history-table-body");
+const reportsNavElement = document.querySelector(".reports-nav");
 const reportsNavLinks = document.querySelectorAll(".reports-nav a[data-target]");
 const reportsNavPanel = document.querySelector(".reports-nav-panel");
 
 const periodOffsets = {
-    "1m": {months: 1},
-    "3m": {months: 3},
-    "1y": {years: 1},
-    "2y": {years: 2}
-};
-
-const historyPeriodOffsets = {
     "1m": {months: 1},
     "2m": {months: 2},
     "3m": {months: 3},
@@ -50,6 +45,8 @@ let snapshotsLoaded = false;
 let currentScope = "accounts";
 let currentOverviewScope = "accounts";
 let currentHistoryPage = 0;
+let historyMatrixCache = null;
+let historyMatrixCacheKey = "";
 let userSettings = null;
 
 function locale() {
@@ -146,6 +143,11 @@ function setMessage(text, type = "") {
 function setHistoryMessage(text, type = "") {
     historyMessageElement.textContent = text;
     historyMessageElement.dataset.type = type;
+}
+
+function invalidateHistoryCache() {
+    historyMatrixCache = null;
+    historyMatrixCacheKey = "";
 }
 
 function updateReportsNavActiveState() {
@@ -507,6 +509,15 @@ function pieSlicePath(cx, cy, radius, startAngle, endAngle) {
     return `M ${cx} ${cy} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
 }
 
+function pieSliceMarkup(cx, cy, radius, startAngle, endAngle, share, index) {
+    const attributes = `data-overview-index="${index}" style="--chart-color: ${chartColor(index)}"`;
+    if (share >= 0.999999) {
+        return `<circle cx="${cx}" cy="${cy}" r="${radius}" ${attributes}></circle>`;
+    }
+
+    return `<path d="${pieSlicePath(cx, cy, radius, startAngle, endAngle)}" ${attributes}></path>`;
+}
+
 function chartColor(index) {
     return [
         "#0f8b8d",
@@ -623,9 +634,9 @@ function renderOverviewChart(rows) {
     const slices = rows.map((row, index) => {
         const share = total === 0 ? 0 : Math.abs(row.balance) / total;
         const nextAngle = angle + share * Math.PI * 2;
-        const path = pieSlicePath(centerX, centerY, radius, angle, nextAngle);
+        const slice = pieSliceMarkup(centerX, centerY, radius, angle, nextAngle, share, index);
         angle = nextAngle;
-        return `<path d="${path}" data-overview-index="${index}" style="--chart-color: ${chartColor(index)}"></path>`;
+        return slice;
     }).join("");
 
     const legend = rows.map((row, index) => `
@@ -645,7 +656,7 @@ function renderOverviewChart(rows) {
         </div>
     `;
 
-    const sliceElements = overviewChartElement.querySelectorAll(".overview-pie-chart path[data-overview-index]");
+    const sliceElements = overviewChartElement.querySelectorAll(".overview-pie-chart [data-overview-index]");
     const legendElements = overviewChartElement.querySelectorAll(".report-chart-legend-item[data-overview-index]");
 
     function setActiveOverviewIndex(activeIndex) {
@@ -700,7 +711,7 @@ function resolveHistoryRange() {
 
     const toDate = todayIsoDate();
     return {
-        fromDate: shiftDate(toDate, historyPeriodOffsets[historyPeriodSelect.value]),
+        fromDate: shiftDate(toDate, periodOffsets[historyPeriodSelect.value]),
         toDate
     };
 }
@@ -770,6 +781,21 @@ function buildHistoryRows(range) {
     return {accounts, rows};
 }
 
+function historyRangeCacheKey(range) {
+    return `${range.fromDate}:${range.toDate}:${currentLanguage}`;
+}
+
+function historyMatrixForRange(range) {
+    const cacheKey = historyRangeCacheKey(range);
+    if (historyMatrixCache && historyMatrixCacheKey === cacheKey) {
+        return historyMatrixCache;
+    }
+
+    historyMatrixCache = buildHistoryRows(range);
+    historyMatrixCacheKey = cacheKey;
+    return historyMatrixCache;
+}
+
 function paginateHistoryMatrix(matrix) {
     const pageSize = Number(historyPageSizeSelect.value);
     const totalElements = matrix.rows.length;
@@ -812,7 +838,7 @@ function renderHistoryPagination(pageData) {
 
 function renderHistory() {
     const range = resolveHistoryRange();
-    const matrix = buildHistoryRows(range);
+    const matrix = historyMatrixForRange(range);
     if (matrix.accounts.length === 0) {
         renderHistoryEmpty(messages["reports.history.empty"]);
         setHistoryMessage(`${formatDate(range.fromDate)} - ${formatDate(range.toDate)}`);
@@ -839,6 +865,20 @@ function updateHistoryCustomPeriodVisibility() {
     });
 }
 
+function renderHistorySection() {
+    if (!snapshotsLoaded) {
+        return;
+    }
+
+    try {
+        setHistoryMessage("");
+        renderHistory();
+    } catch (error) {
+        renderHistoryEmpty(error.message);
+        setHistoryMessage(error.message, "error");
+    }
+}
+
 function renderReports() {
     if (!snapshotsLoaded) {
         return;
@@ -860,7 +900,7 @@ function renderReports() {
         renderChart(rows, step, checkpoints);
         renderTable(rows);
         renderOverview(range.toDate);
-        renderHistory();
+        renderHistorySection();
     } catch (error) {
         renderEmpty(error.message);
         renderOverviewEmpty(error.message);
@@ -878,17 +918,21 @@ async function loadReports() {
 
     cachedSnapshots = await response.json();
     snapshotsLoaded = true;
+    invalidateHistoryCache();
     renderReports();
 }
 
 function handleLanguageChange(nextLanguage, nextMessages) {
     currentLanguage = nextLanguage;
     messages = nextMessages;
+    invalidateHistoryCache();
     document.title = `${messages["reports.heading.title"]} | ${messages["app.name"]}`;
     chartElement.setAttribute("aria-label", messages["reports.chart.aria.changes"]);
     overviewChartElement.setAttribute("aria-label", messages["reports.chart.aria.overview"]);
     reportScopeTabs.setAttribute("aria-label", messages["reports.controls.scope.report"]);
     overviewScopeTabs.setAttribute("aria-label", messages["reports.controls.scope.overview"]);
+    historyPaginationElement.setAttribute("aria-label", messages["reports.history.pagination.aria"]);
+    reportsNavElement.setAttribute("aria-label", messages["reports.nav.aria"]);
     if (!dateToInput.value) {
         dateToInput.value = todayIsoDate();
     }
@@ -899,7 +943,7 @@ function handleLanguageChange(nextLanguage, nextMessages) {
         historyDateToInput.value = todayIsoDate();
     }
     if (!historyDateFromInput.value) {
-        historyDateFromInput.value = shiftDate(todayIsoDate(), historyPeriodOffsets["1m"]);
+        historyDateFromInput.value = shiftDate(todayIsoDate(), periodOffsets["1m"]);
     }
     renderReports();
 }
@@ -941,7 +985,7 @@ refreshButton.addEventListener("click", () => {
 
 refreshHistoryButton.addEventListener("click", () => {
     currentHistoryPage = 0;
-    renderReports();
+    renderHistorySection();
 });
 
 historyPreviousPageButton.addEventListener("click", () => {
@@ -950,17 +994,17 @@ historyPreviousPageButton.addEventListener("click", () => {
     }
 
     currentHistoryPage -= 1;
-    renderReports();
+    renderHistorySection();
 });
 
 historyNextPageButton.addEventListener("click", () => {
     currentHistoryPage += 1;
-    renderReports();
+    renderHistorySection();
 });
 
 historyPageSizeSelect.addEventListener("change", () => {
     currentHistoryPage = 0;
-    renderReports();
+    renderHistorySection();
 });
 
 updateCustomPeriodVisibility();
@@ -972,7 +1016,7 @@ updateReportsNavPanelStickyState();
     input.addEventListener("change", () => {
         currentHistoryPage = 0;
         updateHistoryCustomPeriodVisibility();
-        renderReports();
+        renderHistorySection();
     });
 });
 
