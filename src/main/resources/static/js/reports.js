@@ -173,10 +173,11 @@ function invalidateHistoryCache() {
 
 function updateReportsNavActiveState() {
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    const anchorY = Math.min(120, Math.max(72, viewportHeight * 0.18));
     let activeTarget = "";
+    let largestVisibleHeight = 0;
     let nearestTarget = "";
     let nearestDistance = Number.POSITIVE_INFINITY;
+    const viewportCenterY = viewportHeight / 2;
 
     reportsNavLinks.forEach((link) => {
         const targetId = link.dataset.target ?? "";
@@ -186,16 +187,20 @@ function updateReportsNavActiveState() {
         }
 
         const rect = section.getBoundingClientRect();
-        const containsAnchor = rect.top <= anchorY && rect.bottom > anchorY;
-        const distanceToAnchor = Math.abs(rect.top - anchorY);
+        const visibleTop = Math.max(rect.top, 0);
+        const visibleBottom = Math.min(rect.bottom, viewportHeight);
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+        const sectionCenterY = rect.top + (rect.height / 2);
+        const distanceToCenter = Math.abs(sectionCenterY - viewportCenterY);
 
-        if (distanceToAnchor < nearestDistance) {
-            nearestDistance = distanceToAnchor;
-            nearestTarget = targetId;
+        if (visibleHeight > largestVisibleHeight) {
+            largestVisibleHeight = visibleHeight;
+            activeTarget = targetId;
         }
 
-        if (containsAnchor) {
-            activeTarget = targetId;
+        if (distanceToCenter < nearestDistance) {
+            nearestDistance = distanceToCenter;
+            nearestTarget = targetId;
         }
     });
 
@@ -763,6 +768,13 @@ function resolveHistoryRange() {
 
 function buildHistoryRows(range) {
     validateHistoryRange(range.fromDate, range.toDate);
+    const snapshotsByAccountId = new Map();
+    cachedSnapshots.forEach((snapshot) => {
+        const accountSnapshots = snapshotsByAccountId.get(snapshot.accountId) ?? [];
+        accountSnapshots.push(snapshot);
+        snapshotsByAccountId.set(snapshot.accountId, accountSnapshots);
+    });
+
     const snapshotsInRange = cachedSnapshots.filter((snapshot) =>
         snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate
     );
@@ -789,8 +801,7 @@ function buildHistoryRows(range) {
 
     const seriesByAccountId = new Map();
     accounts.forEach((account) => {
-        const snapshots = cachedSnapshots
-                .filter((snapshot) => snapshot.accountId === account.id)
+        const snapshots = [...(snapshotsByAccountId.get(account.id) ?? [])]
                 .sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
         const series = new Map();
         let previousBalance = null;
@@ -911,6 +922,9 @@ function renderHistorySection() {
     } catch (error) {
         renderHistoryEmpty(error.message);
         setHistoryMessage(error.message, "error");
+    } finally {
+        updateReportsNavActiveState();
+        scheduleReportsNavPanelStickyStateUpdate();
     }
 }
 
@@ -942,6 +956,9 @@ function renderReports() {
         renderHistoryEmpty(error.message);
         setMessage(error.message, "error");
         setHistoryMessage(error.message, "error");
+    } finally {
+        updateReportsNavActiveState();
+        scheduleReportsNavPanelStickyStateUpdate();
     }
 }
 

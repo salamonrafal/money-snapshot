@@ -42,7 +42,8 @@ public class MessageBundleService {
             "home.feature.banks.title",
             "home.feature.banks.description",
             "home.feature.reports.title",
-            "home.feature.reports.description"
+            "home.feature.reports.description",
+            "snapshots.actions.addBulk"
     );
 
     private static final Set<String> LOGIN_PAGE_KEYS = Set.of(
