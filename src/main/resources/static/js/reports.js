@@ -28,6 +28,7 @@ const historyTableBody = document.querySelector("#history-table-body");
 const reportsNavElement = document.querySelector(".reports-nav");
 const reportsNavLinks = document.querySelectorAll(".reports-nav a[data-target]");
 const reportsNavPanel = document.querySelector(".reports-nav-panel");
+const reportsNavStickyMedia = window.matchMedia("(min-width: 861px)");
 
 const periodOffsets = {
     "1m": {months: 1},
@@ -48,6 +49,8 @@ let currentOverviewScope = "accounts";
 let currentHistoryPage = 0;
 let historyMatrixCache = null;
 let historyMatrixCacheKey = "";
+let reportsNavStickyEnabled = reportsNavStickyMedia.matches;
+let reportsNavStickyFramePending = false;
 let userSettings = null;
 
 function locale() {
@@ -210,10 +213,26 @@ function updateReportsNavPanelStickyState() {
         return;
     }
 
-    const isDesktopSticky = window.matchMedia("(min-width: 861px)").matches
-            && window.getComputedStyle(reportsNavPanel).position === "sticky";
     const rect = reportsNavPanel.getBoundingClientRect();
-    reportsNavPanel.classList.toggle("is-stuck", isDesktopSticky && rect.top <= 0);
+    reportsNavPanel.classList.toggle("is-stuck", reportsNavStickyEnabled && rect.top <= 0);
+}
+
+function scheduleReportsNavPanelStickyStateUpdate() {
+    if (reportsNavStickyFramePending) {
+        return;
+    }
+
+    reportsNavStickyFramePending = true;
+    window.requestAnimationFrame(() => {
+        reportsNavStickyFramePending = false;
+        updateReportsNavPanelStickyState();
+    });
+}
+
+function handleReportsNavResize() {
+    reportsNavStickyEnabled = reportsNavStickyMedia.matches;
+    updateReportsNavActiveState();
+    scheduleReportsNavPanelStickyStateUpdate();
 }
 
 function latestBalanceAtOrBefore(snapshots, date) {
@@ -439,10 +458,12 @@ function renderOverviewTable(rows) {
 function renderHistoryTable(matrix) {
     historyTableHeadRow.replaceChildren();
     const dateHead = document.createElement("th");
+    dateHead.scope = "col";
     dateHead.textContent = messages["reports.history.date"] ?? "Date";
     historyTableHeadRow.append(dateHead);
     matrix.accounts.forEach((account) => {
         const th = document.createElement("th");
+        th.scope = "col";
         th.className = "history-account-head";
         th.innerHTML = `
             <span>${escapeHtml(account.accountName)}</span>
@@ -491,6 +512,7 @@ function renderOverviewEmpty(message) {
 function renderHistoryEmpty(message) {
     historyTableHeadRow.replaceChildren();
     const dateHead = document.createElement("th");
+    dateHead.scope = "col";
     dateHead.textContent = messages["reports.history.date"] ?? "Date";
     historyTableHeadRow.append(dateHead);
     const row = document.createElement("tr");
@@ -1029,9 +1051,9 @@ updateReportsNavPanelStickyState();
 });
 
 window.addEventListener("scroll", updateReportsNavActiveState, {passive: true});
-window.addEventListener("scroll", updateReportsNavPanelStickyState, {passive: true});
-window.addEventListener("resize", updateReportsNavActiveState);
-window.addEventListener("resize", updateReportsNavPanelStickyState);
+window.addEventListener("scroll", scheduleReportsNavPanelStickyStateUpdate, {passive: true});
+window.addEventListener("resize", handleReportsNavResize);
+reportsNavStickyMedia.addEventListener("change", handleReportsNavResize);
 
 MoneySnapshotI18n.init({
     endpoint: "/api/reports/messages",
