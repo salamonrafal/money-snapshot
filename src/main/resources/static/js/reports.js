@@ -37,6 +37,7 @@ const periodOffsets = {
     "1y": {years: 1},
     "2y": {years: 2}
 };
+const MAX_HISTORY_RANGE_DAYS = 732;
 
 let currentLanguage = "pl";
 let messages = {};
@@ -82,6 +83,23 @@ function addMonths(date, months) {
     )).getUTCDate();
     nextDate.setUTCDate(Math.min(originalDay, lastDayOfTargetMonth));
     return nextDate.toISOString().slice(0, 10);
+}
+
+function daysBetweenInclusive(fromDate, toDate) {
+    const fromTime = new Date(`${fromDate}T00:00:00Z`).getTime();
+    const toTime = new Date(`${toDate}T00:00:00Z`).getTime();
+    return Math.floor((toTime - fromTime) / 86400000) + 1;
+}
+
+function validateHistoryRange(fromDate, toDate) {
+    if (!fromDate || !toDate || fromDate > toDate) {
+        throw new Error(messages["reports.error.customRange"]);
+    }
+
+    if (daysBetweenInclusive(fromDate, toDate) > MAX_HISTORY_RANGE_DAYS) {
+        throw new Error((messages["reports.error.historyRangeTooLarge"] ?? "")
+                .replace("{days}", String(MAX_HISTORY_RANGE_DAYS)));
+    }
 }
 
 function resolveDateRange() {
@@ -421,7 +439,7 @@ function renderOverviewTable(rows) {
 function renderHistoryTable(matrix) {
     historyTableHeadRow.replaceChildren();
     const dateHead = document.createElement("th");
-    dateHead.textContent = messages["reports.history.date"];
+    dateHead.textContent = messages["reports.history.date"] ?? "Date";
     historyTableHeadRow.append(dateHead);
     matrix.accounts.forEach((account) => {
         const th = document.createElement("th");
@@ -443,10 +461,17 @@ function renderHistoryTable(matrix) {
         row.values.forEach((value) => {
             const cell = document.createElement("td");
             cell.className = "history-value-cell numeric-cell";
-            cell.innerHTML = `
-                <span>${escapeHtml(formatAmount(value.balance))}</span>
-                <span>${escapeHtml(formatChange(value.diff))}</span>
-            `;
+            if (value) {
+                cell.innerHTML = `
+                    <span>${escapeHtml(formatAmount(value.balance))}</span>
+                    <span>${escapeHtml(formatChange(value.diff))}</span>
+                `;
+            } else {
+                cell.innerHTML = `
+                    <span>-</span>
+                    <span>-</span>
+                `;
+            }
             tableRow.append(cell);
         });
         return tableRow;
@@ -466,7 +491,7 @@ function renderOverviewEmpty(message) {
 function renderHistoryEmpty(message) {
     historyTableHeadRow.replaceChildren();
     const dateHead = document.createElement("th");
-    dateHead.textContent = messages["reports.history.date"];
+    dateHead.textContent = messages["reports.history.date"] ?? "Date";
     historyTableHeadRow.append(dateHead);
     const row = document.createElement("tr");
     const cell = document.createElement("td");
@@ -702,9 +727,7 @@ function resolveHistoryRange() {
     if (historyPeriodSelect.value === "custom") {
         const fromDate = historyDateFromInput.value;
         const toDate = historyDateToInput.value;
-        if (!fromDate || !toDate || fromDate > toDate) {
-            throw new Error(messages["reports.error.customRange"]);
-        }
+        validateHistoryRange(fromDate, toDate);
 
         return {fromDate, toDate};
     }
@@ -716,19 +739,13 @@ function resolveHistoryRange() {
     };
 }
 
-function enumerateDates(fromDate, toDate) {
-    const dates = [];
-    let date = fromDate;
-    while (date <= toDate) {
-        dates.push(date);
-        date = addDays(date, 1);
-    }
-    return dates;
-}
-
 function buildHistoryRows(range) {
-    const dates = enumerateDates(range.fromDate, range.toDate);
+    validateHistoryRange(range.fromDate, range.toDate);
     const accountsMap = new Map();
+    const dates = [...new Set(cachedSnapshots
+            .filter((snapshot) => snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate)
+            .map((snapshot) => snapshot.snapshotDate))]
+            .sort((left, right) => right.localeCompare(left));
 
     cachedSnapshots.forEach((snapshot) => {
         const account = accountsMap.get(snapshot.accountId) ?? {
@@ -748,34 +765,25 @@ function buildHistoryRows(range) {
     const seriesByAccountId = new Map();
     accounts.forEach((account) => {
         const snapshots = [...account.snapshots].sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
-        let snapshotIndex = 0;
-        let currentBalance = 0;
-
-        while (snapshotIndex < snapshots.length && snapshots[snapshotIndex].snapshotDate <= range.fromDate) {
-            currentBalance = Number(snapshots[snapshotIndex].balance);
-            snapshotIndex += 1;
-        }
-
-        let previousBalance = currentBalance;
         const series = new Map();
-        dates.forEach((date) => {
-            while (snapshotIndex < snapshots.length && snapshots[snapshotIndex].snapshotDate <= date) {
-                currentBalance = Number(snapshots[snapshotIndex].balance);
-                snapshotIndex += 1;
+        let previousBalance = null;
+        snapshots.forEach((snapshot) => {
+            const balance = Number(snapshot.balance);
+            const isInRange = snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate;
+            if (isInRange) {
+                series.set(snapshot.snapshotDate, {
+                    balance,
+                    diff: previousBalance === null ? balance : balance - previousBalance
+                });
             }
-
-            series.set(date, {
-                balance: currentBalance,
-                diff: currentBalance - previousBalance
-            });
-            previousBalance = currentBalance;
+            previousBalance = balance;
         });
         seriesByAccountId.set(account.id, series);
     });
 
-    const rows = [...dates].reverse().map((date) => ({
+    const rows = dates.map((date) => ({
         date,
-        values: accounts.map((account) => seriesByAccountId.get(account.id).get(date))
+        values: accounts.map((account) => seriesByAccountId.get(account.id).get(date) ?? null)
     }));
 
     return {accounts, rows};

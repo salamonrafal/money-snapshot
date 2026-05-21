@@ -228,6 +228,7 @@ public class MessageBundleService {
             "reports.controls.to",
             "reports.empty",
             "reports.error.customRange",
+            "reports.error.historyRangeTooLarge",
             "reports.error.load",
             "reports.heading.eyebrow",
             "reports.heading.subtitle",
