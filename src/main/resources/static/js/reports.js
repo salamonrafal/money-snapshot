@@ -378,7 +378,7 @@ function buildRows(snapshots, range, scope) {
                 change: balance - startBalance
             };
         });
-        const seriesDates = [...new Set([range.fromDate, ...pointDates, range.toDate])].sort();
+        const seriesDates = [...new Set([range.fromDate, ...checkpoints, ...pointDates, range.toDate])].sort();
         const series = seriesDates.map((date) => {
             const balance = balanceForEntryAt(entry, date);
             return {
@@ -763,21 +763,24 @@ function resolveHistoryRange() {
 
 function buildHistoryRows(range) {
     validateHistoryRange(range.fromDate, range.toDate);
+    const snapshotsInRange = cachedSnapshots.filter((snapshot) =>
+        snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate
+    );
+    if (snapshotsInRange.length === 0) {
+        return {accounts: [], rows: []};
+    }
+
     const accountsMap = new Map();
-    const dates = [...new Set(cachedSnapshots
-            .filter((snapshot) => snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate)
-            .map((snapshot) => snapshot.snapshotDate))]
+    const dates = [...new Set(snapshotsInRange.map((snapshot) => snapshot.snapshotDate))]
             .sort((left, right) => right.localeCompare(left));
 
-    cachedSnapshots.forEach((snapshot) => {
+    snapshotsInRange.forEach((snapshot) => {
         const account = accountsMap.get(snapshot.accountId) ?? {
             id: snapshot.accountId,
             accountName: snapshot.accountName,
             bankName: snapshot.bankName,
-            currencyCode: snapshot.currencyCode,
-            snapshots: []
+            currencyCode: snapshot.currencyCode
         };
-        account.snapshots.push(snapshot);
         accountsMap.set(snapshot.accountId, account);
     });
 
@@ -786,7 +789,9 @@ function buildHistoryRows(range) {
 
     const seriesByAccountId = new Map();
     accounts.forEach((account) => {
-        const snapshots = [...account.snapshots].sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
+        const snapshots = cachedSnapshots
+                .filter((snapshot) => snapshot.accountId === account.id)
+                .sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
         const series = new Map();
         let previousBalance = null;
         snapshots.forEach((snapshot) => {

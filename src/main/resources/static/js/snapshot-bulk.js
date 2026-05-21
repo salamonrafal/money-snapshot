@@ -149,7 +149,7 @@ function createBalanceInputCell(account, previousAccount, compact = false) {
     cell.className = `bulk-balance-cell bulk-value-cell${compact ? " bulk-compact-value-cell" : ""}`;
     spacer.className = "bulk-balance-spacer";
     spacer.setAttribute("aria-hidden", "true");
-    spacer.textContent = messages["snapshots.form.date"] ?? "Data migawki";
+    spacer.textContent = messages["snapshots.form.balance"] ?? "Saldo";
     balanceInput.className = "table-input";
     balanceInput.type = "number";
     balanceInput.step = "0.0001";
