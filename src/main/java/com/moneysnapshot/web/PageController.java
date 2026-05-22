@@ -23,6 +23,17 @@ public class PageController {
         return "banks";
     }
 
+    @GetMapping("/banks/new.html")
+    public String newBank() {
+        return "bank-new";
+    }
+
+    @GetMapping("/banks/{id}/edit.html")
+    public String editBank(@PathVariable String id, Model model) {
+        model.addAttribute("bankId", id);
+        return "bank-edit";
+    }
+
     @GetMapping("/accounts.html")
     public String accounts() {
         return "accounts";

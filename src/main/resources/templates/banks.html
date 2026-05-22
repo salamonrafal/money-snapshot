@@ -8,27 +8,19 @@
     <section class="page-heading">
         <p class="eyebrow" data-i18n="banks.heading.eyebrow">Rejestr banków</p>
         <h1 data-i18n="banks.heading.title">Banki</h1>
-        <p data-i18n="banks.heading.subtitle">Dodawaj i porządkuj banki używane przy kontach.</p>
+        <p data-i18n="banks.heading.subtitle">Przeglądaj i porządkuj banki używane przy kontach.</p>
     </section>
 
-    <section class="management-layout" aria-label="Zarządzanie bankami">
-        <form class="editor-panel" id="bank-form">
-            <h2 data-i18n="banks.form.title">Nowy bank</h2>
-            <label class="field">
-                <span data-i18n="banks.form.name">Nazwa banku</span>
-                <input id="bank-name" name="name" type="text" maxlength="120" autocomplete="organization" required>
-            </label>
-            <div class="form-actions">
-                <button type="submit" class="button primary" data-i18n="banks.form.add">Dodaj bank</button>
-            </div>
-            <p class="form-message" id="bank-form-message" role="status"></p>
-        </form>
-
+    <section class="management-layout single-column banks-management-layout" aria-label="Zarządzanie bankami">
         <section class="table-panel" aria-labelledby="bank-list-title">
             <div class="section-header">
                 <h2 id="bank-list-title" data-i18n="banks.table.title">Lista banków</h2>
-                <button type="button" class="button secondary compact" id="refresh-banks" data-i18n="banks.actions.refresh">Odśwież</button>
+                <div class="section-actions">
+                    <a href="/banks/new.html" class="button primary compact" data-i18n="banks.actions.add">Nowy bank</a>
+                    <button type="button" class="button secondary compact" id="refresh-banks" data-i18n="banks.actions.refresh">Odśwież</button>
+                </div>
             </div>
+            <p class="form-message" id="banks-list-message" role="status"></p>
             <div class="table-wrap banks-table-wrap">
                 <table class="banks-table">
                     <thead>
