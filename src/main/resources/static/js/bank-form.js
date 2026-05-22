@@ -17,26 +17,6 @@ function setFormMessage(text, type = "") {
     formMessage.dataset.type = type;
 }
 
-async function createBank(name) {
-    const response = await fetch("/api/banks", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({name})
-    });
-
-    if (response.status === 409) {
-        throw new Error(messages["banks.error.duplicate"]);
-    }
-
-    if (!response.ok) {
-        throw new Error(messages["banks.error.create"]);
-    }
-
-    return response.json();
-}
-
 async function loadBank() {
     if (formMode !== "edit") {
         return;
@@ -48,7 +28,7 @@ async function loadBank() {
     }
 
     if (!response.ok) {
-        throw new Error(messages["banks.error.load"]);
+        throw new Error(messages["banks.error.loadBank"]);
     }
 
     const bank = await response.json();

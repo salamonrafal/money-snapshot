@@ -72,6 +72,7 @@ public class MessageBundleService {
             "banks.error.delete",
             "banks.error.duplicate",
             "banks.error.inUse",
+            "banks.error.loadBank",
             "banks.error.load",
             "banks.error.notFound",
             "banks.error.update",
