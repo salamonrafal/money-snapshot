@@ -54,8 +54,7 @@ public class BankService {
     public Bank updateBank(UUID id, CreateBankRequest request) {
         Bank bank = getBank(id);
         String normalizedName = normalizer.normalize(request.name());
-        AppUser owner = bank.getOwner() == null ? currentUserService.currentUser() : bank.getOwner();
-        bankRepository.findByOwnerIdAndNormalizedName(owner.getId(), normalizedName)
+        bankRepository.findByOwnerIdAndNormalizedName(currentUserService.currentUserId(), normalizedName)
                 .filter(existingBank -> !existingBank.getId().equals(id))
                 .ifPresent(existingBank -> {
                     throw new DuplicateBankNameException(normalizedName);
