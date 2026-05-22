@@ -34,6 +34,11 @@ public class BankService {
         return bankRepository.findAllByOwnerIdOrderByName(currentUserService.currentUserId());
     }
 
+    public Bank getBank(UUID id) {
+        return bankRepository.findByIdAndOwnerId(id, currentUserService.currentUserId())
+                .orElseThrow(() -> new BankNotFoundException(id));
+    }
+
     @Transactional
     public Bank createBank(CreateBankRequest request) {
         String normalizedName = normalizer.normalize(request.name());
@@ -46,9 +51,23 @@ public class BankService {
     }
 
     @Transactional
+    public Bank updateBank(UUID id, CreateBankRequest request) {
+        Bank bank = getBank(id);
+        String normalizedName = normalizer.normalize(request.name());
+        AppUser owner = bank.getOwner() == null ? currentUserService.currentUser() : bank.getOwner();
+        bankRepository.findByOwnerIdAndNormalizedName(owner.getId(), normalizedName)
+                .filter(existingBank -> !existingBank.getId().equals(id))
+                .ifPresent(existingBank -> {
+                    throw new DuplicateBankNameException(normalizedName);
+                });
+
+        bank.updateDetails(request.name().trim(), normalizedName);
+        return bankRepository.save(bank);
+    }
+
+    @Transactional
     public void deleteBank(UUID id) {
-        bankRepository.findByIdAndOwnerId(id, currentUserService.currentUserId())
-                .orElseThrow(() -> new BankNotFoundException(id));
+        getBank(id);
 
         eventPublisher.publishEvent(new BankDeletionRequestedEvent(id));
         bankRepository.deleteById(id);

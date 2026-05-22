@@ -88,4 +88,9 @@ public class Bank {
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public void updateDetails(String name, String normalizedName) {
+        this.name = name;
+        this.normalizedName = normalizedName;
+    }
 }

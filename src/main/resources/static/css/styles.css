@@ -150,6 +150,11 @@ input {
     min-height: 560px;
 }
 
+.hero-content {
+    max-width: 100%;
+    width: min(100%, clamp(440px, 46vw, 620px));
+}
+
 .eyebrow {
     margin: 0 0 16px;
     color: var(--accent-strong);
@@ -517,6 +522,11 @@ h1 {
     justify-content: center;
 }
 
+.banks-management-layout.management-layout.single-column {
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+}
+
 .wide-panel {
     width: 100%;
 }
@@ -537,8 +547,9 @@ h1 {
     position: sticky;
     top: 0;
     margin-top: 0;
+    margin-right: calc(var(--page-padding) * -1);
     justify-self: end;
-    width: 240px;
+    width: calc(240px + var(--page-padding));
     border-right: 0;
     border-bottom-right-radius: 0;
 }
@@ -1455,6 +1466,7 @@ td:nth-child(5) {
 .banks-table td:nth-child(5) {
     width: 88px;
     text-align: center;
+    white-space: nowrap;
 }
 
 .users-table-wrap {
@@ -1623,7 +1635,7 @@ td:nth-child(5) {
     }
 
     .table-panel.reports-nav-panel {
-        width: 208px;
+        width: calc(208px + var(--page-padding));
     }
 
     .reports-nav a {

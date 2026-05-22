@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Nowy bank | Money Snapshot', 'bank-form.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('banks')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="banks.form.eyebrow">Rejestracja banku</p>
+        <h1 data-i18n="banks.form.title">Nowy bank</h1>
+        <p data-i18n="banks.form.subtitle">Dodaj bank, aby można go było przypisywać do kont.</p>
+    </section>
+
+    <section class="editor-panel account-form-panel">
+        <form id="bank-form" data-mode="create">
+            <label class="field">
+                <span data-i18n="banks.form.name">Nazwa banku</span>
+                <input id="bank-name" name="name" type="text" maxlength="120" autocomplete="organization" required>
+            </label>
+            <div class="form-actions split-actions">
+                <button type="submit" class="button primary" data-i18n="banks.form.add">Dodaj bank</button>
+                <a href="/banks.html" class="button secondary" data-i18n="banks.form.cancel">Anuluj</a>
+            </div>
+            <p class="form-message" id="bank-form-message" role="status"></p>
+        </form>
+    </section>
+</main>
+</body>
+</html>

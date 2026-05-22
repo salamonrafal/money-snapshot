@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -38,10 +39,20 @@ public class BankController {
                 .toList();
     }
 
+    @GetMapping("/{id}")
+    public BankResponse getBank(@PathVariable UUID id) {
+        return BankResponse.from(bankService.getBank(id));
+    }
+
     @PostMapping
     public ResponseEntity<BankResponse> createBank(@Valid @RequestBody CreateBankRequest request) {
         BankResponse response = BankResponse.from(bankService.createBank(request));
         return ResponseEntity.created(URI.create("/api/banks/" + response.id())).body(response);
+    }
+
+    @PutMapping("/{id}")
+    public BankResponse updateBank(@PathVariable UUID id, @Valid @RequestBody CreateBankRequest request) {
+        return BankResponse.from(bankService.updateBank(id, request));
     }
 
     @DeleteMapping("/{id}")

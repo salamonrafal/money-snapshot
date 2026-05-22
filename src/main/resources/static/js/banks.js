@@ -1,8 +1,6 @@
-const bankForm = document.querySelector("#bank-form");
-const bankNameInput = document.querySelector("#bank-name");
-const formMessage = document.querySelector("#bank-form-message");
 const tableBody = document.querySelector("#banks-table-body");
 const refreshButton = document.querySelector("#refresh-banks");
+const listMessage = document.querySelector("#banks-list-message");
 const deleteModal = MoneySnapshotUi.createConfirmModal({
     modalSelector: "#delete-bank-modal",
     subjectSelector: "#delete-bank-name",
@@ -34,8 +32,12 @@ function formatDateTime(value) {
 }
 
 function setMessage(text, type = "") {
-    formMessage.textContent = text;
-    formMessage.dataset.type = type;
+    if (!listMessage) {
+        return;
+    }
+
+    listMessage.textContent = text;
+    listMessage.dataset.type = type;
 }
 
 function renderBanks(banks) {
@@ -66,8 +68,19 @@ function renderBanks(banks) {
 
         const actionsCell = document.createElement("td");
         const actions = document.createElement("div");
+        const editButton = document.createElement("button");
         const deleteButton = document.createElement("button");
         actions.className = "row-actions";
+
+        editButton.type = "button";
+        editButton.className = "icon-button";
+        editButton.title = messages["banks.actions.edit"];
+        editButton.setAttribute("aria-label", messages["banks.actions.edit"]);
+        editButton.append(MoneySnapshotUi.createEditIcon());
+        editButton.addEventListener("click", () => {
+            window.location.href = `/banks/${encodeURIComponent(bank.id)}/edit.html`;
+        });
+
         deleteButton.type = "button";
         deleteButton.className = "icon-button danger";
         deleteButton.title = messages["banks.actions.delete"];
@@ -76,7 +89,7 @@ function renderBanks(banks) {
         deleteButton.addEventListener("click", () => {
             deleteModal.open(bank, bank.name);
         });
-        actions.append(deleteButton);
+        actions.append(editButton, deleteButton);
         actionsCell.append(actions);
         row.append(actionsCell);
 
@@ -91,26 +104,6 @@ async function loadBanks() {
     }
 
     renderBanks(await response.json());
-}
-
-async function createBank(name) {
-    const response = await fetch("/api/banks", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({name})
-    });
-
-    if (response.status === 409) {
-        throw new Error(messages["banks.error.duplicate"]);
-    }
-
-    if (!response.ok) {
-        throw new Error(messages["banks.error.create"]);
-    }
-
-    return response.json();
 }
 
 async function deleteBank(id) {
@@ -130,31 +123,6 @@ async function deleteBank(id) {
         throw new Error(messages["banks.error.delete"]);
     }
 }
-
-bankForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const name = bankNameInput.value.trim();
-    if (!name) {
-        setMessage(messages["banks.form.requiredName"], "error");
-        return;
-    }
-
-    bankForm.querySelector("button[type='submit']").disabled = true;
-    setMessage("");
-
-    try {
-        await createBank(name);
-        bankForm.reset();
-        setMessage(messages["banks.form.success"], "success");
-        await loadBanks();
-    } catch (error) {
-        setMessage(error.message, "error");
-    } finally {
-        bankForm.querySelector("button[type='submit']").disabled = false;
-        bankNameInput.focus();
-    }
-});
 
 refreshButton.addEventListener("click", () => {
     loadBanks().catch((error) => {
