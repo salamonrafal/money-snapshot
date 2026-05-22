@@ -26,6 +26,7 @@
                     <span data-i18n="reports.controls.period">Okres</span>
                     <select id="report-period">
                         <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
+                        <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
                         <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
                         <option value="1y" data-i18n="reports.period.1y">1 rok</option>
                         <option value="2y" data-i18n="reports.period.2y">2 lata</option>
@@ -76,6 +77,25 @@
                     <button type="button" class="report-tab overview-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
                     <button type="button" class="report-tab overview-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
                 </div>
+                <label class="compact-field">
+                    <span data-i18n="reports.controls.period">Okres</span>
+                    <select id="overview-period">
+                        <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
+                        <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
+                        <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
+                        <option value="1y" data-i18n="reports.period.1y">1 rok</option>
+                        <option value="2y" data-i18n="reports.period.2y">2 lata</option>
+                        <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
+                    </select>
+                </label>
+                <label class="compact-field overview-custom-period-field" hidden>
+                    <span data-i18n="reports.controls.from">Od</span>
+                    <input type="date" id="overview-date-from">
+                </label>
+                <label class="compact-field overview-custom-period-field" hidden>
+                    <span data-i18n="reports.controls.to">Do</span>
+                    <input type="date" id="overview-date-to">
+                </label>
             </div>
         </div>
         <div class="report-content overview-content">
@@ -108,6 +128,7 @@
                     <span data-i18n="reports.controls.period">Okres</span>
                     <select id="history-period">
                         <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
+                        <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
                         <option value="2m" data-i18n="reports.period.2m">2 miesiące</option>
                         <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
                         <option value="6m" data-i18n="reports.period.6m">6 miesięcy</option>

@@ -27,6 +27,11 @@ function formatPeriod(periodDate) {
         return "-";
     }
 
+    if ((userSettings?.billingMonthStartDay ?? 1) !== 1) {
+        const endDate = new Date(periodEndDate(periodDate).getTime() - 86400000).toISOString().slice(0, 10);
+        return `${MoneySnapshotUi.formatDateValue(periodDate, userSettings)} - ${MoneySnapshotUi.formatDateValue(endDate, userSettings)}`;
+    }
+
     const period = new Intl.DateTimeFormat(currentLanguage === "en" ? "en-US" : "pl-PL", {
         month: "long",
         year: "numeric"
@@ -54,7 +59,33 @@ function renderSnapshotPanel(panel) {
 
 function monthEndDate(periodDate) {
     const startDate = new Date(`${periodDate}T00:00:00Z`);
-    return new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 1));
+    const billingMonthStartDay = Math.min(Math.max(userSettings?.billingMonthStartDay ?? 1, 1), 31);
+    const nextMonthDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 1));
+    const lastDayOfNextMonth = new Date(Date.UTC(
+            nextMonthDate.getUTCFullYear(),
+            nextMonthDate.getUTCMonth() + 1,
+            0
+    )).getUTCDate();
+    nextMonthDate.setUTCDate(Math.min(billingMonthStartDay, lastDayOfNextMonth));
+    return nextMonthDate;
+}
+
+function periodEndDate(periodDate) {
+    return monthEndDate(periodDate);
+}
+
+function shiftIsoDate(date, days) {
+    const shiftedDate = new Date(`${date}T00:00:00Z`);
+    shiftedDate.setUTCDate(shiftedDate.getUTCDate() + days);
+    return shiftedDate.toISOString().slice(0, 10);
+}
+
+function chartStartDate(periodDate) {
+    return shiftIsoDate(periodDate, -1);
+}
+
+function chartEndDate(periodDate) {
+    return shiftIsoDate(periodEndDate(periodDate).toISOString().slice(0, 10), -1);
 }
 
 function groupSnapshotsForChart(snapshots, periodDate) {
@@ -62,12 +93,11 @@ function groupSnapshotsForChart(snapshots, periodDate) {
         return [];
     }
 
-    const startDate = periodDate ?? new Date().toISOString().slice(0, 7) + "-01";
-    const monthEndExclusive = monthEndDate(startDate);
-    const endDate = monthEndExclusive.toISOString().slice(0, 10);
-    const lastMonthDate = new Date(monthEndExclusive.getTime() - 86400000).toISOString().slice(0, 10);
+    const periodStartDate = periodDate ?? new Date().toISOString().slice(0, 7) + "-01";
+    const startDate = chartStartDate(periodStartDate);
+    const endDate = chartEndDate(periodStartDate);
     const todayDate = new Date().toISOString().slice(0, 10);
-    const shouldMarkToday = todayDate >= startDate && todayDate <= lastMonthDate;
+    const shouldMarkToday = todayDate >= startDate && todayDate <= endDate;
     const sortedSnapshots = [...snapshots].sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
     const preferredCurrency = sortedSnapshots.some((snapshot) => snapshot.currencyCode === (userSettings?.defaultCurrency ?? "PLN"))
             ? userSettings?.defaultCurrency ?? "PLN"
@@ -87,7 +117,7 @@ function groupSnapshotsForChart(snapshots, periodDate) {
             .filter((snapshot) =>
                     snapshot.currencyCode === preferredCurrency
                     && snapshot.snapshotDate >= startDate
-                    && snapshot.snapshotDate < endDate
+                    && snapshot.snapshotDate <= endDate
             )
             .forEach((snapshot) => {
                 const snapshotsForDate = monthSnapshotsByDate.get(snapshot.snapshotDate) ?? [];
@@ -141,9 +171,9 @@ function groupSnapshotsForChart(snapshots, periodDate) {
         todayAdded = true;
     }
 
-    if (latestAmountByAccount.size > 0 && points.at(-1)?.date !== lastMonthDate) {
+    if (latestAmountByAccount.size > 0 && points.at(-1)?.date !== endDate) {
         points.push({
-            date: lastMonthDate,
+            date: endDate,
             amount: sumLatestAmounts(latestAmountByAccount),
             currencyCode: preferredCurrency,
             type: "end"
@@ -222,8 +252,9 @@ function renderSnapshotChart(snapshots, periodDate) {
     const rightPadding = 26;
     const topPadding = 34;
     const bottomPadding = 34;
-    const startTime = new Date(`${chartPeriodDate}T00:00:00Z`).getTime();
-    const endDateLabel = new Date(monthEndDate(chartPeriodDate).getTime() - 86400000).toISOString().slice(0, 10);
+    const startDateLabel = chartStartDate(chartPeriodDate);
+    const endDateLabel = chartEndDate(chartPeriodDate);
+    const startTime = new Date(`${startDateLabel}T00:00:00Z`).getTime();
     const endTime = new Date(`${endDateLabel}T00:00:00Z`).getTime();
     const timeRange = endTime - startTime || 1;
     const minAmount = Math.min(...data.map((point) => point.amount));
@@ -246,7 +277,7 @@ function renderSnapshotChart(snapshots, periodDate) {
             <path class="chart-line" d="${line}"></path>
             ${visiblePoints.map((point) => `<circle class="${chartPointClass(point)}" cx="${point.x}" cy="${point.y}" r="4"></circle>`).join("")}
             ${visiblePoints.map((point, index) => chartValueLabel(point, index, visiblePoints, height, bottomPadding)).join("")}
-            <text class="chart-axis-label" x="${leftPadding}" y="${height - 8}">${chartDateLabel(chartPeriodDate)}</text>
+            <text class="chart-axis-label" x="${leftPadding}" y="${height - 8}">${chartDateLabel(startDateLabel)}</text>
             <text class="chart-axis-label" x="${width - rightPadding}" y="${height - 8}" text-anchor="end">${chartDateLabel(endDateLabel)}</text>
         </svg>
     `;
