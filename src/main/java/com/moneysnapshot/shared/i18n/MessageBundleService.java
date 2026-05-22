@@ -244,6 +244,7 @@ public class MessageBundleService {
             "reports.period.6m",
             "reports.period.1y",
             "reports.period.2y",
+            "reports.period.billing",
             "reports.period.custom",
             "reports.scope.accounts",
             "reports.scope.banks",
@@ -340,6 +341,7 @@ public class MessageBundleService {
     private static final Set<String> SETTINGS_PAGE_KEYS = Set.of(
             "settings.error.load",
             "settings.error.update",
+            "settings.form.billingMonthStartDay",
             "settings.form.dateTimeFormat",
             "settings.form.defaultCurrency",
             "settings.form.moneyFormat",

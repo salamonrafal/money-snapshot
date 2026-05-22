@@ -8,6 +8,10 @@ const refreshButton = document.querySelector("#refresh-reports");
 const messageElement = document.querySelector("#reports-message");
 const chartElement = document.querySelector("#reports-chart");
 const tableBody = document.querySelector("#reports-table-body");
+const overviewPeriodSelect = document.querySelector("#overview-period");
+const overviewDateFromInput = document.querySelector("#overview-date-from");
+const overviewDateToInput = document.querySelector("#overview-date-to");
+const overviewCustomPeriodFields = document.querySelectorAll(".overview-custom-period-field");
 const overviewChartElement = document.querySelector("#overview-chart");
 const overviewTableBody = document.querySelector("#overview-table-body");
 const reportScopeTabs = document.querySelector("#report-scope-tabs");
@@ -88,6 +92,32 @@ function addMonths(date, months) {
     return nextDate.toISOString().slice(0, 10);
 }
 
+function periodStartDateForBillingCycle(today, billingMonthStartDay) {
+    const normalizedStartDay = Math.max(1, Math.min(31, billingMonthStartDay));
+    const currentMonthStart = new Date(`${today}T00:00:00Z`);
+    currentMonthStart.setUTCDate(Math.min(normalizedStartDay, new Date(Date.UTC(
+            currentMonthStart.getUTCFullYear(),
+            currentMonthStart.getUTCMonth() + 1,
+            0
+    )).getUTCDate()));
+
+    if (today >= currentMonthStart.toISOString().slice(0, 10)) {
+        return currentMonthStart.toISOString().slice(0, 10);
+    }
+
+    return addMonths(currentMonthStart.toISOString().slice(0, 10), -1);
+}
+
+function billingRange() {
+    const today = todayIsoDate();
+    const billingMonthStartDay = Math.max(1, Math.min(userSettings?.billingMonthStartDay ?? 1, 31));
+    const periodStartDate = periodStartDateForBillingCycle(today, billingMonthStartDay);
+    return {
+        fromDate: addDays(periodStartDate, -1),
+        toDate: addDays(addMonths(periodStartDate, 1), -1)
+    };
+}
+
 function daysBetweenInclusive(fromDate, toDate) {
     const fromTime = new Date(`${fromDate}T00:00:00Z`).getTime();
     const toTime = new Date(`${toDate}T00:00:00Z`).getTime();
@@ -116,11 +146,47 @@ function resolveDateRange() {
         return {fromDate, toDate};
     }
 
+    if (periodSelect.value === "billing") {
+        return billingRange();
+    }
+
     const toDate = todayIsoDate();
     return {
         fromDate: shiftDate(toDate, periodOffsets[periodSelect.value]),
         toDate
     };
+}
+
+function resolveOverviewRange() {
+    if (overviewPeriodSelect.value === "custom") {
+        const fromDate = overviewDateFromInput.value;
+        const toDate = overviewDateToInput.value;
+        if (!fromDate || !toDate || fromDate > toDate) {
+            throw new Error(messages["reports.error.customRange"]);
+        }
+
+        return {fromDate, toDate};
+    }
+
+    if (overviewPeriodSelect.value === "billing") {
+        return billingRange();
+    }
+
+    const toDate = todayIsoDate();
+    return {
+        fromDate: shiftDate(toDate, periodOffsets[overviewPeriodSelect.value]),
+        toDate
+    };
+}
+
+function syncRangeInputs(periodValue, resolveRange, fromInput, toInput) {
+    if (periodValue === "custom") {
+        return;
+    }
+
+    const range = resolveRange();
+    fromInput.value = range.fromDate;
+    toInput.value = range.toDate;
 }
 
 function formatDate(value) {
@@ -129,6 +195,11 @@ function formatDate(value) {
 
 function formatAmount(value) {
     return MoneySnapshotUi.formatMoneyValue(value, userSettings);
+}
+
+function displayRangeLabel(range, periodValue) {
+    const displayFromDate = periodValue === "billing" ? addDays(range.fromDate, 1) : range.fromDate;
+    return `${formatDate(displayFromDate)} - ${formatDate(range.toDate)}`;
 }
 
 function formatChange(value) {
@@ -308,6 +379,10 @@ function balanceForEntryAt(entry, date) {
 
 function resolveChartStep(range) {
     if (periodSelect.value === "1m") {
+        return "day";
+    }
+
+    if (periodSelect.value === "billing") {
         return "day";
     }
 
@@ -759,6 +834,10 @@ function resolveHistoryRange() {
         return {fromDate, toDate};
     }
 
+    if (historyPeriodSelect.value === "billing") {
+        return billingRange();
+    }
+
     const toDate = todayIsoDate();
     return {
         fromDate: shiftDate(toDate, periodOffsets[historyPeriodSelect.value]),
@@ -887,17 +966,18 @@ function renderHistory() {
     const matrix = historyMatrixForRange(range);
     if (matrix.accounts.length === 0) {
         renderHistoryEmpty(messages["reports.history.empty"]);
-        setHistoryMessage(`${formatDate(range.fromDate)} - ${formatDate(range.toDate)}`);
+        setHistoryMessage(displayRangeLabel(range, historyPeriodSelect.value));
         return;
     }
 
     const pagedMatrix = paginateHistoryMatrix(matrix);
     renderHistoryTable(pagedMatrix);
     renderHistoryPagination(pagedMatrix);
-    setHistoryMessage(`${formatDate(range.fromDate)} - ${formatDate(range.toDate)}`);
+    setHistoryMessage(displayRangeLabel(range, historyPeriodSelect.value));
 }
 
 function updateCustomPeriodVisibility() {
+    syncRangeInputs(periodSelect.value, resolveDateRange, dateFromInput, dateToInput);
     const isCustom = periodSelect.value === "custom";
     customPeriodFields.forEach((field) => {
         field.hidden = !isCustom;
@@ -905,8 +985,17 @@ function updateCustomPeriodVisibility() {
 }
 
 function updateHistoryCustomPeriodVisibility() {
+    syncRangeInputs(historyPeriodSelect.value, resolveHistoryRange, historyDateFromInput, historyDateToInput);
     const isCustom = historyPeriodSelect.value === "custom";
     historyCustomPeriodFields.forEach((field) => {
+        field.hidden = !isCustom;
+    });
+}
+
+function updateOverviewCustomPeriodVisibility() {
+    syncRangeInputs(overviewPeriodSelect.value, resolveOverviewRange, overviewDateFromInput, overviewDateToInput);
+    const isCustom = overviewPeriodSelect.value === "custom";
+    overviewCustomPeriodFields.forEach((field) => {
         field.hidden = !isCustom;
     });
 }
@@ -936,6 +1025,7 @@ function renderReports() {
     try {
         setMessage("");
         const range = resolveDateRange();
+        const overviewRange = resolveOverviewRange();
         const {rows, step, checkpoints} = buildRows(cachedSnapshots, range, currentScope);
         if (rows.length === 0) {
             renderEmpty(messages["reports.empty"]);
@@ -945,10 +1035,10 @@ function renderReports() {
             return;
         }
 
-        setMessage(`${formatDate(range.fromDate)} - ${formatDate(range.toDate)}`);
+        setMessage(displayRangeLabel(range, periodSelect.value));
         renderChart(rows, step, checkpoints);
         renderTable(rows);
-        renderOverview(range.toDate);
+        renderOverview(overviewRange.toDate);
         renderHistorySection();
     } catch (error) {
         renderEmpty(error.message);
@@ -996,6 +1086,12 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     }
     if (!historyDateFromInput.value) {
         historyDateFromInput.value = shiftDate(todayIsoDate(), periodOffsets["1m"]);
+    }
+    if (!overviewDateToInput.value) {
+        overviewDateToInput.value = todayIsoDate();
+    }
+    if (!overviewDateFromInput.value) {
+        overviewDateFromInput.value = shiftDate(todayIsoDate(), periodOffsets["1m"]);
     }
     renderReports();
 }
@@ -1060,9 +1156,17 @@ historyPageSizeSelect.addEventListener("change", () => {
 });
 
 updateCustomPeriodVisibility();
+updateOverviewCustomPeriodVisibility();
 updateHistoryCustomPeriodVisibility();
 updateReportsNavActiveState();
 updateReportsNavPanelStickyState();
+
+[overviewPeriodSelect, overviewDateFromInput, overviewDateToInput].forEach((input) => {
+    input.addEventListener("change", () => {
+        updateOverviewCustomPeriodVisibility();
+        renderReports();
+    });
+});
 
 [historyPeriodSelect, historyDateFromInput, historyDateToInput].forEach((input) => {
     input.addEventListener("change", () => {

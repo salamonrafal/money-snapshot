@@ -2,6 +2,7 @@ const settingsForm = document.querySelector("#settings-form");
 const defaultCurrencySelect = document.querySelector("#settings-default-currency");
 const dateTimeFormatInput = document.querySelector("#settings-date-time-format");
 const moneyFormatInput = document.querySelector("#settings-money-format");
+const billingMonthStartDayInput = document.querySelector("#settings-billing-month-start-day");
 const formMessage = document.querySelector("#settings-form-message");
 
 let messages = {};
@@ -20,6 +21,7 @@ function fillSettings(settings) {
     defaultCurrencySelect.value = settings.defaultCurrency ?? "PLN";
     dateTimeFormatInput.value = settings.dateTimeFormat ?? "Y-m-d H:m";
     moneyFormatInput.value = settings.moneyFormat ?? "### ###,00 zł";
+    billingMonthStartDayInput.value = settings.billingMonthStartDay ?? 1;
 }
 
 async function loadSettings() {
@@ -39,7 +41,8 @@ async function saveSettings() {
             values: {
                 defaultCurrency: defaultCurrencySelect.value,
                 dateTimeFormat: dateTimeFormatInput.value.trim(),
-                moneyFormat: moneyFormatInput.value.trim()
+                moneyFormat: moneyFormatInput.value.trim(),
+                billingMonthStartDay: billingMonthStartDayInput.value.trim()
             }
         })
     });
@@ -54,7 +57,12 @@ async function saveSettings() {
 
 settingsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!dateTimeFormatInput.value.trim() || !moneyFormatInput.value.trim()) {
+    const billingMonthStartDay = Number.parseInt(billingMonthStartDayInput.value, 10);
+    if (!dateTimeFormatInput.value.trim()
+            || !moneyFormatInput.value.trim()
+            || !Number.isInteger(billingMonthStartDay)
+            || billingMonthStartDay < 1
+            || billingMonthStartDay > 31) {
         setMessage(messages["settings.form.required"], "error");
         return;
     }

@@ -1,6 +1,7 @@
 package com.moneysnapshot.dashboard;
 
 import com.moneysnapshot.security.CurrentUserService;
+import com.moneysnapshot.security.UserSettingsService;
 import com.moneysnapshot.snapshot.AccountSnapshotRepository;
 import com.moneysnapshot.snapshot.CurrencyAmount;
 import java.math.BigDecimal;
@@ -20,17 +21,28 @@ public class SnapshotPanelService {
 
     private final AccountSnapshotRepository snapshotRepository;
     private final CurrentUserService currentUserService;
+    private final UserSettingsService userSettingsService;
     private final Clock clock;
     private final Map<UUID, SnapshotPanelResponse> cachedPanels = new HashMap<>();
 
     @Autowired
-    public SnapshotPanelService(AccountSnapshotRepository snapshotRepository, CurrentUserService currentUserService) {
-        this(snapshotRepository, currentUserService, Clock.systemUTC());
+    public SnapshotPanelService(
+            AccountSnapshotRepository snapshotRepository,
+            CurrentUserService currentUserService,
+            UserSettingsService userSettingsService
+    ) {
+        this(snapshotRepository, currentUserService, userSettingsService, Clock.systemUTC());
     }
 
-    SnapshotPanelService(AccountSnapshotRepository snapshotRepository, CurrentUserService currentUserService, Clock clock) {
+    SnapshotPanelService(
+            AccountSnapshotRepository snapshotRepository,
+            CurrentUserService currentUserService,
+            UserSettingsService userSettingsService,
+            Clock clock
+    ) {
         this.snapshotRepository = snapshotRepository;
         this.currentUserService = currentUserService;
+        this.userSettingsService = userSettingsService;
         this.clock = clock;
     }
 
@@ -44,7 +56,7 @@ public class SnapshotPanelService {
     }
 
     private SnapshotPanelResponse buildPanel(UUID ownerId) {
-        LocalDate periodDate = LocalDate.now(clock).withDayOfMonth(1);
+        LocalDate periodDate = resolvePeriodStart(LocalDate.now(clock), userSettingsService.currentUserSettings().billingMonthStartDay());
         List<CurrencyAmount> currentBalances = snapshotRepository.sumLatestBalancesByOwnerIdAndCurrency(ownerId);
         List<CurrencyAmount> previousBalances = snapshotRepository.sumLatestBalancesBeforeDateByOwnerIdAndCurrency(ownerId, periodDate);
         List<CurrencyAmount> monthlyChanges = subtractByCurrency(currentBalances, previousBalances);
@@ -56,6 +68,17 @@ public class SnapshotPanelService {
                 toResponse(currentBalances),
                 toResponse(monthlyChanges)
         );
+    }
+
+    static LocalDate resolvePeriodStart(LocalDate today, int billingMonthStartDay) {
+        int normalizedStartDay = Math.max(1, Math.min(31, billingMonthStartDay));
+        LocalDate currentMonthStart = today.withDayOfMonth(Math.min(normalizedStartDay, today.lengthOfMonth()));
+        if (!today.isBefore(currentMonthStart)) {
+            return currentMonthStart;
+        }
+
+        LocalDate previousMonth = today.minusMonths(1);
+        return previousMonth.withDayOfMonth(Math.min(normalizedStartDay, previousMonth.lengthOfMonth()));
     }
 
     private BigDecimal calculateMonthlyChangePercent(List<CurrencyAmount> currentBalances, List<CurrencyAmount> previousBalances) {

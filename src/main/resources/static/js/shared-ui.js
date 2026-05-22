@@ -4,10 +4,12 @@ window.MoneySnapshotUi = (() => {
         defaultCurrency: "PLN",
         dateTimeFormat: "Y-m-d H:m",
         moneyFormat: "### ###,00 zł",
+        billingMonthStartDay: 1,
         values: {
             defaultCurrency: "PLN",
             dateTimeFormat: "Y-m-d H:m",
-            moneyFormat: "### ###,00 zł"
+            moneyFormat: "### ###,00 zł",
+            billingMonthStartDay: "1"
         }
     };
     let settingsPromise = null;
