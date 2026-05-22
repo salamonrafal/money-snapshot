@@ -17,6 +17,20 @@ function setMessage(text, type = "") {
     formMessage.dataset.type = type;
 }
 
+function normalizedBillingMonthStartDayValue() {
+    const rawValue = billingMonthStartDayInput.value.trim();
+    if (!/^\d+$/.test(rawValue)) {
+        return null;
+    }
+
+    const numericValue = Number(rawValue);
+    if (!Number.isInteger(numericValue) || numericValue < 1 || numericValue > 31) {
+        return null;
+    }
+
+    return String(numericValue);
+}
+
 function fillSettings(settings) {
     defaultCurrencySelect.value = settings.defaultCurrency ?? "PLN";
     dateTimeFormatInput.value = settings.dateTimeFormat ?? "Y-m-d H:m";
@@ -34,6 +48,7 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
+    const billingMonthStartDay = normalizedBillingMonthStartDayValue();
     const response = await fetch("/api/users/me/settings", {
         method: "PUT",
         headers: {"Content-Type": "application/json"},
@@ -42,7 +57,7 @@ async function saveSettings() {
                 defaultCurrency: defaultCurrencySelect.value,
                 dateTimeFormat: dateTimeFormatInput.value.trim(),
                 moneyFormat: moneyFormatInput.value.trim(),
-                billingMonthStartDay: billingMonthStartDayInput.value.trim()
+                billingMonthStartDay
             }
         })
     });
@@ -57,12 +72,10 @@ async function saveSettings() {
 
 settingsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const billingMonthStartDay = Number.parseInt(billingMonthStartDayInput.value, 10);
+    const billingMonthStartDay = normalizedBillingMonthStartDayValue();
     if (!dateTimeFormatInput.value.trim()
             || !moneyFormatInput.value.trim()
-            || !Number.isInteger(billingMonthStartDay)
-            || billingMonthStartDay < 1
-            || billingMonthStartDay > 31) {
+            || billingMonthStartDay === null) {
         setMessage(messages["settings.form.required"], "error");
         return;
     }

@@ -94,18 +94,32 @@ function addMonths(date, months) {
 
 function periodStartDateForBillingCycle(today, billingMonthStartDay) {
     const normalizedStartDay = Math.max(1, Math.min(31, billingMonthStartDay));
-    const currentMonthStart = new Date(`${today}T00:00:00Z`);
-    currentMonthStart.setUTCDate(Math.min(normalizedStartDay, new Date(Date.UTC(
-            currentMonthStart.getUTCFullYear(),
-            currentMonthStart.getUTCMonth() + 1,
-            0
-    )).getUTCDate()));
+    const currentDate = new Date(`${today}T00:00:00Z`);
+    const currentMonthStart = new Date(Date.UTC(
+            currentDate.getUTCFullYear(),
+            currentDate.getUTCMonth(),
+            Math.min(normalizedStartDay, new Date(Date.UTC(
+                    currentDate.getUTCFullYear(),
+                    currentDate.getUTCMonth() + 1,
+                    0
+            )).getUTCDate())
+    ));
 
     if (today >= currentMonthStart.toISOString().slice(0, 10)) {
         return currentMonthStart.toISOString().slice(0, 10);
     }
 
-    return addMonths(currentMonthStart.toISOString().slice(0, 10), -1);
+    const previousMonthDate = new Date(Date.UTC(
+            currentDate.getUTCFullYear(),
+            currentDate.getUTCMonth() - 1,
+            1
+    ));
+    previousMonthDate.setUTCDate(Math.min(normalizedStartDay, new Date(Date.UTC(
+            previousMonthDate.getUTCFullYear(),
+            previousMonthDate.getUTCMonth() + 1,
+            0
+    )).getUTCDate()));
+    return previousMonthDate.toISOString().slice(0, 10);
 }
 
 function billingRange() {
