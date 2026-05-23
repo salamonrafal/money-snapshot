@@ -26,7 +26,6 @@ let cachedAccounts = [];
 let userSettings = null;
 
 if (clearFiltersButton) {
-    clearFiltersButton.classList.add("has-app-tooltip");
     clearFiltersButton.append(MoneySnapshotUi.createClearFiltersIcon());
 }
 

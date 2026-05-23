@@ -38,6 +38,9 @@ const MoneySnapshotI18n = (() => {
                     node.dataset.tooltip = messages[titleKey];
                     node.classList.add("has-app-tooltip");
                     node.removeAttribute("title");
+                } else {
+                    delete node.dataset.tooltip;
+                    node.classList.remove("has-app-tooltip");
                 }
             }
 
