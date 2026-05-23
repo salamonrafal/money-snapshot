@@ -31,3 +31,5 @@ app:
     password: ${ADMIN_PASSWORD:}
     first-name: ${ADMIN_FIRST_NAME:Admin}
     last-name: ${ADMIN_LAST_NAME:User}
+  security:
+    remember-me-days: ${REMEMBER_ME_DAYS:30}

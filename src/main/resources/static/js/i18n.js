@@ -22,12 +22,25 @@ const MoneySnapshotI18n = (() => {
         return response.json();
     }
 
-    function applyMessages(messages, language, translatableNodes = document.querySelectorAll("[data-i18n]")) {
+    function applyMessages(messages, language, translatableNodes = document.querySelectorAll("[data-i18n], [data-i18n-title], [data-i18n-aria-label]")) {
         document.documentElement.lang = language;
         translatableNodes.forEach((node) => {
-            const key = node.dataset.i18n;
-            if (messages[key]) {
-                node.textContent = messages[key];
+            const textKey = node.dataset.i18n;
+            const titleKey = node.dataset.i18nTitle;
+            const ariaLabelKey = node.dataset.i18nAriaLabel;
+
+            if (textKey && messages[textKey]) {
+                node.textContent = messages[textKey];
+            }
+
+            if (titleKey && messages[titleKey]) {
+                node.dataset.tooltip = messages[titleKey];
+                node.classList.add("has-app-tooltip");
+                node.removeAttribute("title");
+            }
+
+            if (ariaLabelKey && messages[ariaLabelKey]) {
+                node.setAttribute("aria-label", messages[ariaLabelKey]);
             }
         });
     }

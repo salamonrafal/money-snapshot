@@ -78,8 +78,8 @@ function renderUsers(users) {
 
         editButton.type = "button";
         editButton.className = "icon-button";
-        editButton.title = messages["users.actions.edit"];
         editButton.setAttribute("aria-label", messages["users.actions.edit"]);
+        MoneySnapshotUi.setTooltip(editButton, messages["users.actions.edit"]);
         editButton.append(MoneySnapshotUi.createEditIcon());
         editButton.addEventListener("click", () => {
             window.location.href = `/users/${encodeURIComponent(user.id)}/edit.html`;
@@ -87,8 +87,8 @@ function renderUsers(users) {
 
         deleteButton.type = "button";
         deleteButton.className = "icon-button danger";
-        deleteButton.title = messages["users.actions.delete"];
         deleteButton.setAttribute("aria-label", messages["users.actions.delete"]);
+        MoneySnapshotUi.setTooltip(deleteButton, messages["users.actions.delete"]);
         deleteButton.append(MoneySnapshotUi.createTrashIcon());
         deleteButton.addEventListener("click", () => {
             deleteModal.open(user, user.email);

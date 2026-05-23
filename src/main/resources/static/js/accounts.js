@@ -86,8 +86,8 @@ function renderAccounts(accounts) {
 
         editButton.type = "button";
         editButton.className = "icon-button";
-        editButton.title = messages["accounts.actions.edit"];
         editButton.setAttribute("aria-label", messages["accounts.actions.edit"]);
+        MoneySnapshotUi.setTooltip(editButton, messages["accounts.actions.edit"]);
         editButton.append(MoneySnapshotUi.createEditIcon());
         editButton.addEventListener("click", () => {
             window.location.href = `/accounts/${encodeURIComponent(account.id)}/edit.html`;
@@ -95,8 +95,8 @@ function renderAccounts(accounts) {
 
         deleteButton.type = "button";
         deleteButton.className = "icon-button danger";
-        deleteButton.title = messages["accounts.actions.delete"];
         deleteButton.setAttribute("aria-label", messages["accounts.actions.delete"]);
+        MoneySnapshotUi.setTooltip(deleteButton, messages["accounts.actions.delete"]);
         deleteButton.append(MoneySnapshotUi.createTrashIcon());
         deleteButton.addEventListener("click", () => {
             deleteModal.open(account, account.accountName);

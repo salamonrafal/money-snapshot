@@ -61,6 +61,47 @@ window.MoneySnapshotUi = (() => {
         return icon;
     }
 
+    function createClearFiltersIcon() {
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "2");
+        icon.setAttribute("stroke-linecap", "round");
+        icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
+
+        [
+            "M4 6h16",
+            "M7 12h10",
+            "M10 18h4",
+            "M17 17l4 4",
+            "M21 17l-4 4"
+        ].forEach((value) => {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", value);
+            icon.append(path);
+        });
+
+        return icon;
+    }
+
+    function setTooltip(element, label) {
+        if (!element) {
+            return;
+        }
+
+        if (label) {
+            element.dataset.tooltip = label;
+            element.classList.add("has-app-tooltip");
+        } else {
+            delete element.dataset.tooltip;
+            element.classList.remove("has-app-tooltip");
+        }
+
+        element.removeAttribute("title");
+    }
+
     function createConfirmModal({modalSelector, subjectSelector, confirmSelector, cancelSelector}) {
         const modal = document.querySelector(modalSelector);
         const subject = document.querySelector(subjectSelector);
@@ -114,6 +155,62 @@ window.MoneySnapshotUi = (() => {
 
     function clearUserSettingsCache() {
         settingsPromise = null;
+    }
+
+    function initializeMobileNavigation() {
+        const menuToggle = document.querySelector(".menu-toggle");
+        const topbarActions = document.querySelector(".topbar-actions");
+        const mainMenu = document.querySelector("#main-menu");
+
+        if (!menuToggle || !topbarActions || !mainMenu) {
+            return;
+        }
+
+        const openLabel = menuToggle.querySelector(".menu-toggle-open-label");
+        const closeLabel = menuToggle.querySelector(".menu-toggle-close-label");
+
+        function syncMenuState(isOpen) {
+            menuToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            menuToggle.setAttribute("aria-label", isOpen ? closeLabel?.textContent || "" : openLabel?.textContent || "");
+            topbarActions.classList.toggle("is-open", isOpen);
+            document.body.classList.toggle("menu-open", isOpen);
+        }
+
+        menuToggle.addEventListener("click", () => {
+            const isOpen = menuToggle.getAttribute("aria-expanded") !== "true";
+            syncMenuState(isOpen);
+        });
+
+        mainMenu.addEventListener("click", (event) => {
+            if (window.matchMedia("(max-width: 1024px)").matches && event.target instanceof HTMLAnchorElement) {
+                syncMenuState(false);
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && menuToggle.getAttribute("aria-expanded") === "true") {
+                syncMenuState(false);
+                menuToggle.focus();
+            }
+        });
+
+        window.addEventListener("resize", () => {
+            if (!window.matchMedia("(max-width: 1024px)").matches) {
+                syncMenuState(false);
+            }
+        });
+
+        const labelObserver = new MutationObserver(() => {
+            syncMenuState(menuToggle.getAttribute("aria-expanded") === "true");
+        });
+        if (openLabel) {
+            labelObserver.observe(openLabel, {childList: true, characterData: true, subtree: true});
+        }
+        if (closeLabel) {
+            labelObserver.observe(closeLabel, {childList: true, characterData: true, subtree: true});
+        }
+
+        syncMenuState(false);
     }
 
     function pad(value) {
@@ -197,12 +294,19 @@ window.MoneySnapshotUi = (() => {
         return formatMoneyValue(value, settings);
     }
 
+    document.addEventListener("DOMContentLoaded", () => {
+        initializeMobileNavigation();
+    });
+
     return {
         bulkSnapshotSuccessKey,
         clearUserSettingsCache,
         createConfirmModal,
+        createClearFiltersIcon,
         createEditIcon,
+        setTooltip,
         createTrashIcon,
+        initializeMobileNavigation,
         formatDate,
         formatDateValue,
         formatDateTime,

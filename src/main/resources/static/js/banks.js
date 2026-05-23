@@ -74,8 +74,8 @@ function renderBanks(banks) {
 
         editButton.type = "button";
         editButton.className = "icon-button";
-        editButton.title = messages["banks.actions.edit"];
         editButton.setAttribute("aria-label", messages["banks.actions.edit"]);
+        MoneySnapshotUi.setTooltip(editButton, messages["banks.actions.edit"]);
         editButton.append(MoneySnapshotUi.createEditIcon());
         editButton.addEventListener("click", () => {
             window.location.href = `/banks/${encodeURIComponent(bank.id)}/edit.html`;
@@ -83,8 +83,8 @@ function renderBanks(banks) {
 
         deleteButton.type = "button";
         deleteButton.className = "icon-button danger";
-        deleteButton.title = messages["banks.actions.delete"];
         deleteButton.setAttribute("aria-label", messages["banks.actions.delete"]);
+        MoneySnapshotUi.setTooltip(deleteButton, messages["banks.actions.delete"]);
         deleteButton.append(MoneySnapshotUi.createTrashIcon());
         deleteButton.addEventListener("click", () => {
             deleteModal.open(bank, bank.name);

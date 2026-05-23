@@ -10,6 +10,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfiguration {
 
+    private final UserSettingsRememberMeServices rememberMeServices;
+
+    public SecurityConfiguration(UserSettingsRememberMeServices rememberMeServices) {
+        this.rememberMeServices = rememberMeServices;
+    }
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -24,6 +30,9 @@ public class SecurityConfiguration {
                         .loginPage("/login")
                         .defaultSuccessUrl("/", true)
                         .permitAll()
+                )
+                .rememberMe(rememberMe -> rememberMe
+                        .rememberMeServices(rememberMeServices)
                 )
                 .logout(logout -> logout.logoutSuccessUrl("/login?logout").permitAll())
                 .csrf(csrf -> csrf.disable())
