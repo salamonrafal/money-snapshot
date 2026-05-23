@@ -46,12 +46,14 @@ class AccountSnapshotServiceTest {
                 accountId,
                 snapshotDate,
                 new BigDecimal("100.00"),
+                SnapshotType.FINAL,
                 "first"
         );
         CreateAccountSnapshotRequest duplicateRequest = new CreateAccountSnapshotRequest(
                 accountId,
                 snapshotDate,
                 new BigDecimal("200.00"),
+                SnapshotType.PARTIAL,
                 "second"
         );
 

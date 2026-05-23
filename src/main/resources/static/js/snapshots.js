@@ -6,6 +6,8 @@ const nextPageButton = document.querySelector("#snapshots-next-page");
 const pageInfo = document.querySelector("#snapshots-page-info");
 const pageSizeSelect = document.querySelector("#snapshots-page-size");
 const accountFilterSelect = document.querySelector("#snapshots-account-filter");
+const dateFilterInput = document.querySelector("#snapshots-date-filter");
+const SNAPSHOT_LIST_STATE_KEY = "money-snapshot-snapshots-list-state";
 const deleteModal = MoneySnapshotUi.createConfirmModal({
     modalSelector: "#delete-snapshot-modal",
     subjectSelector: "#delete-snapshot-name",
@@ -21,6 +23,33 @@ let currentPage = 0;
 let currentPageData = null;
 let cachedAccounts = [];
 let userSettings = null;
+
+function saveListState() {
+    window.sessionStorage.setItem(SNAPSHOT_LIST_STATE_KEY, JSON.stringify({
+        currentPage,
+        pageSize: pageSizeSelect.value,
+        accountId: accountFilterSelect.value,
+        snapshotDate: dateFilterInput.value
+    }));
+}
+
+function restoreListState() {
+    const savedState = window.sessionStorage.getItem(SNAPSHOT_LIST_STATE_KEY);
+    if (!savedState) {
+        return;
+    }
+
+    try {
+        const state = JSON.parse(savedState);
+        currentPage = Number.isInteger(state.currentPage) && state.currentPage >= 0 ? state.currentPage : 0;
+        pageSizeSelect.value = ["10", "20", "50", "100"].includes(state.pageSize) ? state.pageSize : pageSizeSelect.value;
+        dateFilterInput.value = typeof state.snapshotDate === "string" ? state.snapshotDate : "";
+        accountFilterSelect.dataset.pendingValue = typeof state.accountId === "string" ? state.accountId : "";
+    } catch (error) {
+        console.error("Cannot restore snapshots list state", error);
+        window.sessionStorage.removeItem(SNAPSHOT_LIST_STATE_KEY);
+    }
+}
 
 function handleLanguageChange(nextLanguage, nextMessages) {
     currentLanguage = nextLanguage;
@@ -69,12 +98,56 @@ function formatBalance(snapshot) {
     return MoneySnapshotUi.formatMoneyValue(snapshot.balance, userSettings);
 }
 
+function createSnapshotTypeSelect(snapshot) {
+    const select = document.createElement("select");
+    select.className = "table-input snapshot-type-select";
+    select.setAttribute("aria-label", messages["snapshots.table.type"] ?? "Type");
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = messages["snapshots.form.typePlaceholder"] ?? "";
+    select.append(placeholder);
+
+    ["FINAL", "PARTIAL"].forEach((type) => {
+        const option = document.createElement("option");
+        option.value = type;
+        option.textContent = messages[`snapshots.type.${type}`] ?? type;
+        select.append(option);
+    });
+
+    select.value = snapshot.snapshotType ?? "";
+    select.addEventListener("change", async () => {
+        const previousType = snapshot.snapshotType;
+        const nextType = select.value;
+        if (nextType === previousType) {
+            return;
+        }
+
+        select.disabled = true;
+        setListMessage("");
+
+        try {
+            const updatedSnapshot = await updateSnapshotType(snapshot, nextType);
+            snapshot.snapshotType = updatedSnapshot.snapshotType;
+            select.value = updatedSnapshot.snapshotType ?? "";
+            setListMessage(messages["snapshots.update.success"] ?? "", "success");
+        } catch (error) {
+            select.value = previousType ?? "";
+            setListMessage(error.message, "error");
+        } finally {
+            select.disabled = false;
+        }
+    });
+
+    return select;
+}
+
 function formatAccountOption(account) {
     return `${account.accountName} (${account.bankName}, ${account.currencyCode})`;
 }
 
 function renderAccountFilterOptions() {
-    const selectedValue = accountFilterSelect.value;
+    const selectedValue = accountFilterSelect.dataset.pendingValue || accountFilterSelect.value;
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = messages["snapshots.filter.allAccounts"] ?? "";
@@ -90,6 +163,7 @@ function renderAccountFilterOptions() {
     );
 
     accountFilterSelect.value = cachedAccounts.some((account) => account.id === selectedValue) ? selectedValue : "";
+    delete accountFilterSelect.dataset.pendingValue;
 }
 
 function renderEmpty(message) {
@@ -116,17 +190,25 @@ function renderSnapshots(snapshots) {
 
     tableBody.replaceChildren(...snapshots.map((snapshot) => {
         const row = document.createElement("tr");
-        [
-            snapshot.accountName,
-            formatDate(snapshot.snapshotDate),
-            formatBalance(snapshot),
-            snapshot.note || "-",
-            formatDateTime(snapshot.createdAt)
-        ].forEach((value) => {
-            const cell = document.createElement("td");
-            cell.textContent = value;
-            row.append(cell);
-        });
+        const accountCell = document.createElement("td");
+        accountCell.textContent = snapshot.accountName;
+        row.append(accountCell);
+
+        const dateCell = document.createElement("td");
+        dateCell.textContent = formatDate(snapshot.snapshotDate);
+        row.append(dateCell);
+
+        const balanceCell = document.createElement("td");
+        balanceCell.textContent = formatBalance(snapshot);
+        row.append(balanceCell);
+
+        const typeCell = document.createElement("td");
+        typeCell.append(createSnapshotTypeSelect(snapshot));
+        row.append(typeCell);
+
+        const createdAtCell = document.createElement("td");
+        createdAtCell.textContent = formatDateTime(snapshot.createdAt);
+        row.append(createdAtCell);
 
         const actionsCell = document.createElement("td");
         const actions = document.createElement("div");
@@ -180,8 +262,11 @@ function renderPagination(pageData) {
 async function loadSnapshots() {
     const pageSize = Number(pageSizeSelect.value);
     const accountId = accountFilterSelect.value;
+    const snapshotDate = dateFilterInput.value;
+    saveListState();
     const accountFilter = accountId ? `&accountId=${encodeURIComponent(accountId)}` : "";
-    const response = await fetch(`/api/snapshots?page=${encodeURIComponent(currentPage)}&size=${encodeURIComponent(pageSize)}${accountFilter}`);
+    const dateFilter = snapshotDate ? `&snapshotDate=${encodeURIComponent(snapshotDate)}` : "";
+    const response = await fetch(`/api/snapshots?page=${encodeURIComponent(currentPage)}&size=${encodeURIComponent(pageSize)}${accountFilter}${dateFilter}`);
     if (!response.ok) {
         throw new Error(messages["snapshots.error.load"]);
     }
@@ -204,6 +289,39 @@ async function loadAccounts() {
 
     cachedAccounts = await response.json();
     renderAccountFilterOptions();
+}
+
+async function updateSnapshotType(snapshot, snapshotType) {
+    const response = await fetch(`/api/snapshots/${encodeURIComponent(snapshot.id)}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            accountId: snapshot.accountId,
+            snapshotDate: snapshot.snapshotDate,
+            balance: snapshot.balance,
+            snapshotType,
+            note: snapshot.note ?? ""
+        })
+    });
+
+    if (!response.ok) {
+        let errorMessage = messages["snapshots.error.update"];
+
+        try {
+            const errorBody = await response.json();
+            if (errorBody?.message) {
+                errorMessage = errorBody.message;
+            }
+        } catch (error) {
+            console.error("Cannot parse snapshot update error", error);
+        }
+
+        throw new Error(errorMessage);
+    }
+
+    return response.json();
 }
 
 async function deleteSnapshot(id) {
@@ -264,6 +382,14 @@ accountFilterSelect.addEventListener("change", () => {
     });
 });
 
+dateFilterInput.addEventListener("change", () => {
+    currentPage = 0;
+    setListMessage("");
+    loadSnapshots().catch((error) => {
+        setListMessage(error.message, "error");
+    });
+});
+
 deleteModal.confirmButton.addEventListener("click", async () => {
     const selectedSnapshot = deleteModal.getSelectedItem();
     if (!selectedSnapshot) {
@@ -292,6 +418,7 @@ MoneySnapshotI18n.init({
         handleLanguageChange(language, messages);
     }
 })
+        .then(restoreListState)
         .then(() => MoneySnapshotUi.loadUserSettings())
         .then((settings) => {
             userSettings = settings;

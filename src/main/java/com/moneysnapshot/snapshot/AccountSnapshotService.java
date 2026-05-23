@@ -47,12 +47,31 @@ public class AccountSnapshotService {
         return snapshotRepository.findPageByOwnerIdWithAccountOrderBySnapshotDateDesc(currentUserService.currentUserId(), pageable);
     }
 
-    public Page<AccountSnapshot> listSnapshots(UUID accountId, Pageable pageable) {
-        if (accountId == null) {
-            return listSnapshots(pageable);
+    public Page<AccountSnapshot> listSnapshots(UUID accountId, LocalDate snapshotDate, Pageable pageable) {
+        UUID ownerId = currentUserService.currentUserId();
+
+        if (accountId != null && snapshotDate != null) {
+            return snapshotRepository.findPageByAccountIdAndOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+                    accountId,
+                    ownerId,
+                    snapshotDate,
+                    pageable
+            );
         }
 
-        return snapshotRepository.findPageByAccountIdWithAccountOrderBySnapshotDateDesc(accountId, currentUserService.currentUserId(), pageable);
+        if (accountId != null) {
+            return snapshotRepository.findPageByAccountIdWithAccountOrderBySnapshotDateDesc(accountId, ownerId, pageable);
+        }
+
+        if (snapshotDate != null) {
+            return snapshotRepository.findPageByOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+                    ownerId,
+                    snapshotDate,
+                    pageable
+            );
+        }
+
+        return snapshotRepository.findPageByOwnerIdWithAccountOrderBySnapshotDateDesc(ownerId, pageable);
     }
 
     public AccountSnapshot getSnapshot(UUID id) {
@@ -74,7 +93,8 @@ public class AccountSnapshotService {
                 resolveSnapshotOwner(account),
                 request.snapshotDate(),
                 request.balance(),
-                normalizeNote(request.note())
+                normalizeNote(request.note()),
+                request.snapshotType()
         );
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
@@ -107,7 +127,8 @@ public class AccountSnapshotService {
                     resolveSnapshotOwner(account),
                     request.snapshotDate(),
                     request.balance(),
-                    normalizeNote(request.note())
+                    normalizeNote(request.note()),
+                    request.snapshotType()
             ));
         }
 
@@ -137,7 +158,8 @@ public class AccountSnapshotService {
                 account,
                 request.snapshotDate(),
                 request.balance(),
-                normalizeNote(request.note())
+                normalizeNote(request.note()),
+                request.snapshotType()
         );
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);

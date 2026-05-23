@@ -1,6 +1,7 @@
 package com.moneysnapshot.snapshot.web;
 
 import com.moneysnapshot.snapshot.AccountSnapshot;
+import com.moneysnapshot.snapshot.SnapshotType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -14,6 +15,7 @@ public record AccountSnapshotResponse(
         String currencyCode,
         LocalDate snapshotDate,
         BigDecimal balance,
+        SnapshotType snapshotType,
         String note,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
@@ -28,6 +30,7 @@ public record AccountSnapshotResponse(
                 snapshot.getAccount().getCurrencyCode(),
                 snapshot.getSnapshotDate(),
                 snapshot.getBalance(),
+                snapshot.getSnapshotType(),
                 snapshot.getNote(),
                 snapshot.getCreatedAt(),
                 snapshot.getUpdatedAt()

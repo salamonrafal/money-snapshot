@@ -949,6 +949,11 @@ h1 {
     overflow-x: visible;
 }
 
+.snapshots-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
 .pagination-bar {
     display: flex;
     flex-wrap: wrap;
@@ -1074,10 +1079,35 @@ td:nth-child(5) {
     white-space: nowrap;
 }
 
+.snapshots-table th:nth-child(4),
+.snapshots-table td:nth-child(4) {
+    width: 14%;
+}
+
 .snapshots-table th:nth-child(6),
 .snapshots-table td:nth-child(6) {
     width: 8%;
     text-align: center;
+}
+
+.snapshot-type-select {
+    width: 100%;
+    min-width: 132px;
+}
+
+.snapshots-table {
+    min-width: 760px;
+    table-layout: auto;
+}
+
+.snapshots-table th,
+.snapshots-table td {
+    overflow-wrap: break-word;
+}
+
+.snapshots-table th:nth-child(1),
+.snapshots-table td:nth-child(1) {
+    white-space: normal;
 }
 
 .bulk-snapshot-panel {
@@ -1086,7 +1116,7 @@ td:nth-child(5) {
 
 .bulk-snapshot-controls {
     display: grid;
-    grid-template-columns: minmax(280px, 1fr);
+    grid-template-columns: minmax(220px, 320px) minmax(320px, 1fr);
     gap: 18px;
     align-items: start;
 }
@@ -1783,6 +1813,20 @@ td:nth-child(5) {
         padding: 0 12px;
     }
 
+    .snapshots-table {
+        min-width: 700px;
+    }
+
+    .snapshots-table th,
+    .snapshots-table td {
+        padding: 10px 8px;
+        font-size: 0.82rem;
+    }
+
+    .snapshot-type-select {
+        min-width: 120px;
+    }
+
     .reports-main > .report-panel {
         padding: 18px 14px;
     }
@@ -1865,6 +1909,14 @@ td:nth-child(5) {
     .compact-field select,
     .compact-field input {
         width: 100%;
+    }
+
+    .snapshots-table {
+        min-width: 640px;
+    }
+
+    .snapshot-type-select {
+        min-width: 108px;
     }
 
     .report-tabs {

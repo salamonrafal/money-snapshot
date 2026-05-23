@@ -4,6 +4,8 @@ import com.moneysnapshot.account.Account;
 import com.moneysnapshot.security.AppUser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -44,6 +46,10 @@ public class AccountSnapshot {
     @Column(length = 500)
     private String note;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "snapshot_type", length = 20)
+    private SnapshotType snapshotType;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -53,20 +59,35 @@ public class AccountSnapshot {
     protected AccountSnapshot() {
     }
 
-    public AccountSnapshot(Account account, AppUser owner, LocalDate snapshotDate, BigDecimal balance, String note) {
+    public AccountSnapshot(
+            Account account,
+            AppUser owner,
+            LocalDate snapshotDate,
+            BigDecimal balance,
+            String note,
+            SnapshotType snapshotType
+    ) {
         this.account = account;
         this.owner = owner;
         this.snapshotDate = snapshotDate;
         this.balance = balance;
         this.note = note;
+        this.snapshotType = snapshotType;
     }
 
-    public void updateDetails(Account account, LocalDate snapshotDate, BigDecimal balance, String note) {
+    public void updateDetails(
+            Account account,
+            LocalDate snapshotDate,
+            BigDecimal balance,
+            String note,
+            SnapshotType snapshotType
+    ) {
         this.account = account;
         this.owner = account.getOwner();
         this.snapshotDate = snapshotDate;
         this.balance = balance;
         this.note = note;
+        this.snapshotType = snapshotType;
     }
 
     @PrePersist
@@ -103,6 +124,10 @@ public class AccountSnapshot {
 
     public String getNote() {
         return note;
+    }
+
+    public SnapshotType getSnapshotType() {
+        return snapshotType;
     }
 
     public OffsetDateTime getCreatedAt() {

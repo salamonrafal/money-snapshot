@@ -6,6 +6,7 @@ import com.moneysnapshot.snapshot.AccountSnapshotService;
 import com.moneysnapshot.snapshot.DuplicateAccountSnapshotException;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,12 +39,13 @@ public class AccountSnapshotController {
     public Object listSnapshots(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) UUID accountId
+            @RequestParam(required = false) UUID accountId,
+            @RequestParam(required = false) LocalDate snapshotDate
     ) {
         if (page != null || size != null) {
             int pageNumber = Math.max(page == null ? 0 : page, 0);
             int pageSize = Math.max(1, Math.min(size == null ? 20 : size, 100));
-            return PagedAccountSnapshotResponse.from(snapshotService.listSnapshots(accountId, PageRequest.of(pageNumber, pageSize))
+            return PagedAccountSnapshotResponse.from(snapshotService.listSnapshots(accountId, snapshotDate, PageRequest.of(pageNumber, pageSize))
                     .map(AccountSnapshotResponse::from));
         }
 

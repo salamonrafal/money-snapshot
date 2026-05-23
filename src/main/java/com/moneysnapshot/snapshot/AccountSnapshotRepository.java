@@ -39,6 +39,55 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
     )
     Page<AccountSnapshot> findPageByAccountIdWithAccountOrderBySnapshotDateDesc(@Param("accountId") UUID accountId, @Param("ownerId") UUID ownerId, Pageable pageable);
 
+    @Query(
+            value = """
+                    select snapshot
+                    from AccountSnapshot snapshot
+                    join fetch snapshot.account account
+                    join fetch account.bank
+                    where snapshot.owner.id = :ownerId
+                        and snapshot.snapshotDate = :snapshotDate
+                    order by snapshot.snapshotDate desc, account.name
+                    """,
+            countQuery = """
+                    select count(snapshot)
+                    from AccountSnapshot snapshot
+                    where snapshot.owner.id = :ownerId
+                        and snapshot.snapshotDate = :snapshotDate
+                    """
+    )
+    Page<AccountSnapshot> findPageByOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+            @Param("ownerId") UUID ownerId,
+            @Param("snapshotDate") LocalDate snapshotDate,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+                    select snapshot
+                    from AccountSnapshot snapshot
+                    join fetch snapshot.account account
+                    join fetch account.bank
+                    where snapshot.owner.id = :ownerId
+                        and account.id = :accountId
+                        and snapshot.snapshotDate = :snapshotDate
+                    order by snapshot.snapshotDate desc, account.name
+                    """,
+            countQuery = """
+                    select count(snapshot)
+                    from AccountSnapshot snapshot
+                    where snapshot.owner.id = :ownerId
+                        and snapshot.account.id = :accountId
+                        and snapshot.snapshotDate = :snapshotDate
+                    """
+    )
+    Page<AccountSnapshot> findPageByAccountIdAndOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+            @Param("accountId") UUID accountId,
+            @Param("ownerId") UUID ownerId,
+            @Param("snapshotDate") LocalDate snapshotDate,
+            Pageable pageable
+    );
+
     @Query("select snapshot from AccountSnapshot snapshot join fetch snapshot.account account join fetch account.bank where snapshot.id = :id")
     Optional<AccountSnapshot> findByIdWithAccount(@Param("id") UUID id);
 

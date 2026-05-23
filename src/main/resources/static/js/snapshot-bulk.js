@@ -1,5 +1,6 @@
 const bulkSnapshotForm = document.querySelector("#bulk-snapshot-form");
 const noteInput = document.querySelector("#bulk-snapshot-note");
+const snapshotTypeSelect = document.querySelector("#bulk-snapshot-type");
 const tableBody = document.querySelector("#bulk-snapshot-table-body");
 const formMessage = document.querySelector("#bulk-snapshot-message");
 
@@ -272,6 +273,7 @@ function payloads() {
             accountId: account.id,
             snapshotDate: snapshotDateInput.value,
             balance: tableBody.querySelector(`[data-role='balance'][data-account-id='${account.id}']`).value,
+            snapshotType: snapshotTypeSelect.value,
             note: noteInput.value.trim()
         }
     }));
@@ -280,6 +282,9 @@ function payloads() {
 function validateAccountPayload({payload}) {
     if (!payload.snapshotDate) {
         return messages["snapshots.bulk.requiredDate"];
+    }
+    if (!payload.snapshotType) {
+        return messages["snapshots.bulk.requiredType"];
     }
     if (!payload.balance) {
         return messages["snapshots.bulk.requiredBalance"];
@@ -320,11 +325,19 @@ function balanceInputForAccount(accountId) {
 
 function markValidationErrors(invalidEntries) {
     const dateError = document.querySelector("#bulk-snapshot-date-error");
+    const typeError = document.querySelector("#bulk-snapshot-type-error");
     let firstInvalidInput = null;
 
     if (!snapshotDateInput.value) {
         markInputError(snapshotDateInput, dateError, invalidEntries[0].message);
         firstInvalidInput = snapshotDateInput;
+    }
+
+    if (!snapshotTypeSelect.value) {
+        markInputError(snapshotTypeSelect, typeError, messages["snapshots.bulk.requiredType"]);
+        if (!firstInvalidInput) {
+            firstInvalidInput = snapshotTypeSelect;
+        }
     }
 
     invalidEntries
@@ -436,6 +449,11 @@ bulkSnapshotForm.addEventListener("submit", async (event) => {
         setFormMessage(error.message, "error");
         submitButton.disabled = false;
     }
+});
+
+snapshotTypeSelect.addEventListener("change", () => {
+    const error = document.querySelector("#bulk-snapshot-type-error");
+    clearInputError(snapshotTypeSelect, error);
 });
 
 MoneySnapshotI18n.init({

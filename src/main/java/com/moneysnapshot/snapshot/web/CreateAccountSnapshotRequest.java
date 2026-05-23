@@ -1,5 +1,6 @@
 package com.moneysnapshot.snapshot.web;
 
+import com.moneysnapshot.snapshot.SnapshotType;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,6 +18,9 @@ public record CreateAccountSnapshotRequest(
         @NotNull
         @Digits(integer = 15, fraction = 4)
         BigDecimal balance,
+
+        @NotNull
+        SnapshotType snapshotType,
 
         @Size(max = 500)
         String note
