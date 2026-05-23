@@ -6,6 +6,7 @@ import com.moneysnapshot.account.AccountNotFoundException;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.snapshot.web.CreateAccountSnapshotRequest;
+import com.moneysnapshot.snapshot.web.UpdateSnapshotTypeRequest;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -41,6 +42,28 @@ public class AccountSnapshotService {
 
     public List<AccountSnapshot> listSnapshots() {
         return snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateDesc(currentUserService.currentUserId());
+    }
+
+    public List<AccountSnapshot> listSnapshots(UUID accountId, LocalDate snapshotDate) {
+        UUID ownerId = currentUserService.currentUserId();
+
+        if (accountId != null && snapshotDate != null) {
+            return snapshotRepository.findAllByAccountIdAndOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+                    accountId,
+                    ownerId,
+                    snapshotDate
+            );
+        }
+
+        if (accountId != null) {
+            return snapshotRepository.findAllByAccountIdAndOwnerIdWithAccountOrderBySnapshotDateDesc(accountId, ownerId);
+        }
+
+        if (snapshotDate != null) {
+            return snapshotRepository.findAllByOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(ownerId, snapshotDate);
+        }
+
+        return snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateDesc(ownerId);
     }
 
     public Page<AccountSnapshot> listSnapshots(Pageable pageable) {
@@ -170,6 +193,13 @@ public class AccountSnapshotService {
         ));
 
         return savedSnapshot;
+    }
+
+    @Transactional
+    public AccountSnapshot updateSnapshotType(UUID id, UpdateSnapshotTypeRequest request) {
+        AccountSnapshot snapshot = getSnapshot(id);
+        snapshot.updateSnapshotType(request.snapshotType());
+        return snapshotRepository.save(snapshot);
     }
 
     @Transactional

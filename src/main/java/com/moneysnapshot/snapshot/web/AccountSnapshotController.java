@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,7 +50,7 @@ public class AccountSnapshotController {
                     .map(AccountSnapshotResponse::from));
         }
 
-        return snapshotService.listSnapshots().stream()
+        return snapshotService.listSnapshots(accountId, snapshotDate).stream()
                 .map(AccountSnapshotResponse::from)
                 .toList();
     }
@@ -76,6 +77,11 @@ public class AccountSnapshotController {
     @PutMapping("/{id}")
     public AccountSnapshotResponse updateSnapshot(@PathVariable UUID id, @Valid @RequestBody CreateAccountSnapshotRequest request) {
         return AccountSnapshotResponse.from(snapshotService.updateSnapshot(id, request));
+    }
+
+    @PatchMapping("/{id}/type")
+    public AccountSnapshotResponse updateSnapshotType(@PathVariable UUID id, @Valid @RequestBody UpdateSnapshotTypeRequest request) {
+        return AccountSnapshotResponse.from(snapshotService.updateSnapshotType(id, request));
     }
 
     @DeleteMapping("/{id}")

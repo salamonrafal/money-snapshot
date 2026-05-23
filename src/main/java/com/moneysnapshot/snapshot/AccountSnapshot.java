@@ -90,6 +90,10 @@ public class AccountSnapshot {
         this.snapshotType = snapshotType;
     }
 
+    public void updateSnapshotType(SnapshotType snapshotType) {
+        this.snapshotType = snapshotType;
+    }
+
     @PrePersist
     void prePersist() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);

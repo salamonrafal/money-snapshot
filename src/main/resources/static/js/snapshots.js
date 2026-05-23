@@ -25,16 +25,27 @@ let cachedAccounts = [];
 let userSettings = null;
 
 function saveListState() {
-    window.sessionStorage.setItem(SNAPSHOT_LIST_STATE_KEY, JSON.stringify({
-        currentPage,
-        pageSize: pageSizeSelect.value,
-        accountId: accountFilterSelect.value,
-        snapshotDate: dateFilterInput.value
-    }));
+    try {
+        window.sessionStorage.setItem(SNAPSHOT_LIST_STATE_KEY, JSON.stringify({
+            currentPage,
+            pageSize: pageSizeSelect.value,
+            accountId: accountFilterSelect.value,
+            snapshotDate: dateFilterInput.value
+        }));
+    } catch (error) {
+        console.warn("Cannot save snapshots list state", error);
+    }
 }
 
 function restoreListState() {
-    const savedState = window.sessionStorage.getItem(SNAPSHOT_LIST_STATE_KEY);
+    let savedState;
+    try {
+        savedState = window.sessionStorage.getItem(SNAPSHOT_LIST_STATE_KEY);
+    } catch (error) {
+        console.warn("Cannot access snapshots list state", error);
+        return;
+    }
+
     if (!savedState) {
         return;
     }
@@ -47,7 +58,11 @@ function restoreListState() {
         accountFilterSelect.dataset.pendingValue = typeof state.accountId === "string" ? state.accountId : "";
     } catch (error) {
         console.error("Cannot restore snapshots list state", error);
-        window.sessionStorage.removeItem(SNAPSHOT_LIST_STATE_KEY);
+        try {
+            window.sessionStorage.removeItem(SNAPSHOT_LIST_STATE_KEY);
+        } catch (removeError) {
+            console.warn("Cannot clear invalid snapshots list state", removeError);
+        }
     }
 }
 
@@ -68,12 +83,23 @@ function setListMessage(text, type = "") {
 }
 
 function showBulkSnapshotSuccessMessage() {
-    const savedCount = window.sessionStorage.getItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
+    let savedCount;
+    try {
+        savedCount = window.sessionStorage.getItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
+    } catch (error) {
+        console.warn("Cannot access bulk snapshot success state", error);
+        return;
+    }
+
     if (!savedCount) {
         return;
     }
 
-    window.sessionStorage.removeItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
+    try {
+        window.sessionStorage.removeItem(MoneySnapshotUi.bulkSnapshotSuccessKey);
+    } catch (error) {
+        console.warn("Cannot clear bulk snapshot success state", error);
+    }
     const successMessage = messages["snapshots.bulk.success"] ?? "Saved snapshots: {count}.";
     setListMessage(successMessage.replace("{count}", savedCount), "success");
 }
@@ -106,6 +132,7 @@ function createSnapshotTypeSelect(snapshot) {
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = messages["snapshots.form.typePlaceholder"] ?? "";
+    placeholder.disabled = true;
     select.append(placeholder);
 
     ["FINAL", "PARTIAL"].forEach((type) => {
@@ -292,17 +319,13 @@ async function loadAccounts() {
 }
 
 async function updateSnapshotType(snapshot, snapshotType) {
-    const response = await fetch(`/api/snapshots/${encodeURIComponent(snapshot.id)}`, {
-        method: "PUT",
+    const response = await fetch(`/api/snapshots/${encodeURIComponent(snapshot.id)}/type`, {
+        method: "PATCH",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            accountId: snapshot.accountId,
-            snapshotDate: snapshot.snapshotDate,
-            balance: snapshot.balance,
-            snapshotType,
-            note: snapshot.note ?? ""
+            snapshotType
         })
     });
 
