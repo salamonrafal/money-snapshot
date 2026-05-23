@@ -33,14 +33,23 @@ const MoneySnapshotI18n = (() => {
                 node.textContent = messages[textKey];
             }
 
-            if (titleKey && messages[titleKey]) {
-                node.dataset.tooltip = messages[titleKey];
-                node.classList.add("has-app-tooltip");
+            if (titleKey) {
+                if (messages[titleKey]) {
+                    node.dataset.tooltip = messages[titleKey];
+                    node.classList.add("has-app-tooltip");
+                } else {
+                    delete node.dataset.tooltip;
+                    node.classList.remove("has-app-tooltip");
+                }
                 node.removeAttribute("title");
             }
 
-            if (ariaLabelKey && messages[ariaLabelKey]) {
-                node.setAttribute("aria-label", messages[ariaLabelKey]);
+            if (ariaLabelKey) {
+                if (messages[ariaLabelKey]) {
+                    node.setAttribute("aria-label", messages[ariaLabelKey]);
+                } else {
+                    node.removeAttribute("aria-label");
+                }
             }
         });
     }

@@ -1,23 +1,20 @@
 package com.moneysnapshot.security;
 
+import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfiguration {
 
-    private final UserSettingsRememberMeServices rememberMeServices;
-
-    public SecurityConfiguration(UserSettingsRememberMeServices rememberMeServices) {
-        this.rememberMeServices = rememberMeServices;
-    }
-
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, UserSettingsRememberMeServices rememberMeServices) throws Exception {
         return http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/css/**", "/js/**").permitAll()
@@ -42,5 +39,27 @@ public class SecurityConfiguration {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    PersistentTokenRepository persistentTokenRepository(DataSource dataSource) {
+        JdbcTokenRepositoryImpl repository = new JdbcTokenRepositoryImpl();
+        repository.setDataSource(dataSource);
+        return repository;
+    }
+
+    @Bean
+    UserSettingsRememberMeServices userSettingsRememberMeServices(
+            AppUserDetailsService userDetailsService,
+            PersistentTokenRepository persistentTokenRepository,
+            @org.springframework.beans.factory.annotation.Value("${app.security.remember-me-key:}") String rememberMeKey,
+            @org.springframework.beans.factory.annotation.Value("${app.security.remember-me-days:30}") int rememberMeDays
+    ) {
+        return new UserSettingsRememberMeServices(
+                userDetailsService,
+                persistentTokenRepository,
+                rememberMeKey,
+                rememberMeDays
+        );
     }
 }
