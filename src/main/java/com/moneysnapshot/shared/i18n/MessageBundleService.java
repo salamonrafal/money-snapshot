@@ -53,6 +53,7 @@ public class MessageBundleService {
             "login.form.email",
             "login.form.password",
             "login.form.rememberMe",
+            "login.form.rememberMeUnavailable",
             "login.form.submit",
             "login.heading.eyebrow",
             "login.heading.subtitle",

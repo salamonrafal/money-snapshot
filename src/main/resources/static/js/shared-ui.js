@@ -170,8 +170,11 @@ window.MoneySnapshotUi = (() => {
         const closeLabel = menuToggle.querySelector(".menu-toggle-close-label");
 
         function syncMenuState(isOpen) {
+            const nextLabel = (isOpen ? closeLabel?.textContent : openLabel?.textContent)?.trim();
             menuToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-            menuToggle.setAttribute("aria-label", isOpen ? closeLabel?.textContent || "" : openLabel?.textContent || "");
+            if (nextLabel) {
+                menuToggle.setAttribute("aria-label", nextLabel);
+            }
             topbarActions.classList.toggle("is-open", isOpen);
             document.body.classList.toggle("menu-open", isOpen);
         }

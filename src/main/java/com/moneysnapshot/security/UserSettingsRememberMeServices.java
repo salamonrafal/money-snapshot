@@ -1,6 +1,5 @@
 package com.moneysnapshot.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
@@ -14,14 +13,15 @@ public class UserSettingsRememberMeServices extends PersistentTokenBasedRemember
     public UserSettingsRememberMeServices(
             AppUserDetailsService userDetailsService,
             PersistentTokenRepository persistentTokenRepository,
-            @Value("${app.security.remember-me-key:}") String rememberMeKey,
-            @Value("${app.security.remember-me-days:30}") int rememberMeDays
+            String rememberMeKey,
+            int rememberMeDays
     ) {
         super(requireRememberMeKey(rememberMeKey), userDetailsService, persistentTokenRepository);
         this.rememberMeDays = normalizeRememberMeDays(rememberMeDays);
         setParameter(REMEMBER_ME_PARAMETER);
         setTokenValiditySeconds(this.rememberMeDays * 24 * 60 * 60);
     }
+
     private int normalizeRememberMeDays(int value) {
         return value >= 1 && value <= 365 ? value : DEFAULT_REMEMBER_ME_DAYS;
     }

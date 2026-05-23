@@ -1,5 +1,6 @@
 package com.moneysnapshot.web;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,13 +9,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class PageController {
 
+    private final boolean rememberMeEnabled;
+
+    public PageController(@Value("${app.security.remember-me-key:${REMEMBER_ME_KEY:}}") String rememberMeKey) {
+        this.rememberMeEnabled = rememberMeKey != null && !rememberMeKey.isBlank();
+    }
+
     @GetMapping("/")
     public String home() {
         return "index";
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String login(Model model) {
+        model.addAttribute("rememberMeEnabled", rememberMeEnabled);
         return "login";
     }
 
