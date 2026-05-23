@@ -6,6 +6,7 @@ import com.moneysnapshot.account.AccountNotFoundException;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.snapshot.web.CreateAccountSnapshotRequest;
+import com.moneysnapshot.snapshot.web.UpdateSnapshotTypeRequest;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -43,16 +44,57 @@ public class AccountSnapshotService {
         return snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateDesc(currentUserService.currentUserId());
     }
 
+    public List<AccountSnapshot> listSnapshots(UUID accountId, LocalDate snapshotDate) {
+        UUID ownerId = currentUserService.currentUserId();
+
+        if (accountId != null && snapshotDate != null) {
+            return snapshotRepository.findAllByAccountIdAndOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+                    accountId,
+                    ownerId,
+                    snapshotDate
+            );
+        }
+
+        if (accountId != null) {
+            return snapshotRepository.findAllByAccountIdAndOwnerIdWithAccountOrderBySnapshotDateDesc(accountId, ownerId);
+        }
+
+        if (snapshotDate != null) {
+            return snapshotRepository.findAllByOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(ownerId, snapshotDate);
+        }
+
+        return snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateDesc(ownerId);
+    }
+
     public Page<AccountSnapshot> listSnapshots(Pageable pageable) {
         return snapshotRepository.findPageByOwnerIdWithAccountOrderBySnapshotDateDesc(currentUserService.currentUserId(), pageable);
     }
 
-    public Page<AccountSnapshot> listSnapshots(UUID accountId, Pageable pageable) {
-        if (accountId == null) {
-            return listSnapshots(pageable);
+    public Page<AccountSnapshot> listSnapshots(UUID accountId, LocalDate snapshotDate, Pageable pageable) {
+        UUID ownerId = currentUserService.currentUserId();
+
+        if (accountId != null && snapshotDate != null) {
+            return snapshotRepository.findPageByAccountIdAndOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+                    accountId,
+                    ownerId,
+                    snapshotDate,
+                    pageable
+            );
         }
 
-        return snapshotRepository.findPageByAccountIdWithAccountOrderBySnapshotDateDesc(accountId, currentUserService.currentUserId(), pageable);
+        if (accountId != null) {
+            return snapshotRepository.findPageByAccountIdWithAccountOrderBySnapshotDateDesc(accountId, ownerId, pageable);
+        }
+
+        if (snapshotDate != null) {
+            return snapshotRepository.findPageByOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(
+                    ownerId,
+                    snapshotDate,
+                    pageable
+            );
+        }
+
+        return snapshotRepository.findPageByOwnerIdWithAccountOrderBySnapshotDateDesc(ownerId, pageable);
     }
 
     public AccountSnapshot getSnapshot(UUID id) {
@@ -74,7 +116,8 @@ public class AccountSnapshotService {
                 resolveSnapshotOwner(account),
                 request.snapshotDate(),
                 request.balance(),
-                normalizeNote(request.note())
+                normalizeNote(request.note()),
+                request.snapshotType()
         );
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
@@ -107,7 +150,8 @@ public class AccountSnapshotService {
                     resolveSnapshotOwner(account),
                     request.snapshotDate(),
                     request.balance(),
-                    normalizeNote(request.note())
+                    normalizeNote(request.note()),
+                    request.snapshotType()
             ));
         }
 
@@ -137,7 +181,8 @@ public class AccountSnapshotService {
                 account,
                 request.snapshotDate(),
                 request.balance(),
-                normalizeNote(request.note())
+                normalizeNote(request.note()),
+                request.snapshotType()
         );
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
@@ -148,6 +193,13 @@ public class AccountSnapshotService {
         ));
 
         return savedSnapshot;
+    }
+
+    @Transactional
+    public AccountSnapshot updateSnapshotType(UUID id, UpdateSnapshotTypeRequest request) {
+        AccountSnapshot snapshot = getSnapshot(id);
+        snapshot.updateSnapshotType(request.snapshotType());
+        return snapshotRepository.save(snapshot);
     }
 
     @Transactional

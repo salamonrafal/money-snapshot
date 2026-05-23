@@ -28,6 +28,10 @@
                     <option value="" data-i18n="snapshots.filter.allAccounts">Wszystkie konta</option>
                 </select>
             </label>
+            <label class="compact-field">
+                <span data-i18n="snapshots.filter.date">Data</span>
+                <input id="snapshots-date-filter" type="date">
+            </label>
         </div>
         <div class="pagination-bar" aria-label="Stronicowanie migawek">
             <button type="button" class="button secondary compact" id="snapshots-prev-page" data-i18n="snapshots.pagination.previous">Poprzednia</button>
@@ -43,14 +47,14 @@
                 </select>
             </label>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap snapshots-table-wrap">
             <table class="snapshots-table">
                 <thead>
                 <tr>
                     <th data-i18n="snapshots.table.account">Konto</th>
                     <th data-i18n="snapshots.table.date">Data</th>
                     <th data-i18n="snapshots.table.balance">Saldo</th>
-                    <th data-i18n="snapshots.table.note">Notatka</th>
+                    <th data-i18n="snapshots.table.type">Typ</th>
                     <th data-i18n="snapshots.table.createdAt">Dodano</th>
                     <th data-i18n="snapshots.table.actions">Akcje</th>
                 </tr>

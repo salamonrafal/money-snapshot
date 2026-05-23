@@ -3,6 +3,7 @@ const formMessage = document.querySelector("#snapshot-form-message");
 const accountSelect = document.querySelector("#snapshot-account");
 const snapshotDateInput = document.querySelector("#snapshot-date");
 const balanceInput = document.querySelector("#snapshot-balance");
+const snapshotTypeSelect = document.querySelector("#snapshot-type");
 const noteInput = document.querySelector("#snapshot-note");
 const rememberAccountInput = document.querySelector("#remember-snapshot-account");
 const lastSnapshotSummary = document.querySelector("#snapshot-last-summary");
@@ -127,6 +128,7 @@ async function loadSnapshot() {
     accountSelect.value = loadedSnapshot.accountId;
     snapshotDateInput.value = loadedSnapshot.snapshotDate;
     balanceInput.value = loadedSnapshot.balance;
+    snapshotTypeSelect.value = loadedSnapshot.snapshotType ?? "";
     noteInput.value = loadedSnapshot.note ?? "";
 }
 
@@ -162,10 +164,11 @@ snapshotForm.addEventListener("submit", async (event) => {
         accountId: accountSelect.value,
         snapshotDate: snapshotDateInput.value,
         balance: balanceInput.value,
+        snapshotType: snapshotTypeSelect.value,
         note: noteInput.value.trim()
     };
 
-    if (!payload.accountId || !payload.snapshotDate || !payload.balance) {
+    if (!payload.accountId || !payload.snapshotDate || !payload.balance || !payload.snapshotType) {
         setFormMessage(messages["snapshots.form.required"], "error");
         return;
     }

@@ -22,6 +22,15 @@
             </div>
             <div class="bulk-snapshot-controls">
                 <label class="field">
+                    <span data-i18n="snapshots.form.type">Typ migawki</span>
+                    <select id="bulk-snapshot-type" name="snapshotType" required>
+                        <option value="" data-i18n="snapshots.form.typePlaceholder">Wybierz typ migawki</option>
+                        <option value="FINAL" data-i18n="snapshots.type.FINAL">Finalna</option>
+                        <option value="PARTIAL" data-i18n="snapshots.type.PARTIAL">Cząstkowa</option>
+                    </select>
+                    <span id="bulk-snapshot-type-error" class="bulk-input-error" data-role="validation-error" aria-live="polite" hidden></span>
+                </label>
+                <label class="field">
                     <span data-i18n="snapshots.bulk.commonNote">Wspólna notatka</span>
                     <textarea id="bulk-snapshot-note" name="note" maxlength="500" rows="3"></textarea>
                 </label>
