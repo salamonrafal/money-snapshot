@@ -131,4 +131,5 @@ public class UserSettingsService {
             return 1;
         }
     }
+
 }

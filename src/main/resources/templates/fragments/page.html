@@ -15,8 +15,20 @@
         <span class="brand-mark">MS</span>
         <span data-i18n="app.name">Money Snapshot</span>
     </a>
+    <button type="button"
+            class="menu-toggle"
+            aria-expanded="false"
+            aria-controls="main-menu"
+            data-i18n-aria-label="common.nav.menu.open"
+            aria-label="Otwórz menu">
+        <span class="menu-toggle-bar"></span>
+        <span class="menu-toggle-bar"></span>
+        <span class="menu-toggle-bar"></span>
+        <span class="visually-hidden menu-toggle-open-label" data-i18n="common.nav.menu.open">Otwórz menu</span>
+        <span class="visually-hidden menu-toggle-close-label" data-i18n="common.nav.menu.close">Zamknij menu</span>
+    </button>
     <div class="topbar-actions">
-        <nav class="main-nav" aria-label="Main navigation">
+        <nav class="main-nav" id="main-menu" aria-label="Main navigation">
             <a href="/"
                th:attr="aria-current=${activePage == 'home' ? 'page' : null}"
                data-i18n="common.nav.home">Start</a>

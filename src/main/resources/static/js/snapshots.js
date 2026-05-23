@@ -7,6 +7,7 @@ const pageInfo = document.querySelector("#snapshots-page-info");
 const pageSizeSelect = document.querySelector("#snapshots-page-size");
 const accountFilterSelect = document.querySelector("#snapshots-account-filter");
 const dateFilterInput = document.querySelector("#snapshots-date-filter");
+const clearFiltersButton = document.querySelector("#clear-snapshots-filters");
 const SNAPSHOT_LIST_STATE_KEY = "money-snapshot-snapshots-list-state";
 const deleteModal = MoneySnapshotUi.createConfirmModal({
     modalSelector: "#delete-snapshot-modal",
@@ -23,6 +24,10 @@ let currentPage = 0;
 let currentPageData = null;
 let cachedAccounts = [];
 let userSettings = null;
+
+if (clearFiltersButton) {
+    clearFiltersButton.append(MoneySnapshotUi.createClearFiltersIcon());
+}
 
 function saveListState() {
     try {
@@ -70,6 +75,7 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     currentLanguage = nextLanguage;
     messages = nextMessages;
     document.title = `${messages["snapshots.heading.title"]} | ${messages["app.name"]}`;
+    updateClearFiltersButton();
     if (snapshotsLoaded) {
         renderAccountFilterOptions();
         renderSnapshots(cachedSnapshots);
@@ -80,6 +86,24 @@ function handleLanguageChange(nextLanguage, nextMessages) {
 function setListMessage(text, type = "") {
     listMessage.textContent = text;
     listMessage.dataset.type = type;
+}
+
+function hasActiveFilters() {
+    return Boolean(accountFilterSelect.value || dateFilterInput.value);
+}
+
+function updateClearFiltersButton() {
+    if (!clearFiltersButton) {
+        return;
+    }
+
+    const clearFiltersLabel = messages["snapshots.filter.clear"];
+    if (clearFiltersLabel) {
+        MoneySnapshotUi.setTooltip(clearFiltersButton, clearFiltersLabel);
+        clearFiltersButton.setAttribute("aria-label", clearFiltersLabel);
+    }
+
+    clearFiltersButton.hidden = !hasActiveFilters();
 }
 
 function showBulkSnapshotSuccessMessage() {
@@ -191,6 +215,7 @@ function renderAccountFilterOptions() {
 
     accountFilterSelect.value = cachedAccounts.some((account) => account.id === selectedValue) ? selectedValue : "";
     delete accountFilterSelect.dataset.pendingValue;
+    updateClearFiltersButton();
 }
 
 function renderEmpty(message) {
@@ -244,16 +269,16 @@ function renderSnapshots(snapshots) {
         actions.className = "row-actions";
         editButton.type = "button";
         editButton.className = "icon-button";
-        editButton.title = messages["snapshots.actions.edit"];
         editButton.setAttribute("aria-label", messages["snapshots.actions.edit"]);
+        MoneySnapshotUi.setTooltip(editButton, messages["snapshots.actions.edit"]);
         editButton.append(MoneySnapshotUi.createEditIcon());
         editButton.addEventListener("click", () => {
             window.location.href = `/snapshots/${encodeURIComponent(snapshot.id)}/edit.html`;
         });
         deleteButton.type = "button";
         deleteButton.className = "icon-button danger";
-        deleteButton.title = messages["snapshots.actions.delete"];
         deleteButton.setAttribute("aria-label", messages["snapshots.actions.delete"]);
+        MoneySnapshotUi.setTooltip(deleteButton, messages["snapshots.actions.delete"]);
         deleteButton.append(MoneySnapshotUi.createTrashIcon());
         deleteButton.addEventListener("click", () => {
             deleteModal.open(snapshot, snapshotSubject(snapshot));
@@ -290,6 +315,7 @@ async function loadSnapshots() {
     const pageSize = Number(pageSizeSelect.value);
     const accountId = accountFilterSelect.value;
     const snapshotDate = dateFilterInput.value;
+    updateClearFiltersButton();
     saveListState();
     const accountFilter = accountId ? `&accountId=${encodeURIComponent(accountId)}` : "";
     const dateFilter = snapshotDate ? `&snapshotDate=${encodeURIComponent(snapshotDate)}` : "";
@@ -399,6 +425,7 @@ pageSizeSelect.addEventListener("change", () => {
 
 accountFilterSelect.addEventListener("change", () => {
     currentPage = 0;
+    updateClearFiltersButton();
     setListMessage("");
     loadSnapshots().catch((error) => {
         setListMessage(error.message, "error");
@@ -407,6 +434,22 @@ accountFilterSelect.addEventListener("change", () => {
 
 dateFilterInput.addEventListener("change", () => {
     currentPage = 0;
+    updateClearFiltersButton();
+    setListMessage("");
+    loadSnapshots().catch((error) => {
+        setListMessage(error.message, "error");
+    });
+});
+
+clearFiltersButton?.addEventListener("click", () => {
+    if (!hasActiveFilters()) {
+        return;
+    }
+
+    accountFilterSelect.value = "";
+    dateFilterInput.value = "";
+    currentPage = 0;
+    updateClearFiltersButton();
     setListMessage("");
     loadSnapshots().catch((error) => {
         setListMessage(error.message, "error");
@@ -446,6 +489,7 @@ MoneySnapshotI18n.init({
         .then((settings) => {
             userSettings = settings;
         })
+        .then(updateClearFiltersButton)
         .then(showBulkSnapshotSuccessMessage)
         .then(loadAccounts)
         .then(loadSnapshots)

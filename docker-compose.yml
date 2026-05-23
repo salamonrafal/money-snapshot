@@ -17,10 +17,18 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
       ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
+      REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
+      REMEMBER_ME_DAYS: ${REMEMBER_ME_DAYS:-30}
     volumes:
       - .:/app
       - maven_target:/app/target
       - maven_cache:/root/.m2
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider \"http://127.0.0.1:$${SERVER_PORT}/login\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
     depends_on:
       postgres:
         condition: service_healthy

@@ -40,6 +40,11 @@
                 <span data-i18n="login.form.password">Hasło</span>
                 <input name="password" type="password" autocomplete="current-password" required>
             </label>
+            <label class="checkbox-field" th:if="${rememberMeEnabled}">
+                <input name="remember-me" type="checkbox">
+                <span data-i18n="login.form.rememberMe">Zapamiętaj mnie</span>
+            </label>
+            <p class="form-message" data-type="error" th:unless="${rememberMeEnabled}" data-i18n="login.form.rememberMeUnavailable">Opcja Zapamiętaj mnie jest wyłączona, ponieważ nie ustawiono klucza REMEMBER_ME_KEY.</p>
             <div class="form-actions">
                 <button type="submit" class="button primary" data-i18n="login.form.submit">Zaloguj</button>
             </div>

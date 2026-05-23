@@ -27,11 +27,6 @@ function formatPeriod(periodDate) {
         return "-";
     }
 
-    if ((userSettings?.billingMonthStartDay ?? 1) !== 1) {
-        const endDate = new Date(periodEndDate(periodDate).getTime() - 86400000).toISOString().slice(0, 10);
-        return `${MoneySnapshotUi.formatDateValue(periodDate, userSettings)} - ${MoneySnapshotUi.formatDateValue(endDate, userSettings)}`;
-    }
-
     const period = new Intl.DateTimeFormat(currentLanguage === "en" ? "en-US" : "pl-PL", {
         month: "long",
         year: "numeric"
