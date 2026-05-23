@@ -17,6 +17,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-Admin}
       ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
+      REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
+      REMEMBER_ME_DAYS: ${REMEMBER_ME_DAYS:-30}
     volumes:
       - .:/app
       - maven_target:/app/target
