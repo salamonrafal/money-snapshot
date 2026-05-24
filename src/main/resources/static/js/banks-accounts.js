@@ -369,7 +369,9 @@ function renderBankAccounts() {
         const detailsCell = document.createElement("td");
         detailsCell.colSpan = 4;
         detailsCell.className = "bank-details-cell";
-        detailsCell.append(createAccountTable(bankAccounts));
+        if (expanded) {
+            detailsCell.append(createAccountTable(bankAccounts));
+        }
         detailsRow.append(detailsCell);
         rows.push(detailsRow);
     });
