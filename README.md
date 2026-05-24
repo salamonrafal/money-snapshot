@@ -227,7 +227,7 @@ Optional environment variables:
 - `ENV_TEMPLATE_FILE` - template file path, default: `.env.example`
 - `ENV_OUTPUT_FILE` - generated output file path, default: `.env.tmp`
 - `VAULT_CONNECT_TIMEOUT_SECONDS` - Vault connection timeout in seconds, default: `5`
-- `VAULT_MAX_TIME_SECONDS` - maximum total Vault request time in seconds, default: `30`
+- `VAULT_MAX_TIME_SECONDS` - maximum time for a single Vault request attempt in seconds, default: `30`
 - `VAULT_RETRY_COUNT` - number of retry attempts for transient Vault request failures, default: `2`
 
 Example:
