@@ -182,15 +182,19 @@ function createAccountTable(accounts) {
     nestedTable.className = "accounts-table banks-accounts-nested-table";
 
     const thead = document.createElement("thead");
-    thead.innerHTML = `
-        <tr>
-            <th>${messages["accounts.table.name"] ?? ""}</th>
-            <th>${messages["accounts.table.accountType"] ?? ""}</th>
-            <th>${messages["accounts.table.currency"] ?? ""}</th>
-            <th>${messages["accounts.table.status"] ?? ""}</th>
-            <th>${messages["accounts.table.actions"] ?? ""}</th>
-        </tr>
-    `;
+    const headerRow = document.createElement("tr");
+    [
+        messages["accounts.table.name"] ?? "",
+        messages["accounts.table.accountType"] ?? "",
+        messages["accounts.table.currency"] ?? "",
+        messages["accounts.table.status"] ?? "",
+        messages["accounts.table.actions"] ?? ""
+    ].forEach((value) => {
+        const headerCell = document.createElement("th");
+        headerCell.textContent = value;
+        headerRow.append(headerCell);
+    });
+    thead.append(headerRow);
 
     const tbody = document.createElement("tbody");
 
