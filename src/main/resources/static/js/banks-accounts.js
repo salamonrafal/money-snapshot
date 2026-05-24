@@ -304,7 +304,7 @@ function renderBankAccounts() {
         MoneySnapshotUi.setTooltip(editButton, messages["banks.actions.edit"]);
         editButton.append(MoneySnapshotUi.createEditIcon());
         editButton.addEventListener("click", () => {
-            window.location.href = `/banks/${encodeURIComponent(bank.id)}/edit.html?returnTo=${encodeURIComponent("/banks-accounts.html")}`;
+            window.location.href = `/banks/${encodeURIComponent(bank.id)}/edit.html?returnTo=${encodeURIComponent(`/banks-accounts.html?expandBank=${bank.id}`)}`;
         });
 
         deleteButton.type = "button";

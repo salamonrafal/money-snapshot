@@ -131,6 +131,22 @@ window.MoneySnapshotUi = (() => {
         return icon;
     }
 
+    function safeReturnToPath(value) {
+        if (!value) {
+            return "";
+        }
+
+        try {
+            const url = new URL(value, window.location.origin);
+            if (url.origin !== window.location.origin || !url.pathname.startsWith("/")) {
+                return "";
+            }
+            return `${url.pathname}${url.search}${url.hash}`;
+        } catch {
+            return "";
+        }
+    }
+
     function setTooltip(element, label) {
         if (!element) {
             return;
@@ -354,6 +370,7 @@ window.MoneySnapshotUi = (() => {
         createClearFiltersIcon,
         createEditIcon,
         createInfoIcon,
+        safeReturnToPath,
         setTooltip,
         createTrashIcon,
         initializeMobileNavigation,

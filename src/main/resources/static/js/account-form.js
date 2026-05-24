@@ -18,24 +18,8 @@ let messages = {};
 let cachedBanks = [];
 let loadedAccount = null;
 
-function safeReturnToPath(value) {
-    if (!value) {
-        return "";
-    }
-
-    try {
-        const url = new URL(value, window.location.origin);
-        if (url.origin !== window.location.origin || !url.pathname.startsWith("/")) {
-            return "";
-        }
-        return `${url.pathname}${url.search}${url.hash}`;
-    } catch {
-        return "";
-    }
-}
-
 function resolveRedirectUrl() {
-    const safePath = safeReturnToPath(returnTo);
+    const safePath = MoneySnapshotUi.safeReturnToPath(returnTo);
     if (safePath) {
         return safePath;
     }
@@ -52,7 +36,7 @@ function syncCancelLink() {
 }
 
 function buildReturnUrl(savedAccount) {
-    const safePath = safeReturnToPath(returnTo);
+    const safePath = MoneySnapshotUi.safeReturnToPath(returnTo);
     if (!safePath) {
         return resolveRedirectUrl();
     }
