@@ -84,7 +84,6 @@ if not isinstance(secret_data, dict):
 
 template_lines = template_path.read_text().splitlines()
 result_lines = []
-used_keys = set()
 
 def format_env_value(value):
     if isinstance(value, str):
@@ -103,19 +102,8 @@ for line in template_lines:
     key = key.strip()
     if key in secret_data and secret_data[key] is not None:
         result_lines.append(f"{key}={format_env_value(secret_data[key])}")
-        used_keys.add(key)
     else:
         result_lines.append(line)
-
-for key in sorted(secret_data):
-    if key in used_keys:
-        continue
-    if not isinstance(key, str):
-        continue
-    value = secret_data[key]
-    if value is None:
-        continue
-    result_lines.append(f"{key}={format_env_value(value)}")
 
 output_path.parent.mkdir(parents=True, exist_ok=True)
 with tempfile.NamedTemporaryFile(
