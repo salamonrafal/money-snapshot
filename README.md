@@ -248,6 +248,7 @@ docker compose --env-file .env.tmp up -d
 The script expects a Vault response in KV v2 shape, where the actual secret values are under `data.data`.
 Keys missing from the Vault response keep the values from the template file.
 Vault keys that are not present in the template are ignored and are not appended to the generated env file.
+Vault values used by the script must be scalars such as strings, numbers, or booleans. Objects and arrays are rejected.
 The script stores the Vault token in a temporary headers file instead of passing it directly in the `curl` command arguments.
 The generated env file contains secrets. The default `.env.tmp` path is ignored by Git, but if you override `ENV_OUTPUT_FILE`, make sure the target path is excluded from version control and handled as sensitive data.
 

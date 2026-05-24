@@ -121,7 +121,11 @@ def format_env_value(value):
         return json.dumps(value)
     if isinstance(value, bool):
         return "true" if value else "false"
-    return str(value)
+    if isinstance(value, (int, float)):
+        return str(value)
+    raise SystemExit(
+        f"Vault secret value has unsupported non-scalar type: {type(value).__name__}"
+    )
 
 for line in template_lines:
     stripped = line.strip()
