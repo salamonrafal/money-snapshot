@@ -206,6 +206,11 @@ SERVER_PORT=5081
 
 Use `scripts/generate-env.sh` when the deployment process should fetch secrets from Vault and write them to a temporary env file before starting Docker Compose.
 
+Requirements:
+
+- `curl`
+- `python3`
+
 The script:
 
 - reads Vault connection settings from environment variables
@@ -249,6 +254,7 @@ The script accepts Vault responses in KV v2 shape with secret values under `data
 Keys missing from the Vault response keep the values from the template file.
 Vault keys that are not present in the template are ignored and are not appended to the generated env file.
 Vault values used by the script must be scalars such as strings, numbers, or booleans. Objects and arrays are rejected.
+String values must be single-line. Multi-line secrets should be converted to a single-line representation such as base64 before use with this script.
 The script stores the Vault token in a temporary headers file instead of passing it directly in the `curl` command arguments.
 The generated env file contains secrets. The default `.env.tmp` path is ignored by Git, but if you override `ENV_OUTPUT_FILE`, make sure the target path is excluded from version control and handled as sensitive data.
 

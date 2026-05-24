@@ -107,7 +107,7 @@ template_path = pathlib.Path(sys.argv[2])
 output_path = pathlib.Path(sys.argv[3])
 
 try:
-    payload = json.loads(response_path.read_text())
+    payload = json.loads(response_path.read_text(encoding="utf-8"))
 except json.JSONDecodeError as exc:
     raise SystemExit(f"Vault response is not valid JSON: {exc}")
 if isinstance(payload.get("errors"), list) and payload["errors"]:
@@ -121,11 +121,16 @@ secret_data = data.get("data") if isinstance(data.get("data"), dict) else data
 if not isinstance(secret_data, dict):
     raise SystemExit("Vault response does not contain a secret payload")
 
-template_lines = template_path.read_text().splitlines()
+template_lines = template_path.read_text(encoding="utf-8").splitlines()
 result_lines = []
 
 def format_env_value(value):
     if isinstance(value, str):
+        if "\n" in value or "\r" in value:
+            raise SystemExit(
+                "Vault secret string values must be single-line. "
+                "Use a single-line representation such as base64 for multi-line secrets."
+            )
         return json.dumps(value, ensure_ascii=False)
     if isinstance(value, bool):
         return "true" if value else "false"
