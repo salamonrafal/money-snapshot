@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 if ! command -v curl >/dev/null 2>&1; then
   echo "Missing required command: curl" >&2
@@ -60,6 +61,7 @@ fi
 python3 - "$response_file" "$template_file" "$output_file" <<'PY'
 import json
 import pathlib
+import tempfile
 import sys
 
 response_path = pathlib.Path(sys.argv[1])
@@ -82,6 +84,13 @@ template_lines = template_path.read_text().splitlines()
 result_lines = []
 used_keys = set()
 
+def format_env_value(value):
+    if isinstance(value, str):
+        return json.dumps(value)
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
 for line in template_lines:
     stripped = line.strip()
     if not stripped or stripped.startswith("#") or "=" not in line:
@@ -91,7 +100,7 @@ for line in template_lines:
     key, _sep, _value = line.partition("=")
     key = key.strip()
     if key in secret_data and secret_data[key] is not None:
-        result_lines.append(f"{key}={secret_data[key]}")
+        result_lines.append(f"{key}={format_env_value(secret_data[key])}")
         used_keys.add(key)
     else:
         result_lines.append(line)
@@ -104,9 +113,20 @@ for key in sorted(secret_data):
     value = secret_data[key]
     if value is None:
         continue
-    result_lines.append(f"{key}={value}")
+    result_lines.append(f"{key}={format_env_value(value)}")
 
-output_path.write_text("\n".join(result_lines) + "\n")
+output_path.parent.mkdir(parents=True, exist_ok=True)
+with tempfile.NamedTemporaryFile(
+    mode="w",
+    encoding="utf-8",
+    dir=output_path.parent,
+    prefix=f".{output_path.name}.",
+    delete=False,
+) as handle:
+    handle.write("\n".join(result_lines) + "\n")
+    temp_path = pathlib.Path(handle.name)
+
+temp_path.replace(output_path)
 PY
 
 echo "Generated $output_file from Vault path $vault_path"

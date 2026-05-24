@@ -242,6 +242,7 @@ docker compose --env-file .env.tmp up -d
 
 The script expects a Vault response in KV v2 shape, where the actual secret values are under `data.data`.
 Keys missing from the Vault response keep the values from the template file.
+The generated env file contains secrets. Do not commit it, and if you override `ENV_OUTPUT_FILE`, make sure the target path is excluded from version control and handled as sensitive data.
 
 ## Create the first administrator
 

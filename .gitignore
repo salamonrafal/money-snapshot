@@ -41,3 +41,4 @@ bin/
 # Environment
 .env
 .env.local
+.env.tmp
