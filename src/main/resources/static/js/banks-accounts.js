@@ -244,13 +244,18 @@ function renderBankAccounts() {
 
         const nameCell = document.createElement("td");
         const toggleButton = document.createElement("button");
+        const chevron = document.createElement("span");
+        const label = document.createElement("span");
         toggleButton.type = "button";
         toggleButton.className = "bank-toggle";
         toggleButton.setAttribute("aria-expanded", expanded ? "true" : "false");
         toggleButton.setAttribute("aria-label", expanded
             ? (messages["banksAccounts.table.collapse"] ?? "")
             : (messages["banksAccounts.table.expand"] ?? ""));
-        toggleButton.innerHTML = `<span class="bank-toggle-chevron" aria-hidden="true"></span><span>${bank.name}</span>`;
+        chevron.className = "bank-toggle-chevron";
+        chevron.setAttribute("aria-hidden", "true");
+        label.textContent = bank.name;
+        toggleButton.append(chevron, label);
         toggleButton.addEventListener("click", () => {
             if (expandedBankIds.has(bank.id)) {
                 expandedBankIds.delete(bank.id);

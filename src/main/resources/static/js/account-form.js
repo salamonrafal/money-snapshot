@@ -18,9 +18,26 @@ let messages = {};
 let cachedBanks = [];
 let loadedAccount = null;
 
+function safeReturnToPath(value) {
+    if (!value) {
+        return "";
+    }
+
+    try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin || !url.pathname.startsWith("/")) {
+            return "";
+        }
+        return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+        return "";
+    }
+}
+
 function resolveRedirectUrl() {
-    if (returnTo.startsWith("/")) {
-        return returnTo;
+    const safePath = safeReturnToPath(returnTo);
+    if (safePath) {
+        return safePath;
     }
 
     return "/accounts.html";
@@ -35,11 +52,12 @@ function syncCancelLink() {
 }
 
 function buildReturnUrl(savedAccount) {
-    if (!returnTo.startsWith("/")) {
+    const safePath = safeReturnToPath(returnTo);
+    if (!safePath) {
         return resolveRedirectUrl();
     }
 
-    const url = new URL(returnTo, window.location.origin);
+    const url = new URL(safePath, window.location.origin);
     if (savedAccount?.bankId) {
         url.searchParams.set("expandBank", savedAccount.bankId);
     }
