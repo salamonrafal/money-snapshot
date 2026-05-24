@@ -43,11 +43,13 @@ normalized_path="${vault_path#/}"
 vault_url="$normalized_addr/v1/$normalized_path"
 
 response_file="$(mktemp)"
-trap 'rm -f "$response_file"' EXIT
+headers_file="$(mktemp)"
+trap 'rm -f "$response_file" "$headers_file"' EXIT
+
+printf 'X-Vault-Token: %s\nAccept: application/json\n' "$vault_token" > "$headers_file"
 
 http_status="$(curl -sS \
-  -H "X-Vault-Token: $vault_token" \
-  -H "Accept: application/json" \
+  -H @"$headers_file" \
   -o "$response_file" \
   -w "%{http_code}" \
   "$vault_url")"
