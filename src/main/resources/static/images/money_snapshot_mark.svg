@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Money Snapshot</title>
+  <defs>
+    <linearGradient id="bars" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#16a3b5"/>
+      <stop offset="100%" stop-color="#35d6b6"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#14213d"/>
+  <rect x="14" y="38" width="7" height="12" rx="3.5" fill="url(#bars)"/>
+  <rect x="25" y="31" width="7" height="19" rx="3.5" fill="url(#bars)"/>
+  <rect x="36" y="24" width="7" height="26" rx="3.5" fill="url(#bars)"/>
+  <rect x="47" y="16" width="7" height="34" rx="3.5" fill="url(#bars)"/>
+  <path d="M17.5 36.5 28.5 29.5 39.5 22.5 50.5 14.5" fill="none" stroke="#f4b942" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"/>
+  <circle cx="17.5" cy="36.5" r="2.7" fill="#f4b942"/>
+  <circle cx="28.5" cy="29.5" r="2.7" fill="#f4b942"/>
+  <circle cx="39.5" cy="22.5" r="2.7" fill="#f4b942"/>
+  <circle cx="50.5" cy="14.5" r="2.7" fill="#f4b942"/>
+</svg>

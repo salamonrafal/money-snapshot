@@ -14,16 +14,16 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     Optional<Account> findByOwnerIdAndNormalizedName(UUID ownerId, String normalizedName);
 
-    @Query("select account from Account account join fetch account.bank where account.id = :id")
+    @Query("select account from Account account join fetch account.bank left join fetch account.owner where account.id = :id")
     Optional<Account> findByIdWithBank(@Param("id") UUID id);
 
-    @Query("select account from Account account join fetch account.bank where account.id = :id and account.owner.id = :ownerId")
+    @Query("select account from Account account join fetch account.bank join fetch account.owner where account.id = :id and account.owner.id = :ownerId")
     Optional<Account> findByIdAndOwnerIdWithBank(@Param("id") UUID id, @Param("ownerId") UUID ownerId);
 
-    @Query("select account from Account account join fetch account.bank order by account.name")
+    @Query("select account from Account account join fetch account.bank left join fetch account.owner order by account.name")
     List<Account> findAllWithBankOrderByName();
 
-    @Query("select account from Account account join fetch account.bank where account.owner.id = :ownerId order by account.name")
+    @Query("select account from Account account join fetch account.bank left join fetch account.owner where account.owner.id = :ownerId order by account.name")
     List<Account> findAllByOwnerIdWithBankOrderByName(@Param("ownerId") UUID ownerId);
 
     @Modifying

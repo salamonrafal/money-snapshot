@@ -64,6 +64,14 @@ public class HomeController {
         return messageBundleService.accountPageMessages(resolveLocale(lang, acceptLanguage));
     }
 
+    @GetMapping("/banks-accounts/messages")
+    public Map<String, String> banksAndAccountsMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.banksAndAccountsPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
     @GetMapping("/snapshots/messages")
     public Map<String, String> snapshotMessages(
             @RequestParam(required = false) String lang,

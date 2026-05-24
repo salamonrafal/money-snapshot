@@ -14,6 +14,7 @@ public class MessageBundleService {
             "common.delete.cancel",
             "common.delete.confirm",
             "common.nav.accounts",
+            "common.nav.banksAccounts",
             "common.nav.banks",
             "common.nav.home",
             "common.nav.language",
@@ -32,17 +33,14 @@ public class MessageBundleService {
             "home.hero.subtitle",
             "home.hero.primaryAction",
             "home.hero.snapshotsAction",
-            "home.hero.accountsAction",
-            "home.hero.secondaryAction",
+            "home.hero.banksAccountsAction",
             "home.summary.accounts",
             "home.summary.balance",
             "home.summary.change",
             "home.feature.snapshots.title",
             "home.feature.snapshots.description",
-            "home.feature.accounts.title",
-            "home.feature.accounts.description",
-            "home.feature.banks.title",
-            "home.feature.banks.description",
+            "home.feature.banksAccounts.title",
+            "home.feature.banksAccounts.description",
             "home.feature.reports.title",
             "home.feature.reports.description",
             "snapshots.actions.addBulk"
@@ -161,6 +159,31 @@ public class MessageBundleService {
             "accounts.table.title",
             "accounts.table.updatedAt"
     );
+
+    private static final Set<String> BANKS_AND_ACCOUNTS_PAGE_KEYS =
+            java.util.stream.Stream.concat(BANK_PAGE_KEYS.stream(), ACCOUNT_PAGE_KEYS.stream())
+                    .collect(java.util.stream.Collectors.collectingAndThen(
+                            java.util.stream.Collectors.toSet(),
+                            keys -> {
+                                keys.add("banksAccounts.heading.eyebrow");
+                                keys.add("banksAccounts.heading.subtitle");
+                                keys.add("banksAccounts.heading.title");
+                                keys.add("banksAccounts.aria.management");
+                                keys.add("banksAccounts.actions.info");
+                                keys.add("banksAccounts.info.accountTitle");
+                                keys.add("banksAccounts.info.bankTitle");
+                                keys.add("banksAccounts.info.close");
+                                keys.add("banksAccounts.info.title");
+                                keys.add("banksAccounts.info.createdAt");
+                                keys.add("banksAccounts.info.notAvailable");
+                                keys.add("banksAccounts.info.owner");
+                                keys.add("banksAccounts.info.updatedAt");
+                                keys.add("banksAccounts.table.accounts");
+                                keys.add("banksAccounts.table.collapse");
+                                keys.add("banksAccounts.table.expand");
+                                return Set.copyOf(keys);
+                            }
+                    ));
 
     private static final Set<String> SNAPSHOT_PAGE_KEYS = Set.of(
             "snapshots.error.accountNotFound",
@@ -397,6 +420,10 @@ public class MessageBundleService {
 
     public Map<String, String> accountPageMessages(Locale locale) {
         return messages(ACCOUNT_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> banksAndAccountsPageMessages(Locale locale) {
+        return messages(BANKS_AND_ACCOUNTS_PAGE_KEYS, locale);
     }
 
     public Map<String, String> snapshotPageMessages(Locale locale) {

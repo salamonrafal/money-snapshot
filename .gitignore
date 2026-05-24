@@ -27,6 +27,9 @@ replay_pid*
 target/
 bin/
 
+# AI help data
+.ai-data/
+
 # IDE
 .idea/
 *.iml
