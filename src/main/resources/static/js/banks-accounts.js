@@ -164,7 +164,7 @@ function renderEmpty(message) {
     tableBody.replaceChildren(row);
 }
 
-function accountsByBankName() {
+function accountsByBankId() {
     return cachedAccounts.reduce((map, account) => {
         const key = account.bankId ?? "";
         const items = map.get(key) ?? [];
@@ -271,7 +271,7 @@ function renderBankAccounts() {
         return;
     }
 
-    const accountsMap = accountsByBankName();
+    const accountsMap = accountsByBankId();
     const rows = [];
 
     cachedBanks.forEach((bank) => {
