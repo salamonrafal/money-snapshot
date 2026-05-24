@@ -36,6 +36,13 @@ if [ -z "$vault_token" ]; then
   exit 1
 fi
 
+case "$vault_token" in
+  *$'\n'*|*$'\r'*)
+    echo "VAULT_TOKEN must not contain newline or carriage return characters" >&2
+    exit 1
+    ;;
+esac
+
 if [ -z "$vault_path" ]; then
   echo "Missing required environment variable: VAULT_PATH" >&2
   exit 1

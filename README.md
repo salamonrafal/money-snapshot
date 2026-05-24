@@ -245,7 +245,7 @@ Run Docker Compose with the generated file:
 docker compose --env-file .env.tmp up -d
 ```
 
-The script expects a Vault response in KV v2 shape, where the actual secret values are under `data.data`.
+The script accepts Vault responses in KV v2 shape with secret values under `data.data`, and also KV v1-style responses with secret values directly under `data`.
 Keys missing from the Vault response keep the values from the template file.
 Vault keys that are not present in the template are ignored and are not appended to the generated env file.
 Vault values used by the script must be scalars such as strings, numbers, or booleans. Objects and arrays are rejected.
