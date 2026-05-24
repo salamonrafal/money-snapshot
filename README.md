@@ -202,6 +202,62 @@ DB_PASSWORD=<application-database-password>
 SERVER_PORT=5081
 ```
 
+## Generate env file from Vault
+
+Use `scripts/generate-env.sh` when the deployment process should fetch secrets from Vault and write them to a temporary env file before starting Docker Compose.
+
+Requirements:
+
+- `curl`
+- `python3`
+
+The script:
+
+- reads Vault connection settings from environment variables
+- fetches a JSON secret from Vault
+- uses `.env.example` as the template by default
+- writes the generated file to `.env.tmp` by default
+- replaces only keys already present in the template with values returned by Vault
+- creates the output file with owner-only permissions
+- writes the output atomically to avoid partial env files
+
+Required environment variables:
+
+- `VAULT_ADDR` or `VAULT_ADDRESS` - Vault base URL, for example `http://localhost:8200`
+- `VAULT_TOKEN` - Vault access token
+- `VAULT_PATH` - Vault API secret path, for example `secret/data/money-snapshot`
+
+Optional environment variables:
+
+- `ENV_TEMPLATE_FILE` - template file path, default: `.env.example`
+- `ENV_OUTPUT_FILE` - generated output file path, default: `.env.tmp`
+- `VAULT_CONNECT_TIMEOUT_SECONDS` - Vault connection timeout in seconds, default: `5`
+- `VAULT_MAX_TIME_SECONDS` - maximum time for a single Vault request attempt in seconds, default: `30`
+- `VAULT_RETRY_COUNT` - number of retry attempts for transient Vault request failures, default: `2`
+
+Example:
+
+```bash
+VAULT_ADDR=http://localhost:8200 \
+VAULT_TOKEN=<vault-token> \
+VAULT_PATH=secret/data/money-snapshot \
+./scripts/generate-env.sh
+```
+
+Run Docker Compose with the generated file:
+
+```bash
+docker compose --env-file .env.tmp up -d
+```
+
+The script accepts Vault responses in KV v2 shape with secret values under `data.data`, and also KV v1-style responses with secret values directly under `data`.
+Keys missing from the Vault response keep the values from the template file.
+Vault keys that are not present in the template are ignored and are not appended to the generated env file.
+Vault values used by the script must be scalars such as strings, numbers, or booleans. Objects and arrays are rejected.
+String values must be single-line. Multi-line secrets should be converted to a single-line representation such as base64 before use with this script.
+The script stores the Vault token in a temporary headers file instead of passing it directly in the `curl` command arguments.
+The generated env file contains secrets. The default `.env.tmp` path is ignored by Git, but if you override `ENV_OUTPUT_FILE`, make sure the target path is excluded from version control and handled as sensitive data.
+
 ## Create the first administrator
 
 The panel is available only after login. To create the first administrator automatically, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` before the first application start:
