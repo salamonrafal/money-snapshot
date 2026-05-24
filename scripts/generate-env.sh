@@ -62,7 +62,7 @@ trap 'rm -f "$response_file" "$headers_file"' EXIT
 
 printf 'X-Vault-Token: %s\nAccept: application/json\n' "$vault_token" > "$headers_file"
 
-http_status="$(curl -sS \
+if ! http_status="$(curl -sS \
   --connect-timeout "$vault_connect_timeout" \
   --max-time "$vault_max_time" \
   --retry "$vault_retry_count" \
@@ -70,7 +70,13 @@ http_status="$(curl -sS \
   -H @"$headers_file" \
   -o "$response_file" \
   -w "%{http_code}" \
-  "$vault_url")"
+  "$vault_url")"; then
+  echo "Vault request failed before receiving a valid HTTP response." >&2
+  if [ -s "$response_file" ]; then
+    cat "$response_file" >&2
+  fi
+  exit 1
+fi
 
 if [ "$http_status" -lt 200 ] || [ "$http_status" -ge 300 ]; then
   echo "Vault request failed with status $http_status" >&2
