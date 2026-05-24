@@ -26,6 +26,8 @@ let userSettings = null;
 let cachedBanks = [];
 let cachedAccounts = [];
 let dataLoaded = false;
+let infoModalState = null;
+let infoModalTrigger = null;
 const expandedBankIds = new Set();
 const highlightedAccountId = pageParams.get("highlightAccount") ?? "";
 
@@ -57,7 +59,19 @@ function setMessage(element, text, type = "") {
     element.dataset.type = type;
 }
 
-function openInfoModal(title, fields) {
+function renderInfoModal() {
+    if (!infoModalState) {
+        return;
+    }
+
+    const {kind, entity, accountCount = 0} = infoModalState;
+    const title = kind === "bank"
+        ? messages["banksAccounts.info.bankTitle"]
+        : messages["banksAccounts.info.accountTitle"];
+    const fields = kind === "bank"
+        ? buildBankInfoFields(entity, accountCount)
+        : buildAccountInfoFields(entity);
+
     infoModalTitle.textContent = title;
     infoModalList.replaceChildren(...fields.map(({label, value}) => {
         const fragment = document.createDocumentFragment();
@@ -68,12 +82,33 @@ function openInfoModal(title, fields) {
         fragment.append(term, detail);
         return fragment;
     }));
+}
+
+function modalFocusableElements() {
+    if (!infoModal) {
+        return [];
+    }
+
+    return [...infoModal.querySelectorAll(
+        "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
+    )].filter((element) => !element.hasAttribute("hidden"));
+}
+
+function openInfoModal(kind, entity, accountCount = 0, triggerElement = null) {
+    infoModalState = {kind, entity, accountCount};
+    infoModalTrigger = triggerElement;
+    renderInfoModal();
     infoModal.hidden = false;
     infoModalCloseButton.focus();
 }
 
 function closeInfoModal() {
+    infoModalState = null;
     infoModal.hidden = true;
+    if (infoModalTrigger instanceof HTMLElement) {
+        infoModalTrigger.focus();
+    }
+    infoModalTrigger = null;
 }
 
 function buildBankInfoFields(bank, accountCount) {
@@ -112,6 +147,9 @@ function buildAccountInfoFields(account) {
 function handleLanguageChange(nextMessages) {
     messages = nextMessages;
     document.title = `${messages["banksAccounts.heading.title"]} | ${messages["app.name"]}`;
+    if (!infoModal.hidden) {
+        renderInfoModal();
+    }
     if (dataLoaded) {
         renderBankAccounts();
     }
@@ -128,7 +166,7 @@ function renderEmpty(message) {
 
 function accountsByBankName() {
     return cachedAccounts.reduce((map, account) => {
-        const key = account.bankName ?? "";
+        const key = account.bankId ?? "";
         const items = map.get(key) ?? [];
         items.push(account);
         map.set(key, items);
@@ -193,7 +231,7 @@ function createAccountTable(accounts) {
             MoneySnapshotUi.setTooltip(infoButton, messages["banksAccounts.actions.info"]);
             infoButton.append(MoneySnapshotUi.createInfoIcon());
             infoButton.addEventListener("click", () => {
-                openInfoModal(messages["banksAccounts.info.accountTitle"], buildAccountInfoFields(account));
+                openInfoModal("account", account, 0, infoButton);
             });
 
             editButton.type = "button";
@@ -237,7 +275,7 @@ function renderBankAccounts() {
     const rows = [];
 
     cachedBanks.forEach((bank) => {
-        const bankAccounts = accountsMap.get(bank.name) ?? [];
+        const bankAccounts = accountsMap.get(bank.id) ?? [];
         const expanded = expandedBankIds.has(bank.id);
         const row = document.createElement("tr");
         row.className = "bank-summary-row";
@@ -295,7 +333,7 @@ function renderBankAccounts() {
         MoneySnapshotUi.setTooltip(infoButton, messages["banksAccounts.actions.info"]);
         infoButton.append(MoneySnapshotUi.createInfoIcon());
         infoButton.addEventListener("click", () => {
-            openInfoModal(messages["banksAccounts.info.bankTitle"], buildBankInfoFields(bank, bankAccounts.length));
+            openInfoModal("bank", bank, bankAccounts.length, infoButton);
         });
 
         editButton.type = "button";
@@ -421,6 +459,27 @@ infoModal.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !infoModal.hidden) {
         closeInfoModal();
+        return;
+    }
+
+    if (event.key === "Tab" && !infoModal.hidden) {
+        const focusable = modalFocusableElements();
+        if (focusable.length === 0) {
+            event.preventDefault();
+            return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+
+        if (event.shiftKey && active === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && active === last) {
+            event.preventDefault();
+            first.focus();
+        }
     }
 });
 
