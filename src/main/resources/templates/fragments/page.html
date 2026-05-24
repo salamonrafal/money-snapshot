@@ -34,7 +34,7 @@
                th:attr="aria-current=${activePage == 'home' ? 'page' : null}"
                data-i18n="common.nav.home">Start</a>
             <a href="/banks-accounts.html"
-               th:attr="aria-current=${activePage == 'banks-accounts' ? 'page' : null}"
+               th:attr="aria-current=${activePage == 'banks-accounts' || activePage == 'banks' || activePage == 'accounts' ? 'page' : null}"
                data-i18n="common.nav.banksAccounts">Banki i Konta</a>
             <a href="/users.html"
                sec:authorize="hasRole('ADMINISTRATOR')"

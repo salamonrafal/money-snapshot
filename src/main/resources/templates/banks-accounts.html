@@ -11,7 +11,9 @@
         <p data-i18n="banksAccounts.heading.subtitle">Przeglądaj banki i rozwijaj listę kont przypisanych do każdego z nich.</p>
     </section>
 
-    <section class="banks-accounts-panels" aria-label="Zarządzanie bankami i kontami">
+    <section class="banks-accounts-panels"
+             data-i18n-aria-label="banksAccounts.aria.management"
+             aria-label="Zarządzanie bankami i kontami">
         <section class="table-panel" aria-labelledby="bank-account-list-title">
             <div class="section-header">
                 <h2 id="bank-account-list-title" data-i18n="banksAccounts.heading.title">Banki i Konta</h2>
@@ -61,7 +63,7 @@
         'cancel-delete-account')}"></div>
 <div class="modal-backdrop" id="entity-info-modal" hidden>
     <div class="modal info-modal" role="dialog" aria-modal="true" aria-labelledby="entity-info-title">
-        <h2 id="entity-info-title">Szczegóły</h2>
+        <h2 id="entity-info-title" data-i18n="banksAccounts.info.title">Szczegóły</h2>
         <dl class="info-list" id="entity-info-list"></dl>
         <div class="modal-actions">
             <button type="button" class="button secondary" id="entity-info-close" data-i18n="banksAccounts.info.close">Zamknij</button>

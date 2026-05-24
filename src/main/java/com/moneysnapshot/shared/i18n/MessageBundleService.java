@@ -168,10 +168,12 @@ public class MessageBundleService {
                                 keys.add("banksAccounts.heading.eyebrow");
                                 keys.add("banksAccounts.heading.subtitle");
                                 keys.add("banksAccounts.heading.title");
+                                keys.add("banksAccounts.aria.management");
                                 keys.add("banksAccounts.actions.info");
                                 keys.add("banksAccounts.info.accountTitle");
                                 keys.add("banksAccounts.info.bankTitle");
                                 keys.add("banksAccounts.info.close");
+                                keys.add("banksAccounts.info.title");
                                 keys.add("banksAccounts.info.createdAt");
                                 keys.add("banksAccounts.info.notAvailable");
                                 keys.add("banksAccounts.info.owner");
