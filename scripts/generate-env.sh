@@ -67,8 +67,9 @@ normalized_addr="${vault_addr%/}"
 normalized_path="${vault_path#/}"
 vault_url="$normalized_addr/v1/$normalized_path"
 
-response_file="$(mktemp)"
-headers_file="$(mktemp)"
+tmp_dir="${TMPDIR:-/tmp}"
+response_file="$(mktemp "$tmp_dir/generate-env-response.XXXXXX")"
+headers_file="$(mktemp "$tmp_dir/generate-env-headers.XXXXXX")"
 trap 'rm -f "$response_file" "$headers_file"' EXIT
 
 printf 'X-Vault-Token: %s\nAccept: application/json\n' "$vault_token" > "$headers_file"
@@ -125,7 +126,7 @@ result_lines = []
 
 def format_env_value(value):
     if isinstance(value, str):
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, (int, float)):
