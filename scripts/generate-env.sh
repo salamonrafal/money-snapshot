@@ -46,9 +46,9 @@ if [ ! -f "$template_file" ]; then
   exit 1
 fi
 
-template_realpath="$(realpath "$template_file")"
 output_parent_dir="$(dirname "$output_file")"
 mkdir -p "$output_parent_dir"
+template_realpath="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$template_file")"
 output_realpath="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$output_file")"
 
 if [ "$template_realpath" = "$output_realpath" ]; then
