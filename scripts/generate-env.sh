@@ -41,6 +41,17 @@ if [ ! -f "$template_file" ]; then
   exit 1
 fi
 
+template_realpath="$(realpath "$template_file")"
+output_parent_dir="$(dirname "$output_file")"
+mkdir -p "$output_parent_dir"
+touch "$output_file"
+output_realpath="$(realpath "$output_file")"
+
+if [ "$template_realpath" = "$output_realpath" ]; then
+  echo "Output file must be different from the template file: $output_file" >&2
+  exit 1
+fi
+
 normalized_addr="${vault_addr%/}"
 normalized_path="${vault_path#/}"
 vault_url="$normalized_addr/v1/$normalized_path"
