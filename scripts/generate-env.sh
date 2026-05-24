@@ -12,6 +12,11 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+curl_retry_all_errors_args=()
+if curl --help all 2>/dev/null | grep -q -- '--retry-all-errors'; then
+  curl_retry_all_errors_args+=(--retry-all-errors)
+fi
+
 vault_addr="${VAULT_ADDR:-${VAULT_ADDRESS:-}}"
 vault_token="${VAULT_TOKEN:-}"
 vault_path="${VAULT_PATH:-}"
@@ -44,8 +49,7 @@ fi
 template_realpath="$(realpath "$template_file")"
 output_parent_dir="$(dirname "$output_file")"
 mkdir -p "$output_parent_dir"
-touch "$output_file"
-output_realpath="$(realpath "$output_file")"
+output_realpath="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$output_file")"
 
 if [ "$template_realpath" = "$output_realpath" ]; then
   echo "Output file must be different from the template file: $output_file" >&2
@@ -66,7 +70,7 @@ if ! http_status="$(curl -sS \
   --connect-timeout "$vault_connect_timeout" \
   --max-time "$vault_max_time" \
   --retry "$vault_retry_count" \
-  --retry-all-errors \
+  "${curl_retry_all_errors_args[@]}" \
   -H @"$headers_file" \
   -o "$response_file" \
   -w "%{http_code}" \
