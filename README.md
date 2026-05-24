@@ -202,6 +202,47 @@ DB_PASSWORD=<application-database-password>
 SERVER_PORT=5081
 ```
 
+## Generate env file from Vault
+
+Use `scripts/generate-env.sh` when the deployment process should fetch secrets from Vault and write them to a temporary env file before starting Docker Compose.
+
+The script:
+
+- reads Vault connection settings from environment variables
+- fetches a JSON secret from Vault
+- uses `.env.example` as the template by default
+- writes the generated file to `.env.tmp` by default
+- replaces matching keys from the template with values returned by Vault
+
+Required environment variables:
+
+- `VAULT_ADDR` or `VAULT_ADDRESS` - Vault base URL, for example `http://localhost:8200`
+- `VAULT_TOKEN` - Vault access token
+- `VAULT_PATH` - Vault API secret path, for example `secret/data/money-snapshot`
+
+Optional environment variables:
+
+- `ENV_TEMPLATE_FILE` - template file path, default: `.env.example`
+- `ENV_OUTPUT_FILE` - generated output file path, default: `.env.tmp`
+
+Example:
+
+```bash
+VAULT_ADDR=http://localhost:8200 \
+VAULT_TOKEN=<vault-token> \
+VAULT_PATH=secret/data/money-snapshot \
+./scripts/generate-env.sh
+```
+
+Run Docker Compose with the generated file:
+
+```bash
+docker compose --env-file .env.tmp up -d
+```
+
+The script expects a Vault response in KV v2 shape, where the actual secret values are under `data.data`.
+Keys missing from the Vault response keep the values from the template file.
+
 ## Create the first administrator
 
 The panel is available only after login. To create the first administrator automatically, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` before the first application start:
