@@ -6,13 +6,48 @@ const accountTypeSelect = document.querySelector("#account-type");
 const accountCurrencySelect = document.querySelector("#account-currency");
 const accountStatusSelect = document.querySelector("#account-status");
 const accountDescriptionInput = document.querySelector("#account-description");
+const cancelLink = document.querySelector(".split-actions a.button.secondary");
 
 const formMode = accountForm.dataset.mode;
 const accountId = accountForm.dataset.accountId;
+const searchParams = new URLSearchParams(window.location.search);
+const preselectedBankName = searchParams.get("bank") ?? "";
+const returnTo = searchParams.get("returnTo") ?? "";
 
 let messages = {};
 let cachedBanks = [];
 let loadedAccount = null;
+
+function resolveRedirectUrl() {
+    if (returnTo.startsWith("/")) {
+        return returnTo;
+    }
+
+    return "/accounts.html";
+}
+
+function syncCancelLink() {
+    if (!cancelLink) {
+        return;
+    }
+
+    cancelLink.href = resolveRedirectUrl();
+}
+
+function buildReturnUrl(savedAccount) {
+    if (!returnTo.startsWith("/")) {
+        return resolveRedirectUrl();
+    }
+
+    const url = new URL(returnTo, window.location.origin);
+    if (savedAccount?.bankId) {
+        url.searchParams.set("expandBank", savedAccount.bankId);
+    }
+    if (savedAccount?.id) {
+        url.searchParams.set("highlightAccount", savedAccount.id);
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+}
 
 function handleLanguageChange(nextMessages) {
     messages = nextMessages;
@@ -27,7 +62,7 @@ function setFormMessage(text, type = "") {
 }
 
 function renderBankOptions() {
-    const selectedValue = accountBankSelect.value || loadedAccount?.bankName || "";
+    const selectedValue = accountBankSelect.value || loadedAccount?.bankName || (formMode === "create" ? preselectedBankName : "");
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = messages["accounts.form.bankPlaceholder"] ?? "";
@@ -126,8 +161,8 @@ accountForm.addEventListener("submit", async (event) => {
     setFormMessage("");
 
     try {
-        await saveAccount(payload);
-        window.location.href = "/accounts.html";
+        const savedAccount = await saveAccount(payload);
+        window.location.href = buildReturnUrl(savedAccount);
     } catch (error) {
         setFormMessage(error.message, "error");
         accountForm.querySelector("button[type='submit']").disabled = false;
@@ -141,6 +176,9 @@ MoneySnapshotI18n.init({
         handleLanguageChange(messages);
     }
 })
+        .then(() => {
+            syncCancelLink();
+        })
         .then(loadBanks)
         .then(loadAccount)
         .catch((error) => {

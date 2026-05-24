@@ -11,6 +11,7 @@ public record AccountResponse(
         String bankName,
         String accountName,
         String normalizedName,
+        String ownerName,
         String accountTypeCode,
         String currencyCode,
         String description,
@@ -20,12 +21,16 @@ public record AccountResponse(
 ) {
 
     public static AccountResponse from(Account account) {
+        String ownerName = account.getOwner() == null
+                ? null
+                : account.getOwner().getFirstName() + " " + account.getOwner().getLastName();
         return new AccountResponse(
                 account.getId(),
                 account.getBank().getId(),
                 account.getBank().getName(),
                 account.getName(),
                 account.getNormalizedName(),
+                ownerName,
                 account.getAccountTypeCode(),
                 account.getCurrencyCode(),
                 account.getDescription(),

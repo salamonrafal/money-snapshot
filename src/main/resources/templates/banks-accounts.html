@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Banki i Konta | Money Snapshot', 'banks-accounts.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('banks-accounts')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="banksAccounts.heading.eyebrow">Wspólny rejestr</p>
+        <h1 data-i18n="banksAccounts.heading.title">Banki i Konta</h1>
+        <p data-i18n="banksAccounts.heading.subtitle">Przeglądaj banki i rozwijaj listę kont przypisanych do każdego z nich.</p>
+    </section>
+
+    <section class="banks-accounts-panels" aria-label="Zarządzanie bankami i kontami">
+        <section class="table-panel" aria-labelledby="bank-account-list-title">
+            <div class="section-header">
+                <h2 id="bank-account-list-title" data-i18n="banksAccounts.heading.title">Banki i Konta</h2>
+                <div class="section-actions">
+                    <a href="/banks/new.html?returnTo=%2Fbanks-accounts.html" class="button primary compact" data-i18n="banks.actions.add">Nowy bank</a>
+                    <a href="/accounts/new.html?returnTo=%2Fbanks-accounts.html" class="button secondary compact" data-i18n="accounts.actions.add">Dodaj konto</a>
+                    <button type="button" class="button secondary compact" id="refresh-bank-account-list" data-i18n="banks.actions.refresh">Odśwież</button>
+                </div>
+            </div>
+            <p class="form-message" id="bank-account-list-message" role="status"></p>
+            <div class="table-wrap banks-accounts-table-wrap">
+                <table class="banks-accounts-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="banks.table.name">Nazwa</th>
+                        <th data-i18n="banks.table.normalizedName">Normalizacja</th>
+                        <th data-i18n="banksAccounts.table.accounts">Konta</th>
+                        <th data-i18n="banks.table.actions">Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody id="bank-account-table-body">
+                    <tr>
+                        <td colspan="4" data-i18n="banks.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</main>
+
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-bank-modal',
+        'delete-bank-title',
+        'banks.delete.title',
+        'banks.delete.message',
+        'delete-bank-name',
+        'confirm-delete-bank',
+        'cancel-delete-bank')}"></div>
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-account-modal',
+        'delete-account-title',
+        'accounts.delete.title',
+        'accounts.delete.message',
+        'delete-account-name',
+        'confirm-delete-account',
+        'cancel-delete-account')}"></div>
+<div class="modal-backdrop" id="entity-info-modal" hidden>
+    <div class="modal info-modal" role="dialog" aria-modal="true" aria-labelledby="entity-info-title">
+        <h2 id="entity-info-title">Szczegóły</h2>
+        <dl class="info-list" id="entity-info-list"></dl>
+        <div class="modal-actions">
+            <button type="button" class="button secondary" id="entity-info-close" data-i18n="banksAccounts.info.close">Zamknij</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

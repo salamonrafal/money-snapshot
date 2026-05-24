@@ -86,6 +86,51 @@ window.MoneySnapshotUi = (() => {
         return icon;
     }
 
+    function createAddIcon() {
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "2");
+        icon.setAttribute("stroke-linecap", "round");
+        icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
+
+        [
+            "M12 5v14",
+            "M5 12h14"
+        ].forEach((value) => {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", value);
+            icon.append(path);
+        });
+
+        return icon;
+    }
+
+    function createInfoIcon() {
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "2");
+        icon.setAttribute("stroke-linecap", "round");
+        icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
+
+        [
+            "M12 16v-4",
+            "M12 8h.01",
+            "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"
+        ].forEach((value) => {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", value);
+            icon.append(path);
+        });
+
+        return icon;
+    }
+
     function setTooltip(element, label) {
         if (!element) {
             return;
@@ -304,9 +349,11 @@ window.MoneySnapshotUi = (() => {
     return {
         bulkSnapshotSuccessKey,
         clearUserSettingsCache,
+        createAddIcon,
         createConfirmModal,
         createClearFiltersIcon,
         createEditIcon,
+        createInfoIcon,
         setTooltip,
         createTrashIcon,
         initializeMobileNavigation,

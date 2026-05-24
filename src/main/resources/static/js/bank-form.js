@@ -1,10 +1,28 @@
 const bankForm = document.querySelector("#bank-form");
 const bankNameInput = document.querySelector("#bank-name");
 const formMessage = document.querySelector("#bank-form-message");
+const cancelLink = document.querySelector(".split-actions a.button.secondary");
 const formMode = bankForm.dataset.mode;
 const bankId = bankForm.dataset.bankId;
+const returnTo = new URLSearchParams(window.location.search).get("returnTo") ?? "";
 
 let messages = {};
+
+function resolveRedirectUrl() {
+    if (returnTo.startsWith("/")) {
+        return returnTo;
+    }
+
+    return "/banks.html";
+}
+
+function syncCancelLink() {
+    if (!cancelLink) {
+        return;
+    }
+
+    cancelLink.href = resolveRedirectUrl();
+}
 
 function handleLanguageChange(nextMessages) {
     messages = nextMessages;
@@ -74,7 +92,7 @@ bankForm.addEventListener("submit", async (event) => {
 
     try {
         await saveBank(name);
-        window.location.href = "/banks.html";
+        window.location.href = resolveRedirectUrl();
     } catch (error) {
         setFormMessage(error.message, "error");
         bankForm.querySelector("button[type='submit']").disabled = false;
@@ -88,6 +106,9 @@ MoneySnapshotI18n.init({
         handleLanguageChange(messages);
     }
 })
+        .then(() => {
+            syncCancelLink();
+        })
         .then(loadBank)
         .catch((error) => {
             setFormMessage(error.message, "error");

@@ -24,7 +24,7 @@ public class SecurityConfiguration {
     ) throws Exception {
         HttpSecurity security = http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/css/**", "/js/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/login", "/api/login/messages").permitAll()
                         .requestMatchers("/api/users/me", "/api/users/me/settings").authenticated()
                         .requestMatchers("/users.html", "/users/**", "/api/users/**", "/api/roles").hasRole(Role.ADMINISTRATOR)

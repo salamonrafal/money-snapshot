@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title}">Money Snapshot</title>
-    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260519-bulk-snapshots')}">
+    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260523-favicon-fix')}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/money_snapshot_mark.svg}">
     <script defer th:src="@{/js/i18n.js(v='20260519-bulk-snapshots')}"></script>
     <script defer th:src="@{/js/shared-ui.js(v='20260519-bulk-snapshots')}"></script>
     <script defer th:src="@{/js/{script}(script=${pageScript},v='20260519-bulk-snapshots')}"></script>
@@ -12,7 +13,7 @@
 <body>
 <header class="topbar" th:fragment="header(activePage)">
     <a class="brand" href="/" aria-label="Money Snapshot">
-        <span class="brand-mark">MS</span>
+        <img class="brand-icon" th:src="@{/images/money_snapshot_mark.svg}" alt="" width="40" height="40">
         <span data-i18n="app.name">Money Snapshot</span>
     </a>
     <button type="button"
@@ -32,12 +33,9 @@
             <a href="/"
                th:attr="aria-current=${activePage == 'home' ? 'page' : null}"
                data-i18n="common.nav.home">Start</a>
-            <a href="/banks.html"
-               th:attr="aria-current=${activePage == 'banks' ? 'page' : null}"
-               data-i18n="common.nav.banks">Banki</a>
-            <a href="/accounts.html"
-               th:attr="aria-current=${activePage == 'accounts' ? 'page' : null}"
-               data-i18n="common.nav.accounts">Konta</a>
+            <a href="/banks-accounts.html"
+               th:attr="aria-current=${activePage == 'banks-accounts' ? 'page' : null}"
+               data-i18n="common.nav.banksAccounts">Banki i Konta</a>
             <a href="/users.html"
                sec:authorize="hasRole('ADMINISTRATOR')"
                th:attr="aria-current=${activePage == 'users' ? 'page' : null}"

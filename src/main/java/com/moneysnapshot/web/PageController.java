@@ -47,6 +47,11 @@ public class PageController {
         return "accounts";
     }
 
+    @GetMapping("/banks-accounts.html")
+    public String banksAndAccounts() {
+        return "banks-accounts";
+    }
+
     @GetMapping("/reports.html")
     public String reports() {
         return "reports";
