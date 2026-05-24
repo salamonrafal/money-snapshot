@@ -17,6 +17,9 @@ vault_token="${VAULT_TOKEN:-}"
 vault_path="${VAULT_PATH:-}"
 template_file="${ENV_TEMPLATE_FILE:-.env.example}"
 output_file="${ENV_OUTPUT_FILE:-.env.tmp}"
+vault_connect_timeout="${VAULT_CONNECT_TIMEOUT_SECONDS:-5}"
+vault_max_time="${VAULT_MAX_TIME_SECONDS:-30}"
+vault_retry_count="${VAULT_RETRY_COUNT:-2}"
 
 if [ -z "$vault_addr" ]; then
   echo "Missing required environment variable: VAULT_ADDR or VAULT_ADDRESS" >&2
@@ -49,6 +52,10 @@ trap 'rm -f "$response_file" "$headers_file"' EXIT
 printf 'X-Vault-Token: %s\nAccept: application/json\n' "$vault_token" > "$headers_file"
 
 http_status="$(curl -sS \
+  --connect-timeout "$vault_connect_timeout" \
+  --max-time "$vault_max_time" \
+  --retry "$vault_retry_count" \
+  --retry-all-errors \
   -H @"$headers_file" \
   -o "$response_file" \
   -w "%{http_code}" \
@@ -70,7 +77,10 @@ response_path = pathlib.Path(sys.argv[1])
 template_path = pathlib.Path(sys.argv[2])
 output_path = pathlib.Path(sys.argv[3])
 
-payload = json.loads(response_path.read_text())
+try:
+    payload = json.loads(response_path.read_text())
+except json.JSONDecodeError as exc:
+    raise SystemExit(f"Vault response is not valid JSON: {exc}")
 if isinstance(payload.get("errors"), list) and payload["errors"]:
     raise SystemExit("Vault returned errors: " + "; ".join(str(item) for item in payload["errors"]))
 
