@@ -76,7 +76,7 @@ public class SavingsForecastService {
         Map<UUID, AccountSnapshot> latestSnapshotsByAccountId = snapshotRepository
                 .findLatestByOwnerIdBeforeOrOnDateWithAccountOrderByAccountName(ownerId, request.forecastStartDate())
                 .stream()
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         snapshot -> snapshot.getAccount().getId(),
                         Function.identity()
                 ));
@@ -93,9 +93,12 @@ public class SavingsForecastService {
 
         List<SavingsForecastEntry> savedEntries = entryRepository.saveAll(entries);
         List<LocalDate> forecastMonths = buildForecastMonths(run.getForecastStartDate(), run.getDurationMonths());
-        List<SavingsForecastMonthValue> savedMonthValues = monthValueRepository.saveAll(buildMonthValues(savedEntries, forecastMonths));
+        Map<UUID, List<MonthBalance>> monthlyBalancesByEntryId = buildMonthlyBalancesByEntryId(savedEntries, forecastMonths);
+        List<SavingsForecastMonthValue> savedMonthValues = monthValueRepository.saveAll(
+                buildMonthValues(savedEntries, monthlyBalancesByEntryId)
+        );
         List<SavingsForecastMonthSummary> savedMonthSummaries = monthSummaryRepository.saveAll(
-                buildMonthSummaries(run, savedEntries, forecastMonths)
+                buildMonthSummaries(run, savedEntries, monthlyBalancesByEntryId)
         );
         return toResponse(run, savedEntries, savedMonthValues, savedMonthSummaries);
     }
@@ -209,13 +212,27 @@ public class SavingsForecastService {
         return values;
     }
 
-    private List<SavingsForecastMonthValue> buildMonthValues(
+    private Map<UUID, List<MonthBalance>> buildMonthlyBalancesByEntryId(
             List<SavingsForecastEntry> entries,
             List<LocalDate> forecastMonths
     ) {
-        List<SavingsForecastMonthValue> values = new ArrayList<>(entries.size() * forecastMonths.size());
+        Map<UUID, List<MonthBalance>> monthlyBalancesByEntryId = new java.util.LinkedHashMap<>();
         for (SavingsForecastEntry entry : entries) {
-            for (MonthBalance monthBalance : buildMonthlyBalances(entry, forecastMonths)) {
+            monthlyBalancesByEntryId.put(entry.getId(), buildMonthlyBalances(entry, forecastMonths));
+        }
+        return monthlyBalancesByEntryId;
+    }
+
+    private List<SavingsForecastMonthValue> buildMonthValues(
+            List<SavingsForecastEntry> entries,
+            Map<UUID, List<MonthBalance>> monthlyBalancesByEntryId
+    ) {
+        int totalMonthValues = monthlyBalancesByEntryId.values().stream()
+                .mapToInt(List::size)
+                .sum();
+        List<SavingsForecastMonthValue> values = new ArrayList<>(totalMonthValues);
+        for (SavingsForecastEntry entry : entries) {
+            for (MonthBalance monthBalance : monthlyBalancesByEntryId.getOrDefault(entry.getId(), List.of())) {
                 values.add(new SavingsForecastMonthValue(entry, monthBalance.forecastMonth(), monthBalance.balance()));
             }
         }
@@ -225,13 +242,12 @@ public class SavingsForecastService {
     private List<SavingsForecastMonthSummary> buildMonthSummaries(
             SavingsForecastRun run,
             List<SavingsForecastEntry> entries,
-            List<LocalDate> forecastMonths
+            Map<UUID, List<MonthBalance>> monthlyBalancesByEntryId
     ) {
         Map<MonthCurrencyKey, BigDecimal> totalsByMonthAndCurrency = new java.util.LinkedHashMap<>();
 
         for (SavingsForecastEntry entry : entries) {
-            List<MonthBalance> values = buildMonthlyBalances(entry, forecastMonths);
-            for (MonthBalance value : values) {
+            for (MonthBalance value : monthlyBalancesByEntryId.getOrDefault(entry.getId(), List.of())) {
                 MonthCurrencyKey key = new MonthCurrencyKey(
                         value.forecastMonth(),
                         entry.getAccount().getCurrencyCode()
