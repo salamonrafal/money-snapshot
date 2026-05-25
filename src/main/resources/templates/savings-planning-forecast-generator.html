@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Generowanie prognoz | Money Snapshot', 'savings-planning-forecast-generator.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('savings-planning')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="savingsPlanningGenerator.heading.eyebrow">Nowy zestaw prognoz</p>
+        <h1 data-i18n="savingsPlanningGenerator.heading.title">Generowanie prognoz oszczędności</h1>
+        <p data-i18n="savingsPlanningGenerator.heading.subtitle">Wygeneruj prognozy dla wszystkich kont na podstawie zapisanych miesięcznych wpłat i ostatnich sald.</p>
+    </section>
+
+    <section class="management-layout single-column" data-i18n-aria-label="savingsPlanningGenerator.aria.form" aria-label="Generowanie prognoz oszczędności">
+        <form class="editor-panel wide-panel" id="savings-planning-generator-form">
+            <h2 data-i18n="savingsPlanningGenerator.form.title">Parametry prognozy</h2>
+            <div class="planner-warning" id="savings-planning-generator-warning" hidden>
+                <span class="planner-warning-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 10v6"></path>
+                        <path d="M12 7h.01"></path>
+                    </svg>
+                </span>
+                <div class="planner-warning-copy">
+                    <strong data-i18n="savingsPlanningGenerator.warning.title">Aktywny plan oszczędnościowy</strong>
+                    <p id="savings-planning-generator-warning-text" data-i18n="savingsPlanningGenerator.warning.description">Istnieje już nieukończony plan oszczędnościowy.</p>
+                </div>
+            </div>
+            <label class="field">
+                <span data-i18n="savingsPlanningGenerator.form.startDate">Od kiedy</span>
+                <input id="savings-planning-generator-start-date" type="date" required>
+            </label>
+            <label class="field">
+                <span data-i18n="savingsPlanningGenerator.form.duration">Czas trwania</span>
+                <input id="savings-planning-generator-duration"
+                       type="range"
+                       min="0"
+                       max="4"
+                       step="1"
+                       value="1"
+                       list="savings-planning-generator-duration-options">
+                <datalist id="savings-planning-generator-duration-options">
+                    <option value="0"></option>
+                    <option value="1"></option>
+                    <option value="2"></option>
+                    <option value="3"></option>
+                    <option value="4"></option>
+                </datalist>
+                <div class="range-ticks" aria-hidden="true">
+                    <span data-i18n="savingsPlanningGenerator.form.duration.6m">6 miesięcy</span>
+                    <span data-i18n="savingsPlanningGenerator.form.duration.1y">1 rok</span>
+                    <span data-i18n="savingsPlanningGenerator.form.duration.2y">2 lata</span>
+                    <span data-i18n="savingsPlanningGenerator.form.duration.5y">5 lat</span>
+                    <span data-i18n="savingsPlanningGenerator.form.duration.10y">10 lat</span>
+                </div>
+                <span class="range-value" id="savings-planning-generator-duration-value">1 rok</span>
+            </label>
+            <p class="form-helper" data-i18n="savingsPlanningGenerator.form.hint">Generowanie obejmuje wszystkie konta użytkownika z ostatnim znanym saldem oraz ustawioną miesięczną wpłatą.</p>
+            <div class="form-actions">
+                <a href="/savings-planning.html" class="button secondary" data-i18n="savingsPlanningGenerator.actions.back">Powrót</a>
+                <button type="submit" class="button primary" data-i18n="savingsPlanningGenerator.form.submit">Generuj prognozy</button>
+            </div>
+            <p class="form-message" id="savings-planning-generator-message" role="status"></p>
+        </form>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Planowanie oszczędności | Money Snapshot', 'savings-planning.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('savings-planning')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="savingsPlanning.heading.eyebrow">Cele i odkładanie</p>
+        <h1 data-i18n="savingsPlanning.heading.title">Planowanie oszczędności</h1>
+        <p data-i18n="savingsPlanning.heading.subtitle">Przygotuj strukturę pod cele oszczędnościowe, harmonogram odkładania i kolejne etapy rozwoju modułu.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide" aria-labelledby="savings-planning-controls-title">
+        <div class="section-header">
+            <h2 id="savings-planning-controls-title" data-i18n="savingsPlanning.table.title">Prognoza oszczędnościowa</h2>
+            <div class="section-actions">
+                <a href="/savings-planning/settings.html" class="button secondary compact" data-i18n="savingsPlanning.actions.settings">Ustawienia oszczędności</a>
+                <a href="/savings-planning/forecasts/new.html" class="button primary compact" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
+                <button type="button" class="button danger compact" id="delete-savings-planning-forecasts" data-i18n="savingsPlanning.actions.clear" disabled>Wyczyść prognozy</button>
+                <button type="button" class="button secondary compact" id="refresh-savings-planning" data-i18n="savingsPlanning.actions.refresh">Odśwież</button>
+            </div>
+        </div>
+        <p class="form-message" id="savings-planning-message" role="status"></p>
+        <div class="savings-forecast-summary" id="savings-planning-summary" hidden>
+            <span><strong data-i18n="savingsPlanning.summary.generatedAt">Wygenerowano</strong>: <span id="savings-planning-generated-at">-</span></span>
+            <span><strong data-i18n="savingsPlanning.summary.period">Okres</strong>: <span id="savings-planning-period">-</span></span>
+            <span><strong data-i18n="savingsPlanning.summary.duration">Czas trwania</strong>: <span id="savings-planning-duration">-</span></span>
+            <span><strong data-i18n="savingsPlanning.summary.accounts">Konta</strong>: <span id="savings-planning-account-count">0</span></span>
+        </div>
+        <div class="savings-forecast-empty" id="savings-planning-empty-state" hidden>
+            <h3 data-i18n="savingsPlanning.empty.title">Brak wygenerowanych prognoz</h3>
+            <p data-i18n="savingsPlanning.empty.description">Wygeneruj pierwszy zestaw prognoz, aby zobaczyć przewidywane salda dla wszystkich kont.</p>
+            <a href="/savings-planning/forecasts/new.html" class="button primary" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
+        </div>
+        <div class="table-wrap" id="savings-planning-table-wrap" hidden>
+            <table class="savings-forecast-table">
+                <colgroup id="savings-planning-table-colgroup">
+                    <col class="savings-forecast-date-col">
+                </colgroup>
+                <thead id="savings-planning-table-head">
+                <tr id="savings-planning-table-head-row">
+                    <th data-i18n="savingsPlanning.table.date">Data</th>
+                </tr>
+                </thead>
+                <tbody id="savings-planning-table-body">
+                <tr class="savings-forecast-empty-row">
+                    <td class="savings-forecast-empty-cell" colspan="1" data-i18n="savingsPlanning.loading">Ładowanie...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-savings-forecasts-modal',
+        'delete-savings-forecasts-title',
+        'savingsPlanning.delete.title',
+        'savingsPlanning.delete.message',
+        'delete-savings-forecasts-subject',
+        'confirm-delete-savings-forecasts',
+        'cancel-delete-savings-forecasts')}"></div>
+</body>
+</html>

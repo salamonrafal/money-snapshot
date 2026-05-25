@@ -57,6 +57,21 @@ public class PageController {
         return "reports";
     }
 
+    @GetMapping("/savings-planning.html")
+    public String savingsPlanning() {
+        return "savings-planning";
+    }
+
+    @GetMapping("/savings-planning/settings.html")
+    public String savingsPlanningSettings() {
+        return "savings-planning-settings";
+    }
+
+    @GetMapping("/savings-planning/forecasts/new.html")
+    public String savingsPlanningForecastGenerator() {
+        return "savings-planning-forecast-generator";
+    }
+
     @GetMapping("/users.html")
     public String users() {
         return "users";

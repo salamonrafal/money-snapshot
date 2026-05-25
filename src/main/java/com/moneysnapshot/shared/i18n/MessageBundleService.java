@@ -43,7 +43,99 @@ public class MessageBundleService {
             "home.feature.banksAccounts.description",
             "home.feature.reports.title",
             "home.feature.reports.description",
+            "home.feature.savingsPlanning.title",
+            "home.feature.savingsPlanning.description",
+            "home.feature.savingsPlanning.action",
             "snapshots.actions.addBulk"
+    );
+
+    private static final Set<String> SAVINGS_PLANNING_PAGE_KEYS = Set.of(
+            "savingsPlanning.heading.eyebrow",
+            "savingsPlanning.heading.title",
+            "savingsPlanning.heading.subtitle",
+            "savingsPlanning.actions.generate",
+            "savingsPlanning.actions.settings",
+            "savingsPlanning.actions.clear",
+            "savingsPlanning.actions.refresh",
+            "savingsPlanning.delete.title",
+            "savingsPlanning.delete.message",
+            "savingsPlanning.delete.subject",
+            "savingsPlanning.delete.success",
+            "savingsPlanning.empty.title",
+            "savingsPlanning.empty.description",
+            "savingsPlanning.summary.generatedAt",
+            "savingsPlanning.summary.period",
+            "savingsPlanning.summary.accounts",
+            "savingsPlanning.summary.duration",
+            "savingsPlanning.table.title",
+            "savingsPlanning.table.date",
+            "savingsPlanning.table.summary",
+            "savingsPlanning.table.account",
+            "savingsPlanning.table.bank",
+            "savingsPlanning.table.type",
+            "savingsPlanning.table.currency",
+            "savingsPlanning.table.snapshotDate",
+            "savingsPlanning.table.startBalance",
+            "savingsPlanning.table.monthlyContribution",
+            "savingsPlanning.table.projectedBalance",
+            "savingsPlanning.loading",
+            "savingsPlanning.error.load",
+            "savingsPlanning.error.delete",
+            "savingsPlanningGenerator.form.duration.6m",
+            "savingsPlanningGenerator.form.duration.1y",
+            "savingsPlanningGenerator.form.duration.2y",
+            "savingsPlanningGenerator.form.duration.5y",
+            "savingsPlanningGenerator.form.duration.10y",
+            "accounts.accountType.BANK_ACCOUNT",
+            "accounts.accountType.CASH",
+            "accounts.accountType.INVESTMENT",
+            "accounts.accountType.SAVINGS"
+    );
+
+    private static final Set<String> SAVINGS_PLANNING_SETTINGS_PAGE_KEYS = Set.of(
+            "savingsPlanning.heading.title",
+            "savingsPlanningSettings.heading.eyebrow",
+            "savingsPlanningSettings.heading.title",
+            "savingsPlanningSettings.heading.subtitle",
+            "savingsPlanningSettings.table.title",
+            "savingsPlanningSettings.table.account",
+            "savingsPlanningSettings.table.bank",
+            "savingsPlanningSettings.table.currency",
+            "savingsPlanningSettings.table.forecast",
+            "savingsPlanningSettings.empty",
+            "savingsPlanningSettings.loading",
+            "savingsPlanningSettings.actions.back",
+            "savingsPlanningSettings.actions.refresh",
+            "savingsPlanningSettings.form.submit",
+            "savingsPlanningSettings.form.success",
+            "savingsPlanningSettings.form.required",
+            "savingsPlanningSettings.form.hint",
+            "savingsPlanningSettings.error.load",
+            "savingsPlanningSettings.error.update"
+    );
+
+    private static final Set<String> SAVINGS_PLANNING_GENERATOR_PAGE_KEYS = Set.of(
+            "savingsPlanningGenerator.heading.eyebrow",
+            "savingsPlanningGenerator.heading.title",
+            "savingsPlanningGenerator.heading.subtitle",
+            "savingsPlanningGenerator.aria.form",
+            "savingsPlanningGenerator.form.title",
+            "savingsPlanningGenerator.form.startDate",
+            "savingsPlanningGenerator.form.duration",
+            "savingsPlanningGenerator.form.duration.6m",
+            "savingsPlanningGenerator.form.duration.1y",
+            "savingsPlanningGenerator.form.duration.2y",
+            "savingsPlanningGenerator.form.duration.5y",
+            "savingsPlanningGenerator.form.duration.10y",
+            "savingsPlanningGenerator.form.hint",
+            "savingsPlanningGenerator.form.submit",
+            "savingsPlanningGenerator.form.required",
+            "savingsPlanningGenerator.form.success",
+            "savingsPlanningGenerator.warning.title",
+            "savingsPlanningGenerator.warning.description",
+            "savingsPlanningGenerator.actions.back",
+            "savingsPlanningGenerator.error.generate",
+            "savingsPlanningGenerator.error.loadPlan"
     );
 
     private static final Set<String> LOGIN_PAGE_KEYS = Set.of(
@@ -444,6 +536,18 @@ public class MessageBundleService {
 
     public Map<String, String> settingsPageMessages(Locale locale) {
         return messages(SETTINGS_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> savingsPlanningPageMessages(Locale locale) {
+        return messages(SAVINGS_PLANNING_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> savingsPlanningSettingsPageMessages(Locale locale) {
+        return messages(SAVINGS_PLANNING_SETTINGS_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> savingsPlanningGeneratorPageMessages(Locale locale) {
+        return messages(SAVINGS_PLANNING_GENERATOR_PAGE_KEYS, locale);
     }
 
     private Map<String, String> messages(Set<String> keys, Locale locale) {

@@ -1,12 +1,16 @@
 package com.moneysnapshot.account;
 
 import com.moneysnapshot.account.web.CreateAccountRequest;
+import com.moneysnapshot.account.web.SavingsContributionSettingRequest;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.shared.normalization.NameNormalizationService;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -63,6 +67,7 @@ public class AccountService {
                 normalizeAccountTypeCode(request.accountTypeCode()),
                 request.currencyCode().trim().toUpperCase(),
                 normalizeDescription(request.description()),
+                normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution()),
                 status
         );
 
@@ -84,6 +89,9 @@ public class AccountService {
         Bank bank = bankRepository.findByOwnerIdAndNormalizedName(owner.getId(), normalizedBankName)
                 .orElseGet(() -> bankRepository.save(new Bank(owner, request.bankName().trim(), normalizedBankName)));
         AccountStatus status = request.status() == null ? AccountStatus.ACTIVE : request.status();
+        BigDecimal forecastedMonthlyContribution = request.forecastedMonthlyContribution() == null
+                ? account.getForecastedMonthlyContribution()
+                : normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution());
 
         account.updateDetails(
                 bank,
@@ -92,6 +100,7 @@ public class AccountService {
                 normalizeAccountTypeCode(request.accountTypeCode()),
                 request.currencyCode().trim().toUpperCase(),
                 normalizeDescription(request.description()),
+                forecastedMonthlyContribution,
                 status
         );
 
@@ -105,6 +114,35 @@ public class AccountService {
         eventPublisher.publishEvent(new AccountDeletionRequestedEvent(id));
         accountRepository.deleteById(id);
         accountRepository.flush();
+    }
+
+    @Transactional
+    public List<Account> updateForecastedMonthlyContributions(List<SavingsContributionSettingRequest> requests) {
+        UUID ownerId = currentUserService.currentUserId();
+        Map<UUID, SavingsContributionSettingRequest> requestsByAccountId = requests.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        SavingsContributionSettingRequest::accountId,
+                        Function.identity(),
+                        (left, right) -> right,
+                        java.util.LinkedHashMap::new
+                ));
+
+        List<Account> accounts = accountRepository.findAllByOwnerIdWithBankOrderByName(ownerId);
+        Map<UUID, Account> accountsById = accounts.stream()
+                .collect(java.util.stream.Collectors.toMap(Account::getId, Function.identity()));
+
+        requestsByAccountId.forEach((accountId, request) -> {
+            Account account = accountsById.get(accountId);
+            if (account == null) {
+                throw new AccountNotFoundException(accountId);
+            }
+
+            account.updateForecastedMonthlyContribution(
+                    normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution())
+            );
+        });
+
+        return accounts;
     }
 
     private String normalizeDescription(String description) {
@@ -121,5 +159,15 @@ public class AccountService {
         }
 
         return accountTypeCode.trim().toUpperCase();
+    }
+
+    private BigDecimal normalizeForecastedMonthlyContribution(BigDecimal forecastedMonthlyContribution) {
+        if (forecastedMonthlyContribution == null) {
+            return null;
+        }
+
+        return forecastedMonthlyContribution.stripTrailingZeros().scale() < 0
+                ? forecastedMonthlyContribution.setScale(0)
+                : forecastedMonthlyContribution;
     }
 }

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Ustawienia oszczędności | Money Snapshot', 'savings-planning-settings.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('savings-planning')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="savingsPlanningSettings.heading.eyebrow">Prognoza wpłat</p>
+        <h1 data-i18n="savingsPlanningSettings.heading.title">Ustawienia oszczędności</h1>
+        <p data-i18n="savingsPlanningSettings.heading.subtitle">Ustaw prognozowaną miesięczną wpłatę dla każdego konta w jego walucie.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide" aria-labelledby="savings-planning-settings-title">
+        <div class="section-header">
+            <h2 id="savings-planning-settings-title" data-i18n="savingsPlanningSettings.table.title">Miesięczne wpłaty na konta</h2>
+            <div class="section-actions">
+                <a href="/savings-planning.html" class="button secondary compact" data-i18n="savingsPlanningSettings.actions.back">Powrót</a>
+                <button type="button" class="button secondary compact" id="refresh-savings-planning-settings" data-i18n="savingsPlanningSettings.actions.refresh">Odśwież</button>
+            </div>
+        </div>
+        <p class="form-message" id="savings-planning-settings-message" role="status"></p>
+        <form id="savings-planning-settings-form">
+            <div class="table-wrap">
+                <table class="reports-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="savingsPlanningSettings.table.account">Konto</th>
+                        <th data-i18n="savingsPlanningSettings.table.bank">Bank</th>
+                        <th data-i18n="savingsPlanningSettings.table.currency">Waluta</th>
+                        <th data-i18n="savingsPlanningSettings.table.forecast">Prognozowana miesięczna wpłata</th>
+                    </tr>
+                    </thead>
+                    <tbody id="savings-planning-settings-table-body">
+                    <tr>
+                        <td colspan="4" data-i18n="savingsPlanningSettings.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="form-helper" data-i18n="savingsPlanningSettings.form.hint">Pozostaw puste pole, jeśli konto nie ma stałej miesięcznej wpłaty.</p>
+            <div class="form-actions">
+                <button type="submit" class="button primary" data-i18n="savingsPlanningSettings.form.submit">Zapisz ustawienia</button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

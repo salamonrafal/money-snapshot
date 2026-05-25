@@ -214,6 +214,26 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
             """)
     List<CurrencyAmount> sumLatestBalancesBeforeDateByOwnerIdAndCurrency(@Param("ownerId") UUID ownerId, @Param("beforeDate") LocalDate beforeDate);
 
+    @Query("""
+            select snapshot
+            from AccountSnapshot snapshot
+            join fetch snapshot.account account
+            join fetch account.bank
+            where snapshot.owner.id = :ownerId
+                and snapshot.snapshotDate = (
+                    select max(candidate.snapshotDate)
+                    from AccountSnapshot candidate
+                    where candidate.account = snapshot.account
+                        and candidate.owner.id = :ownerId
+                        and candidate.snapshotDate <= :beforeOrOnDate
+                )
+            order by account.name
+            """)
+    List<AccountSnapshot> findLatestByOwnerIdBeforeOrOnDateWithAccountOrderByAccountName(
+            @Param("ownerId") UUID ownerId,
+            @Param("beforeOrOnDate") LocalDate beforeOrOnDate
+    );
+
     @Modifying
     @Query("""
             delete from AccountSnapshot snapshot
