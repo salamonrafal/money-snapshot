@@ -93,9 +93,11 @@ public class SavingsForecastService {
 
         List<SavingsForecastEntry> savedEntries = entryRepository.saveAll(entries);
         List<LocalDate> forecastMonths = buildForecastMonths(run.getForecastStartDate(), run.getDurationMonths());
-        monthValueRepository.saveAll(buildMonthValues(savedEntries, forecastMonths));
-        monthSummaryRepository.saveAll(buildMonthSummaries(run, savedEntries, forecastMonths));
-        return toResponse(run, savedEntries);
+        List<SavingsForecastMonthValue> savedMonthValues = monthValueRepository.saveAll(buildMonthValues(savedEntries, forecastMonths));
+        List<SavingsForecastMonthSummary> savedMonthSummaries = monthSummaryRepository.saveAll(
+                buildMonthSummaries(run, savedEntries, forecastMonths)
+        );
+        return toResponse(run, savedEntries, savedMonthValues, savedMonthSummaries);
     }
 
     private void validateRequest(GenerateSavingsForecastRequest request) {
@@ -103,7 +105,11 @@ public class SavingsForecastService {
             throw new InvalidSavingsForecastRequestException("Forecast start date is required.");
         }
 
-        if (request.durationMonths() == null || !ALLOWED_DURATIONS.contains(request.durationMonths())) {
+        if (request.durationMonths() == null) {
+            throw new InvalidSavingsForecastRequestException("Forecast duration is required.");
+        }
+
+        if (!ALLOWED_DURATIONS.contains(request.durationMonths())) {
             throw new InvalidSavingsForecastRequestException("Unsupported forecast duration.");
         }
     }
@@ -132,13 +138,19 @@ public class SavingsForecastService {
 
     private SavingsForecastRunResponse toResponse(SavingsForecastRun run) {
         List<SavingsForecastEntry> entries = entryRepository.findAllByRunIdWithAccountOrderByAccountName(run.getId());
-        return toResponse(run, entries);
+        List<SavingsForecastMonthValue> monthValues = monthValueRepository.findAllByRunIdOrderByForecastMonthAndAccountName(run.getId());
+        List<SavingsForecastMonthSummary> monthSummaries = monthSummaryRepository.findAllByRunIdOrderByForecastMonthAndCurrencyCode(run.getId());
+        return toResponse(run, entries, monthValues, monthSummaries);
     }
 
-    private SavingsForecastRunResponse toResponse(SavingsForecastRun run, List<SavingsForecastEntry> entries) {
+    private SavingsForecastRunResponse toResponse(
+            SavingsForecastRun run,
+            List<SavingsForecastEntry> entries,
+            List<SavingsForecastMonthValue> monthValues,
+            List<SavingsForecastMonthSummary> monthSummaries
+    ) {
         List<LocalDate> forecastMonths = buildForecastMonths(run.getForecastStartDate(), run.getDurationMonths());
-        Map<UUID, List<SavingsForecastMonthValueResponse>> monthlyValuesByEntryId = monthValueRepository
-                .findAllByRunIdOrderByForecastMonthAndAccountName(run.getId())
+        Map<UUID, List<SavingsForecastMonthValueResponse>> monthlyValuesByEntryId = monthValues
                 .stream()
                 .collect(Collectors.groupingBy(
                         monthValue -> monthValue.getEntry().getId(),
@@ -159,8 +171,7 @@ public class SavingsForecastService {
                 run.getDurationMonths(),
                 run.getGeneratedAt(),
                 forecastMonths,
-                monthSummaryRepository.findAllByRunIdOrderByForecastMonthAndCurrencyCode(run.getId())
-                        .stream()
+                monthSummaries.stream()
                         .map(SavingsForecastSummaryResponse::from)
                         .toList(),
                 entries.stream()
@@ -205,7 +216,7 @@ public class SavingsForecastService {
         List<SavingsForecastMonthValue> values = new ArrayList<>(entries.size() * forecastMonths.size());
         for (SavingsForecastEntry entry : entries) {
             for (MonthBalance monthBalance : buildMonthlyBalances(entry, forecastMonths)) {
-                values.add(new SavingsForecastMonthValue(entry, monthBalance.monthDate(), monthBalance.balance()));
+                values.add(new SavingsForecastMonthValue(entry, monthBalance.forecastMonth(), monthBalance.balance()));
             }
         }
         return values;
@@ -216,33 +227,36 @@ public class SavingsForecastService {
             List<SavingsForecastEntry> entries,
             List<LocalDate> forecastMonths
     ) {
-        Map<String, BigDecimal> totalsByMonthAndCurrency = new java.util.LinkedHashMap<>();
+        Map<MonthCurrencyKey, BigDecimal> totalsByMonthAndCurrency = new java.util.LinkedHashMap<>();
 
         for (SavingsForecastEntry entry : entries) {
             List<MonthBalance> values = buildMonthlyBalances(entry, forecastMonths);
             for (MonthBalance value : values) {
-                String key = value.monthDate() + "|" + entry.getAccount().getCurrencyCode();
+                MonthCurrencyKey key = new MonthCurrencyKey(
+                        value.forecastMonth(),
+                        entry.getAccount().getCurrencyCode()
+                );
                 totalsByMonthAndCurrency.merge(key, value.balance(), BigDecimal::add);
             }
         }
 
         return totalsByMonthAndCurrency.entrySet().stream()
-                .map(totalEntry -> {
-                    String[] parts = totalEntry.getKey().split("\\|", 2);
-                    return new SavingsForecastMonthSummary(
-                            run,
-                            LocalDate.parse(parts[0]),
-                            parts[1],
-                            totalEntry.getValue()
-                    );
-                })
+                .map(totalEntry -> new SavingsForecastMonthSummary(
+                        run,
+                        totalEntry.getKey().forecastMonth(),
+                        totalEntry.getKey().currencyCode(),
+                        totalEntry.getValue()
+                ))
                 .toList();
     }
 
     private SavingsForecastMonthValueResponse toMonthValueResponse(MonthBalance monthBalance) {
-        return new SavingsForecastMonthValueResponse(monthBalance.monthDate(), monthBalance.balance());
+        return new SavingsForecastMonthValueResponse(monthBalance.forecastMonth(), monthBalance.balance());
     }
 
-    private record MonthBalance(LocalDate monthDate, BigDecimal balance) {
+    private record MonthCurrencyKey(LocalDate forecastMonth, String currencyCode) {
+    }
+
+    private record MonthBalance(LocalDate forecastMonth, BigDecimal balance) {
     }
 }

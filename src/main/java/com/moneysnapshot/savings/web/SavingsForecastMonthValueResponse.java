@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record SavingsForecastMonthValueResponse(
-        LocalDate monthDate,
+        LocalDate forecastMonth,
         BigDecimal balance
 ) {
 }
