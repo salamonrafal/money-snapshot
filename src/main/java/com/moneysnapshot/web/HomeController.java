@@ -112,6 +112,30 @@ public class HomeController {
         return messageBundleService.settingsPageMessages(resolveLocale(lang, acceptLanguage));
     }
 
+    @GetMapping("/savings-planning/messages")
+    public Map<String, String> savingsPlanningMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.savingsPlanningPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/savings-planning-settings/messages")
+    public Map<String, String> savingsPlanningSettingsMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.savingsPlanningSettingsPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/savings-planning-generator/messages")
+    public Map<String, String> savingsPlanningGeneratorMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.savingsPlanningGeneratorPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
     private Locale resolveLocale(String lang, String acceptLanguage) {
         Locale requestedLocale = Locale.forLanguageTag(lang == null ? "" : lang);
         if (!requestedLocale.getLanguage().isBlank()) {

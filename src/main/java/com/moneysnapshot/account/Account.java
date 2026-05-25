@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -52,6 +53,9 @@ public class Account {
     @Column(length = 500)
     private String description;
 
+    @Column(name = "forecasted_monthly_contribution", precision = 19, scale = 2)
+    private BigDecimal forecastedMonthlyContribution;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AccountStatus status;
@@ -73,6 +77,7 @@ public class Account {
             String accountTypeCode,
             String currencyCode,
             String description,
+            BigDecimal forecastedMonthlyContribution,
             AccountStatus status
     ) {
         this.bank = bank;
@@ -82,6 +87,7 @@ public class Account {
         this.accountTypeCode = accountTypeCode;
         this.currencyCode = currencyCode;
         this.description = description;
+        this.forecastedMonthlyContribution = forecastedMonthlyContribution;
         this.status = status;
     }
 
@@ -108,6 +114,7 @@ public class Account {
             String accountTypeCode,
             String currencyCode,
             String description,
+            BigDecimal forecastedMonthlyContribution,
             AccountStatus status
     ) {
         this.bank = bank;
@@ -116,6 +123,7 @@ public class Account {
         this.accountTypeCode = accountTypeCode;
         this.currencyCode = currencyCode;
         this.description = description;
+        this.forecastedMonthlyContribution = forecastedMonthlyContribution;
         this.status = status;
     }
 
@@ -145,6 +153,14 @@ public class Account {
 
     public String getDescription() {
         return description;
+    }
+
+    public BigDecimal getForecastedMonthlyContribution() {
+        return forecastedMonthlyContribution;
+    }
+
+    public void updateForecastedMonthlyContribution(BigDecimal forecastedMonthlyContribution) {
+        this.forecastedMonthlyContribution = forecastedMonthlyContribution;
     }
 
     public AccountStatus getStatus() {

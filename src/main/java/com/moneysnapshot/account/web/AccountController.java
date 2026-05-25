@@ -55,6 +55,22 @@ public class AccountController {
         return AccountResponse.from(accountService.updateAccount(id, request));
     }
 
+    @GetMapping("/savings-planning")
+    public List<SavingsContributionSettingResponse> listSavingsContributionSettings() {
+        return accountService.listAccounts().stream()
+                .map(SavingsContributionSettingResponse::from)
+                .toList();
+    }
+
+    @PutMapping("/savings-planning")
+    public List<SavingsContributionSettingResponse> updateSavingsContributionSettings(
+            @Valid @RequestBody UpdateSavingsContributionSettingsRequest request
+    ) {
+        return accountService.updateForecastedMonthlyContributions(request.accounts()).stream()
+                .map(SavingsContributionSettingResponse::from)
+                .toList();
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAccount(@PathVariable UUID id) {

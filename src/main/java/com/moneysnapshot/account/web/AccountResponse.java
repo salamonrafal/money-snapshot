@@ -2,6 +2,7 @@ package com.moneysnapshot.account.web;
 
 import com.moneysnapshot.account.Account;
 import com.moneysnapshot.account.AccountStatus;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ public record AccountResponse(
         String accountTypeCode,
         String currencyCode,
         String description,
+        BigDecimal forecastedMonthlyContribution,
         AccountStatus status,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
@@ -34,6 +36,7 @@ public record AccountResponse(
                 account.getAccountTypeCode(),
                 account.getCurrencyCode(),
                 account.getDescription(),
+                account.getForecastedMonthlyContribution(),
                 account.getStatus(),
                 account.getCreatedAt(),
                 account.getUpdatedAt()
