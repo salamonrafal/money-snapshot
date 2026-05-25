@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +29,9 @@ import org.springframework.stereotype.Service;
 public class SavingsForecastService {
 
     private static final Set<Integer> ALLOWED_DURATIONS = Set.of(6, 12, 24, 60, 120);
+    private static final Comparator<SavingsForecastMonthSummary> MONTH_SUMMARY_ORDER =
+            Comparator.comparing(SavingsForecastMonthSummary::getForecastMonth)
+                    .thenComparing(SavingsForecastMonthSummary::getCurrencyCode);
 
     private final SavingsForecastRunRepository runRepository;
     private final SavingsForecastEntryRepository entryRepository;
@@ -263,6 +267,7 @@ public class SavingsForecastService {
                         totalEntry.getKey().currencyCode(),
                         totalEntry.getValue()
                 ))
+                .sorted(MONTH_SUMMARY_ORDER)
                 .toList();
     }
 

@@ -115,8 +115,6 @@ class SavingsForecastServiceTest {
             savedMonthSummaries.addAll(summaries);
             return summaries;
         });
-        when(monthValueRepository.findAllByRunIdOrderByForecastMonthAndAccountName(savedRun.getId())).thenAnswer(invocation -> savedMonthValues);
-        when(monthSummaryRepository.findAllByRunIdOrderByForecastMonthAndCurrencyCode(savedRun.getId())).thenAnswer(invocation -> savedMonthSummaries);
 
         SavingsForecastRunResponse response = service.generateForecast(new GenerateSavingsForecastRequest(startDate, 6));
 
