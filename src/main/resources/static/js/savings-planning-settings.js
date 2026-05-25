@@ -5,6 +5,7 @@ const formMessage = document.querySelector("#savings-planning-settings-message")
 
 let messages = {};
 let currentAccounts = [];
+let accountsLoaded = false;
 
 function setMessage(text, type = "") {
     formMessage.textContent = text;
@@ -52,6 +53,7 @@ function renderEmpty(message) {
 
 function renderAccounts(accounts) {
     currentAccounts = accounts;
+    accountsLoaded = true;
 
     if (accounts.length === 0) {
         renderEmpty(messages["savingsPlanningSettings.empty"]);
@@ -153,7 +155,7 @@ MoneySnapshotI18n.init({
     onLanguageChange: ({messages: nextMessages}) => {
         messages = nextMessages;
         document.title = `${messages["savingsPlanningSettings.heading.title"]} | ${messages["app.name"]}`;
-        if (currentAccounts.length === 0) {
+        if (!accountsLoaded) {
             renderEmpty(messages["savingsPlanningSettings.loading"]);
             return;
         }

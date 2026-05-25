@@ -89,6 +89,9 @@ public class AccountService {
         Bank bank = bankRepository.findByOwnerIdAndNormalizedName(owner.getId(), normalizedBankName)
                 .orElseGet(() -> bankRepository.save(new Bank(owner, request.bankName().trim(), normalizedBankName)));
         AccountStatus status = request.status() == null ? AccountStatus.ACTIVE : request.status();
+        BigDecimal forecastedMonthlyContribution = request.forecastedMonthlyContribution() == null
+                ? account.getForecastedMonthlyContribution()
+                : normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution());
 
         account.updateDetails(
                 bank,
@@ -97,7 +100,7 @@ public class AccountService {
                 normalizeAccountTypeCode(request.accountTypeCode()),
                 request.currencyCode().trim().toUpperCase(),
                 normalizeDescription(request.description()),
-                normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution()),
+                forecastedMonthlyContribution,
                 status
         );
 
@@ -139,7 +142,7 @@ public class AccountService {
             );
         });
 
-        return accountRepository.saveAll(accounts);
+        return accounts;
     }
 
     private String normalizeDescription(String description) {

@@ -146,10 +146,10 @@ function renderForecastTable(forecast) {
         tableColgroup.append(col);
 
         const th = document.createElement("th");
-        th.innerHTML = [
-            `<span>${messages["savingsPlanning.table.summary"] ?? "Podsumowanie"} [${currencyCode}]</span>`
-        ].join("");
         th.className = "savings-forecast-account-head savings-forecast-summary-head";
+        const summaryLine = document.createElement("span");
+        summaryLine.textContent = `${messages["savingsPlanning.table.summary"] ?? "Podsumowanie"} [${currencyCode}]`;
+        th.append(summaryLine);
         tableHeadRow.append(th);
     });
 

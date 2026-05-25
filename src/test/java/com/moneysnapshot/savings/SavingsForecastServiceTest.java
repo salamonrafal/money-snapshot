@@ -19,6 +19,7 @@ import com.moneysnapshot.snapshot.AccountSnapshotRepository;
 import com.moneysnapshot.savings.web.GenerateSavingsForecastRequest;
 import com.moneysnapshot.savings.web.SavingsForecastEntryResponse;
 import com.moneysnapshot.savings.web.SavingsForecastRunResponse;
+import com.moneysnapshot.savings.web.SavingsForecastSummaryResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -140,10 +141,8 @@ class SavingsForecastServiceTest {
         assertEquals(new BigDecimal("0"), secondEntry.monthlyBalances().get(0).balance());
         assertEquals(new BigDecimal("0"), secondEntry.monthlyBalances().get(5).balance());
 
-        assertEquals(new BigDecimal("1100.00"), response.summaries().get(0).totalBalance());
-        assertEquals("PLN", response.summaries().get(0).currencyCode());
-        assertEquals(new BigDecimal("0"), response.summaries().get(1).totalBalance());
-        assertEquals("USD", response.summaries().get(1).currencyCode());
+        assertSummaryTotal(response.summaries(), LocalDate.of(2026, 1, 1), "PLN", new BigDecimal("1100.00"));
+        assertSummaryTotal(response.summaries(), LocalDate.of(2026, 1, 1), "USD", new BigDecimal("0"));
     }
 
     private Account account(String accountName, String bankName, String currencyCode, BigDecimal monthlyContribution) {
@@ -157,5 +156,19 @@ class SavingsForecastServiceTest {
         when(account.getCurrencyCode()).thenReturn(currencyCode);
         when(account.getForecastedMonthlyContribution()).thenReturn(monthlyContribution);
         return account;
+    }
+
+    private void assertSummaryTotal(
+            List<SavingsForecastSummaryResponse> summaries,
+            LocalDate month,
+            String currencyCode,
+            BigDecimal expectedTotal
+    ) {
+        SavingsForecastSummaryResponse summary = summaries.stream()
+                .filter(item -> month.equals(item.forecastMonth()) && currencyCode.equals(item.currencyCode()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(expectedTotal, summary.totalBalance());
     }
 }

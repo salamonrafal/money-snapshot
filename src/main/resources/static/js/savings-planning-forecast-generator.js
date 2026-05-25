@@ -7,6 +7,7 @@ const warningElement = document.querySelector("#savings-planning-generator-warni
 const warningTextElement = document.querySelector("#savings-planning-generator-warning-text");
 
 let messages = {};
+let currentActiveForecast = null;
 const durations = [6, 12, 24, 60, 120];
 
 function setMessage(text, type = "") {
@@ -40,9 +41,22 @@ function formatDate(value) {
     return MoneySnapshotUi.formatDateValue(value);
 }
 
+function syncWarningText() {
+    if (!currentActiveForecast) {
+        warningElement.hidden = true;
+        return;
+    }
+
+    warningElement.hidden = false;
+    warningTextElement.textContent = (messages["savingsPlanningGenerator.warning.description"] ?? "")
+            .replace("{fromDate}", formatDate(currentActiveForecast.forecastStartDate))
+            .replace("{toDate}", formatDate(currentActiveForecast.forecastEndDate));
+}
+
 async function loadLatestForecast() {
     const response = await fetch("/api/savings-planning/forecasts/latest");
     if (response.status === 204) {
+        currentActiveForecast = null;
         warningElement.hidden = true;
         return;
     }
@@ -53,13 +67,12 @@ async function loadLatestForecast() {
 
     const forecast = await response.json();
     if (forecast.forecastEndDate >= todayIsoDate()) {
-        warningElement.hidden = false;
-        warningTextElement.textContent = (messages["savingsPlanningGenerator.warning.description"] ?? "")
-                .replace("{fromDate}", formatDate(forecast.forecastStartDate))
-                .replace("{toDate}", formatDate(forecast.forecastEndDate));
+        currentActiveForecast = forecast;
+        syncWarningText();
         return;
     }
 
+    currentActiveForecast = null;
     warningElement.hidden = true;
 }
 
@@ -108,6 +121,7 @@ MoneySnapshotI18n.init({
         messages = nextMessages;
         document.title = `${messages["savingsPlanningGenerator.heading.title"]} | ${messages["app.name"]}`;
         syncDurationLabel();
+        syncWarningText();
     }
 })
         .then(() => {

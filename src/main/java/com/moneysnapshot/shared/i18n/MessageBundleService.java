@@ -118,6 +118,7 @@ public class MessageBundleService {
             "savingsPlanningGenerator.heading.eyebrow",
             "savingsPlanningGenerator.heading.title",
             "savingsPlanningGenerator.heading.subtitle",
+            "savingsPlanningGenerator.aria.form",
             "savingsPlanningGenerator.form.title",
             "savingsPlanningGenerator.form.startDate",
             "savingsPlanningGenerator.form.duration",
