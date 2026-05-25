@@ -2,6 +2,7 @@ package com.moneysnapshot.savings;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
@@ -128,18 +129,18 @@ class SavingsForecastServiceTest {
         SavingsForecastEntryResponse secondEntry = response.entries().get(1);
 
         assertEquals("Main account", firstEntry.accountName());
-        assertEquals(new BigDecimal("1000.00"), firstEntry.startingBalance());
-        assertEquals(new BigDecimal("100.00"), firstEntry.forecastedMonthlyContribution());
-        assertEquals(new BigDecimal("1600.00"), firstEntry.projectedBalance());
-        assertEquals(new BigDecimal("1100.00"), firstEntry.monthlyBalances().get(0).balance());
-        assertEquals(new BigDecimal("1600.00"), firstEntry.monthlyBalances().get(5).balance());
+        assertBigDecimalEquals("1000.00", firstEntry.startingBalance());
+        assertBigDecimalEquals("100.00", firstEntry.forecastedMonthlyContribution());
+        assertBigDecimalEquals("1600.00", firstEntry.projectedBalance());
+        assertBigDecimalEquals("1100.00", firstEntry.monthlyBalances().get(0).balance());
+        assertBigDecimalEquals("1600.00", firstEntry.monthlyBalances().get(5).balance());
 
         assertEquals("USD reserve", secondEntry.accountName());
-        assertEquals(new BigDecimal("0"), secondEntry.startingBalance());
-        assertEquals(new BigDecimal("0"), secondEntry.forecastedMonthlyContribution());
-        assertEquals(new BigDecimal("0"), secondEntry.projectedBalance());
-        assertEquals(new BigDecimal("0"), secondEntry.monthlyBalances().get(0).balance());
-        assertEquals(new BigDecimal("0"), secondEntry.monthlyBalances().get(5).balance());
+        assertBigDecimalEquals("0", secondEntry.startingBalance());
+        assertBigDecimalEquals("0", secondEntry.forecastedMonthlyContribution());
+        assertBigDecimalEquals("0", secondEntry.projectedBalance());
+        assertBigDecimalEquals("0", secondEntry.monthlyBalances().get(0).balance());
+        assertBigDecimalEquals("0", secondEntry.monthlyBalances().get(5).balance());
 
         assertSummaryTotal(response.summaries(), LocalDate.of(2026, 1, 1), "PLN", new BigDecimal("1100.00"));
         assertSummaryTotal(response.summaries(), LocalDate.of(2026, 1, 1), "USD", new BigDecimal("0"));
@@ -169,6 +170,10 @@ class SavingsForecastServiceTest {
                 .findFirst()
                 .orElseThrow();
 
-        assertEquals(expectedTotal, summary.totalBalance());
+        assertBigDecimalEquals(expectedTotal.toPlainString(), summary.totalBalance());
+    }
+
+    private void assertBigDecimalEquals(String expected, BigDecimal actual) {
+        assertTrue(new BigDecimal(expected).compareTo(actual) == 0);
     }
 }

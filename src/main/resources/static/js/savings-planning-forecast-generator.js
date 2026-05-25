@@ -16,7 +16,7 @@ function setMessage(text, type = "") {
 }
 
 function todayIsoDate() {
-    return new Date().toISOString().slice(0, 10);
+    return MoneySnapshotUi.localIsoDate();
 }
 
 function durationLabel(durationMonths) {
