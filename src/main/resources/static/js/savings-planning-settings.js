@@ -11,6 +11,10 @@ function setMessage(text, type = "") {
     formMessage.dataset.type = type;
 }
 
+function contributionPlaceholder() {
+    return document.documentElement.lang === "en" ? "0.00" : "0,00";
+}
+
 function normalizeContributionValue(rawValue) {
     const trimmedValue = rawValue.trim();
     if (!trimmedValue) {
@@ -31,7 +35,7 @@ function createContributionInput(account) {
     input.className = "forecast-input";
     input.inputMode = "decimal";
     input.autocomplete = "off";
-    input.placeholder = "0,00";
+    input.placeholder = contributionPlaceholder();
     input.value = account.forecastedMonthlyContribution ?? "";
     input.dataset.accountId = account.accountId;
     return input;

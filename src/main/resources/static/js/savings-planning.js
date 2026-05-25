@@ -50,23 +50,15 @@ function formatMonthLabel(value) {
 }
 
 function durationLabel(durationMonths) {
-    const mapping = {
-        6: "6 miesięcy",
-        12: "1 rok",
-        24: "2 lata",
-        60: "5 lat",
-        120: "10 lat"
+    const durationKeyByMonths = {
+        6: "savingsPlanningGenerator.form.duration.6m",
+        12: "savingsPlanningGenerator.form.duration.1y",
+        24: "savingsPlanningGenerator.form.duration.2y",
+        60: "savingsPlanningGenerator.form.duration.5y",
+        120: "savingsPlanningGenerator.form.duration.10y"
     };
-    if (currentLanguage === "en") {
-        return {
-            6: "6 months",
-            12: "1 year",
-            24: "2 years",
-            60: "5 years",
-            120: "10 years"
-        }[durationMonths] ?? `${durationMonths}`;
-    }
-    return mapping[durationMonths] ?? `${durationMonths}`;
+    const messageKey = durationKeyByMonths[durationMonths];
+    return messageKey ? (messages[messageKey] ?? `${durationMonths}`) : `${durationMonths}`;
 }
 
 function renderEmptyState() {
@@ -88,9 +80,29 @@ function resetTableHead() {
     }));
 }
 
+function renderForecastTableEmptyRun(forecast) {
+    currentForecast = forecast;
+    emptyState.hidden = true;
+    tableWrap.hidden = false;
+    summaryElement.hidden = false;
+    deleteButton.disabled = false;
+    generatedAtElement.textContent = formatDateTime(forecast.generatedAt);
+    periodElement.textContent = `${formatDate(forecast.forecastStartDate)} - ${formatDate(forecast.forecastEndDate)}`;
+    durationElement.textContent = durationLabel(forecast.durationMonths);
+    accountCountElement.textContent = "0";
+    resetTableHead();
+
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 1;
+    cell.textContent = messages["savingsPlanning.empty.description"] ?? "";
+    row.append(cell);
+    tableBody.replaceChildren(row);
+}
+
 function renderForecastTable(forecast) {
     if (!forecast.entries || forecast.entries.length === 0) {
-        renderEmptyState();
+        renderForecastTableEmptyRun(forecast);
         return;
     }
 
@@ -111,13 +123,21 @@ function renderForecastTable(forecast) {
         tableColgroup.append(col);
 
         const th = document.createElement("th");
-        th.innerHTML = [
-            `<span>[${entry.currencyCode}] ${entry.accountName}</span>`,
-            `<span>${entry.bankName}</span>`
-        ].join("");
         th.className = "savings-forecast-account-head";
+        const accountLine = document.createElement("span");
+        const bankLine = document.createElement("span");
+        accountLine.textContent = `[${entry.currencyCode}] ${entry.accountName}`;
+        bankLine.textContent = entry.bankName;
+        th.append(accountLine, bankLine);
         tableHeadRow.append(th);
     });
+
+    const summaryByMonthAndCurrency = new Map(
+        (forecast.summaries ?? []).map((summary) => [
+            `${summary.forecastMonth}|${summary.currencyCode}`,
+            summary
+        ])
+    );
 
     const summaryCurrencies = [...new Set((forecast.summaries ?? []).map((summary) => summary.currencyCode))];
     summaryCurrencies.forEach((currencyCode) => {
@@ -152,9 +172,7 @@ function renderForecastTable(forecast) {
         });
 
         summaryCurrencies.forEach((currencyCode) => {
-            const summary = (forecast.summaries ?? []).find((item) =>
-                item.currencyCode === currencyCode && item.forecastMonth === month
-            );
+            const summary = summaryByMonthAndCurrency.get(`${month}|${currencyCode}`);
 
             const cell = document.createElement("td");
             cell.textContent = summary ? formatAmount(summary.totalBalance) : "-";

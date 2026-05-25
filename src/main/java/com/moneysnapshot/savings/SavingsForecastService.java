@@ -144,10 +144,10 @@ public class SavingsForecastService {
                         monthValue -> monthValue.getEntry().getId(),
                         java.util.LinkedHashMap::new,
                         Collectors.mapping(
-                                monthValue -> new SavingsForecastMonthValueResponse(
+                                monthValue -> toMonthValueResponse(new MonthBalance(
                                         monthValue.getForecastMonth(),
                                         monthValue.getBalance()
-                                ),
+                                )),
                                 Collectors.toList()
                         )
                 ));
@@ -180,11 +180,11 @@ public class SavingsForecastService {
         return months;
     }
 
-    private List<SavingsForecastMonthValueResponse> buildMonthlyBalances(
+    private List<MonthBalance> buildMonthlyBalances(
             SavingsForecastEntry entry,
             List<LocalDate> forecastMonths
     ) {
-        List<SavingsForecastMonthValueResponse> values = new ArrayList<>(forecastMonths.size());
+        List<MonthBalance> values = new ArrayList<>(forecastMonths.size());
         BigDecimal startingBalance = entry.getStartingBalance();
         BigDecimal monthlyContribution = entry.getForecastedMonthlyContribution();
 
@@ -192,7 +192,7 @@ public class SavingsForecastService {
             BigDecimal monthBalance = startingBalance.add(
                     monthlyContribution.multiply(BigDecimal.valueOf(monthIndex + 1L))
             );
-            values.add(new SavingsForecastMonthValueResponse(forecastMonths.get(monthIndex), monthBalance));
+            values.add(new MonthBalance(forecastMonths.get(monthIndex), monthBalance));
         }
 
         return values;
@@ -204,8 +204,8 @@ public class SavingsForecastService {
     ) {
         List<SavingsForecastMonthValue> values = new ArrayList<>(entries.size() * forecastMonths.size());
         for (SavingsForecastEntry entry : entries) {
-            for (SavingsForecastMonthValueResponse response : buildMonthlyBalances(entry, forecastMonths)) {
-                values.add(new SavingsForecastMonthValue(entry, response.monthDate(), response.balance()));
+            for (MonthBalance monthBalance : buildMonthlyBalances(entry, forecastMonths)) {
+                values.add(new SavingsForecastMonthValue(entry, monthBalance.monthDate(), monthBalance.balance()));
             }
         }
         return values;
@@ -219,8 +219,8 @@ public class SavingsForecastService {
         Map<String, BigDecimal> totalsByMonthAndCurrency = new java.util.LinkedHashMap<>();
 
         for (SavingsForecastEntry entry : entries) {
-            List<SavingsForecastMonthValueResponse> values = buildMonthlyBalances(entry, forecastMonths);
-            for (SavingsForecastMonthValueResponse value : values) {
+            List<MonthBalance> values = buildMonthlyBalances(entry, forecastMonths);
+            for (MonthBalance value : values) {
                 String key = value.monthDate() + "|" + entry.getAccount().getCurrencyCode();
                 totalsByMonthAndCurrency.merge(key, value.balance(), BigDecimal::add);
             }
@@ -237,5 +237,12 @@ public class SavingsForecastService {
                     );
                 })
                 .toList();
+    }
+
+    private SavingsForecastMonthValueResponse toMonthValueResponse(MonthBalance monthBalance) {
+        return new SavingsForecastMonthValueResponse(monthBalance.monthDate(), monthBalance.balance());
+    }
+
+    private record MonthBalance(LocalDate monthDate, BigDecimal balance) {
     }
 }
