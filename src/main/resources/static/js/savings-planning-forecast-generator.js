@@ -8,6 +8,7 @@ const warningTextElement = document.querySelector("#savings-planning-generator-w
 
 let messages = {};
 let currentActiveForecast = null;
+let userSettings = null;
 const durations = [6, 12, 24, 60, 120];
 
 function setMessage(text, type = "") {
@@ -38,7 +39,7 @@ function syncDurationLabel() {
 }
 
 function formatDate(value) {
-    return MoneySnapshotUi.formatDateValue(value);
+    return MoneySnapshotUi.formatDateValue(value, userSettings);
 }
 
 function syncWarningText() {
@@ -124,6 +125,10 @@ MoneySnapshotI18n.init({
         syncWarningText();
     }
 })
+        .then(() => MoneySnapshotUi.loadUserSettings())
+        .then((settings) => {
+            userSettings = settings;
+        })
         .then(() => {
             if (!startDateInput.value) {
                 startDateInput.value = todayIsoDate();

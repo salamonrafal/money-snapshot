@@ -886,6 +886,10 @@ h1 {
         letter-spacing: 0.03em;
     }
 
+    .savings-forecast-table td.savings-forecast-empty-cell::before {
+        content: none;
+    }
+
 }
 
 .table-panel.reports-nav-panel {

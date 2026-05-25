@@ -93,7 +93,9 @@ function renderForecastTableEmptyRun(forecast) {
     resetTableHead();
 
     const row = document.createElement("tr");
+    row.className = "savings-forecast-empty-row";
     const cell = document.createElement("td");
+    cell.className = "savings-forecast-empty-cell";
     cell.colSpan = 1;
     cell.textContent = messages["savingsPlanning.empty.description"] ?? "";
     row.append(cell);
