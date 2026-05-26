@@ -728,8 +728,7 @@ h1 {
 }
 
 .field input.duration-range-input:focus-visible {
-    outline: 3px solid rgba(15, 139, 141, 0.16);
-    outline-offset: 4px;
+    outline: none;
 }
 
 .range-control:focus-within {
@@ -829,7 +828,7 @@ h1 {
     margin-top: 22px;
     width: 100%;
     max-width: 100%;
-    overflow-x: clip;
+    overflow-x: hidden;
     overflow-y: visible;
     padding-bottom: 44px;
     margin-bottom: -44px;

@@ -29,6 +29,7 @@ let currentForecast = null;
 let userSettings = null;
 let lastStickyHeadWidth = 0;
 const tooltipMeasureElement = document.createElement("span");
+let tooltipMeasureElementReady = false;
 
 tooltipMeasureElement.style.position = "fixed";
 tooltipMeasureElement.style.left = "-9999px";
@@ -40,7 +41,15 @@ tooltipMeasureElement.style.whiteSpace = "nowrap";
 tooltipMeasureElement.style.padding = "8px 10px";
 tooltipMeasureElement.style.fontSize = "0.78rem";
 tooltipMeasureElement.style.fontWeight = "800";
-document.body.append(tooltipMeasureElement);
+
+function ensureTooltipMeasureElement() {
+    if (tooltipMeasureElementReady || !document.body) {
+        return;
+    }
+
+    document.body.append(tooltipMeasureElement);
+    tooltipMeasureElementReady = true;
+}
 
 function setMessage(text, type = "") {
     messageElement.textContent = text;
@@ -86,6 +95,7 @@ function setTableColumnMetrics(columnCount) {
 }
 
 function measureTooltipWidth(text, maxWidth) {
+    ensureTooltipMeasureElement();
     tooltipMeasureElement.textContent = text;
     tooltipMeasureElement.style.maxWidth = `${maxWidth}px`;
     return Math.min(tooltipMeasureElement.getBoundingClientRect().width, maxWidth);
@@ -424,6 +434,7 @@ MoneySnapshotI18n.init({
         .then(() => MoneySnapshotUi.loadUserSettings())
         .then((settings) => {
             userSettings = settings;
+            ensureTooltipMeasureElement();
         })
         .then(loadLatestForecast)
         .catch((error) => {
