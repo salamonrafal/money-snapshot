@@ -891,11 +891,28 @@ function buildPlanningRows(snapshots) {
     const averageContributionReport = getAverageContributionReport(snapshots);
     const currentPlanByAccountKey = new Map();
     const yearlyPlanByAccountKey = new Map();
+    const latestBalanceByAccountKey = new Map();
+    const today = todayIsoDate();
+
+    snapshots.forEach((snapshot) => {
+        if (snapshot.snapshotDate > today) {
+            return;
+        }
+
+        const key = `${snapshot.accountId}|${snapshot.currencyCode}`;
+        const currentLatest = latestBalanceByAccountKey.get(key);
+        if (!currentLatest || currentLatest.snapshotDate < snapshot.snapshotDate) {
+            latestBalanceByAccountKey.set(key, {
+                snapshotDate: snapshot.snapshotDate,
+                balance: Number(snapshot.balance)
+            });
+        }
+    });
 
     if (cachedSavingsForecast?.entries) {
         cachedSavingsForecast.entries.forEach((entry) => {
             const currentPlanValue = [...(entry.monthlyBalances ?? [])]
-                    .filter((monthValue) => monthKey(monthValue.forecastMonth) <= todayIsoDate())
+                    .filter((monthValue) => monthKey(monthValue.forecastMonth) <= today)
                     .sort((left, right) => monthKey(right.forecastMonth).localeCompare(monthKey(left.forecastMonth)))[0];
             const yearlyPlanValue = (entry.monthlyBalances ?? [])
                     .find((monthValue) => monthKey(monthValue.forecastMonth) === addMonths(cachedSavingsForecast.forecastStartDate, 11));
@@ -918,11 +935,7 @@ function buildPlanningRows(snapshots) {
 
     const rows = averageContributionReport.rows
             .map((row) => {
-                const accountSnapshots = snapshots.filter((snapshot) =>
-                    snapshot.accountId === row.accountId
-                    && snapshot.currencyCode === row.currencyCode
-                );
-                const currentBalance = latestBalanceAtOrBefore(accountSnapshots, todayIsoDate());
+                const currentBalance = latestBalanceByAccountKey.get(`${row.accountId}|${row.currencyCode}`)?.balance ?? 0;
                 const yearlyChange = row.averageContribution * 12;
                 const projectedBalance = currentBalance + yearlyChange;
                 const currentPlannedBalance = currentPlanByAccountKey.get(`${row.accountId}|${row.currencyCode}`) ?? null;
@@ -944,25 +957,31 @@ function buildPlanningRows(snapshots) {
     const totals = [...rows.reduce((accumulator, row) => {
         const nextValue = accumulator.get(row.currencyCode) ?? {
             currencyCode: row.currencyCode,
+            accountCount: 0,
             currentBalance: 0,
             averageContribution: 0,
             projectedBalance: 0,
             yearlyChange: 0,
             currentPlannedBalance: 0,
             plannedBalance: 0,
+            currentPlanCount: 0,
+            yearlyPlanCount: 0,
             hasCurrentPlanData: false,
             hasPlanData: false
         };
+        nextValue.accountCount += 1;
         nextValue.currentBalance += row.currentBalance;
         nextValue.averageContribution += row.averageContribution;
         nextValue.projectedBalance += row.projectedBalance;
         nextValue.yearlyChange += row.yearlyChange;
         if (row.currentPlannedBalance !== null) {
             nextValue.currentPlannedBalance += row.currentPlannedBalance;
+            nextValue.currentPlanCount += 1;
             nextValue.hasCurrentPlanData = true;
         }
         if (row.plannedBalance !== null) {
             nextValue.plannedBalance += row.plannedBalance;
+            nextValue.yearlyPlanCount += 1;
             nextValue.hasPlanData = true;
         }
         accumulator.set(row.currencyCode, nextValue);
@@ -970,11 +989,21 @@ function buildPlanningRows(snapshots) {
     }, new Map()).values()]
             .map((total) => ({
                 ...total,
+                hasCompleteCurrentPlanData: total.accountCount > 0 && total.currentPlanCount === total.accountCount,
+                hasCompleteYearlyPlanData: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount,
                 projectedChangePercent: total.currentBalance === 0 ? null : (total.yearlyChange * 100) / total.currentBalance,
-                currentPlannedBalance: total.hasCurrentPlanData ? total.currentPlannedBalance : null,
-                currentDifferenceToPlan: total.hasCurrentPlanData ? total.currentBalance - total.currentPlannedBalance : null,
-                plannedBalance: total.hasPlanData ? total.plannedBalance : null,
-                differenceToPlan: total.hasPlanData ? total.projectedBalance - total.plannedBalance : null
+                currentPlannedBalance: total.accountCount > 0 && total.currentPlanCount === total.accountCount
+                        ? total.currentPlannedBalance
+                        : null,
+                currentDifferenceToPlan: total.accountCount > 0 && total.currentPlanCount === total.accountCount
+                        ? total.currentBalance - total.currentPlannedBalance
+                        : null,
+                plannedBalance: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount
+                        ? total.plannedBalance
+                        : null,
+                differenceToPlan: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount
+                        ? total.projectedBalance - total.plannedBalance
+                        : null
             }))
             .sort((left, right) => left.currencyCode.localeCompare(right.currencyCode, locale()));
 
