@@ -1315,6 +1315,7 @@ MoneySnapshotI18n.init({
         renderOverviewEmpty(error.message);
         renderAverageContributionsEmpty(error.message);
         renderHistoryEmpty(error.message);
+        setMessage(error.message, "error");
         setAverageContributionsMessage(error.message, "error");
         setHistoryMessage(error.message, "error");
     });
