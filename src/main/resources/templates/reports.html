@@ -128,6 +128,42 @@
         </div>
     </section>
 
+    <section class="table-panel table-panel-wide report-panel" id="reports-planning-section" aria-labelledby="planning-title">
+        <div class="section-header">
+            <h2 id="planning-title" data-i18n="reports.planning.title">Planowanie</h2>
+        </div>
+        <p class="form-message" id="planning-message" role="status"></p>
+        <div class="planning-summary" id="planning-summary"></div>
+        <div class="report-content planning-content">
+            <div class="table-wrap planning-table-wrap">
+                <table class="reports-table planning-table">
+                    <thead>
+                    <tr>
+                        <th scope="col" rowspan="2" data-i18n="reports.planning.account">Konto</th>
+                        <th scope="col" colspan="4" data-i18n="reports.planning.currentGroup">Obecne środki</th>
+                        <th scope="col" colspan="3" data-i18n="reports.planning.yearGroup">Roczne przewidywania</th>
+                    </tr>
+                    <tr>
+                        <th scope="col" data-i18n="reports.planning.current">Obecne środki</th>
+                        <th scope="col" data-i18n="reports.planning.currentPlan">Obecnie według planu</th>
+                        <th scope="col" data-i18n="reports.planning.currentDiff">Różnica teraz</th>
+                        <th scope="col" data-i18n="reports.planning.monthly">Miesięczne tempo</th>
+                        <th scope="col" data-i18n="reports.planning.yearTarget">Za rok</th>
+                        <th scope="col" data-i18n="reports.planning.planTarget">Według planu</th>
+                        <th scope="col" data-i18n="reports.planning.planDiff">Różnica do planu</th>
+                    </tr>
+                    </thead>
+                    <tbody id="planning-table-body">
+                    <tr>
+                        <td colspan="8" data-i18n="reports.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                    <tfoot id="planning-table-foot"></tfoot>
+                </table>
+            </div>
+        </div>
+    </section>
+
     <section class="table-panel table-panel-wide report-panel" id="reports-history-section" aria-labelledby="history-title">
         <div class="section-header">
             <h2 id="history-title" data-i18n="reports.history.title">Historia środków</h2>
@@ -193,6 +229,7 @@
                 <a href="#reports-summary-section" data-target="reports-summary-section" data-i18n="reports.table.title">Zestawienie zmian</a>
                 <a href="#reports-overview-section" data-target="reports-overview-section" data-i18n="reports.overview.title">Przegląd sald</a>
                 <a href="#reports-average-contributions-section" data-target="reports-average-contributions-section" data-i18n="reports.average.title">Średnie wpłaty</a>
+                <a href="#reports-planning-section" data-target="reports-planning-section" data-i18n="reports.planning.title">Planowanie</a>
                 <a href="#reports-history-section" data-target="reports-history-section" data-i18n="reports.history.title">Historia środków</a>
             </nav>
         </aside>
