@@ -14,11 +14,51 @@
     <section class="table-panel table-panel-wide" aria-labelledby="savings-planning-controls-title">
         <div class="section-header">
             <h2 id="savings-planning-controls-title" data-i18n="savingsPlanning.table.title">Prognoza oszczędnościowa</h2>
-            <div class="section-actions">
-                <a href="/savings-planning/settings.html" class="button secondary compact" data-i18n="savingsPlanning.actions.settings">Ustawienia oszczędności</a>
-                <a href="/savings-planning/forecasts/new.html" class="button primary compact" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
-                <button type="button" class="button danger compact" id="delete-savings-planning-forecasts" data-i18n="savingsPlanning.actions.clear" disabled>Wyczyść prognozy</button>
-                <button type="button" class="button secondary compact" id="refresh-savings-planning" data-i18n="savingsPlanning.actions.refresh">Odśwież</button>
+            <div class="section-actions savings-planning-tool-menu">
+                <a href="/savings-planning/forecasts/new.html" class="button primary compact savings-planning-generate-button" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
+                <a href="/savings-planning/settings.html"
+                   class="icon-button secondary"
+                   data-i18n-title="savingsPlanning.actions.settings"
+                   data-i18n-aria-label="savingsPlanning.actions.settings"
+                   aria-label="Ustawienia oszczędności">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v2.2"></path>
+                        <path d="M12 18.8V21"></path>
+                        <path d="m4.93 4.93 1.56 1.56"></path>
+                        <path d="m17.51 17.51 1.56 1.56"></path>
+                        <path d="M3 12h2.2"></path>
+                        <path d="M18.8 12H21"></path>
+                        <path d="m4.93 19.07 1.56-1.56"></path>
+                        <path d="m17.51 6.49 1.56-1.56"></path>
+                        <circle cx="12" cy="12" r="3.2"></circle>
+                    </svg>
+                </a>
+                <button type="button"
+                        class="icon-button danger"
+                        id="delete-savings-planning-forecasts"
+                        data-i18n-title="savingsPlanning.actions.clear"
+                        data-i18n-aria-label="savingsPlanning.actions.clear"
+                        aria-label="Wyczyść prognozy"
+                        disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 6h18"></path>
+                        <path d="M8 6V4h8v2"></path>
+                        <path d="M19 6l-1 14H6L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                    </svg>
+                </button>
+                <button type="button"
+                        class="icon-button secondary"
+                        id="refresh-savings-planning"
+                        data-i18n-title="savingsPlanning.actions.refresh"
+                        data-i18n-aria-label="savingsPlanning.actions.refresh"
+                        aria-label="Odśwież">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                        <path d="M21 3v6h-6"></path>
+                    </svg>
+                </button>
             </div>
         </div>
         <p class="form-message" id="savings-planning-message" role="status"></p>

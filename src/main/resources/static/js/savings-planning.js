@@ -2,6 +2,7 @@ const messageElement = document.querySelector("#savings-planning-message");
 const refreshButton = document.querySelector("#refresh-savings-planning");
 const deleteButton = document.querySelector("#delete-savings-planning-forecasts");
 const tableWrap = document.querySelector("#savings-planning-table-wrap");
+const tableElement = document.querySelector(".savings-forecast-table");
 const tableBody = document.querySelector("#savings-planning-table-body");
 const tableHeadRow = document.querySelector("#savings-planning-table-head-row");
 const tableColgroup = document.querySelector("#savings-planning-table-colgroup");
@@ -61,6 +62,10 @@ function durationLabel(durationMonths) {
     return messageKey ? (messages[messageKey] ?? `${durationMonths}`) : `${durationMonths}`;
 }
 
+function setTableColumnMetrics(columnCount) {
+    tableElement.style.setProperty("--savings-forecast-column-count", String(Math.max(columnCount, 1)));
+}
+
 function renderEmptyState() {
     currentForecast = null;
     tableWrap.hidden = true;
@@ -72,6 +77,7 @@ function renderEmptyState() {
 }
 
 function resetTableHead() {
+    setTableColumnMetrics(1);
     const th = document.createElement("th");
     th.textContent = messages["savingsPlanning.table.date"] ?? "Data";
     tableHeadRow.replaceChildren(th);
@@ -142,6 +148,8 @@ function renderForecastTable(forecast) {
     );
 
     const summaryCurrencies = [...new Set((forecast.summaries ?? []).map((summary) => summary.currencyCode))];
+    setTableColumnMetrics(1 + forecast.entries.length + summaryCurrencies.length);
+
     summaryCurrencies.forEach((currencyCode) => {
         const col = document.createElement("col");
         col.className = "savings-forecast-summary-col";

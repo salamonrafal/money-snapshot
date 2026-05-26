@@ -1,7 +1,8 @@
 const form = document.querySelector("#savings-planning-generator-form");
 const startDateInput = document.querySelector("#savings-planning-generator-start-date");
 const durationSlider = document.querySelector("#savings-planning-generator-duration");
-const durationValueElement = document.querySelector("#savings-planning-generator-duration-value");
+const rangeControlElement = document.querySelector(".range-control");
+const rangeTicksElement = document.querySelector(".range-ticks");
 const messageElement = document.querySelector("#savings-planning-generator-message");
 const warningElement = document.querySelector("#savings-planning-generator-warning");
 const warningTextElement = document.querySelector("#savings-planning-generator-warning-text");
@@ -34,12 +35,52 @@ function selectedDurationMonths() {
     return durations[Number(durationSlider.value)] ?? 12;
 }
 
-function syncDurationLabel() {
-    durationValueElement.textContent = durationLabel(selectedDurationMonths());
+function syncActiveRangeTick() {
+    if (!rangeTicksElement || !durationSlider) {
+        return;
+    }
+
+    const selectedIndex = Number(durationSlider.value);
+    rangeTicksElement.querySelectorAll("[data-range-index]").forEach((label) => {
+        label.classList.toggle("is-active", Number(label.dataset.rangeIndex ?? "-1") === selectedIndex);
+    });
+}
+
+function layoutRangeTicks() {
+    if (!rangeControlElement || !rangeTicksElement || !durationSlider) {
+        return;
+    }
+
+    const tickLabels = [...rangeTicksElement.querySelectorAll("[data-range-index]")];
+    if (tickLabels.length === 0) {
+        return;
+    }
+
+    const sliderStyles = window.getComputedStyle(durationSlider);
+    const paddingLeft = Number.parseFloat(sliderStyles.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(sliderStyles.paddingRight) || 0;
+    const thumbOffset = Number.parseFloat(sliderStyles.getPropertyValue("--range-thumb-offset")) || 10;
+    const trackWidth = Math.max(durationSlider.clientWidth - paddingLeft - paddingRight - (thumbOffset * 2), 0);
+    const maxIndex = Math.max(tickLabels.length - 1, 1);
+    const containerWidth = rangeTicksElement.clientWidth;
+
+    tickLabels.forEach((label) => {
+        const index = Number(label.dataset.rangeIndex ?? "0");
+        const pointX = paddingLeft + thumbOffset + (trackWidth * (index / maxIndex));
+        const labelWidth = label.offsetWidth;
+        const desiredLeft = pointX - (labelWidth / 2);
+        const clampedLeft = Math.min(Math.max(desiredLeft, 0), Math.max(containerWidth - labelWidth, 0));
+        label.style.left = `${clampedLeft}px`;
+    });
 }
 
 function formatDate(value) {
     return MoneySnapshotUi.formatDateValue(value, userSettings);
+}
+
+function clearActiveForecastWarning() {
+    currentActiveForecast = null;
+    warningElement.hidden = true;
 }
 
 function syncWarningText() {
@@ -55,10 +96,12 @@ function syncWarningText() {
 }
 
 async function loadLatestForecast() {
-    const response = await fetch("/api/savings-planning/forecasts/latest");
+    clearActiveForecastWarning();
+
+    const response = await fetch("/api/savings-planning/forecasts/latest", {
+        cache: "no-store"
+    });
     if (response.status === 204) {
-        currentActiveForecast = null;
-        warningElement.hidden = true;
         return;
     }
 
@@ -73,8 +116,7 @@ async function loadLatestForecast() {
         return;
     }
 
-    currentActiveForecast = null;
-    warningElement.hidden = true;
+    clearActiveForecastWarning();
 }
 
 async function generateForecast() {
@@ -114,15 +156,26 @@ form.addEventListener("submit", async (event) => {
     }
 });
 
-durationSlider.addEventListener("input", syncDurationLabel);
+durationSlider.addEventListener("input", () => {
+    syncActiveRangeTick();
+});
+window.addEventListener("resize", layoutRangeTicks);
+
+window.addEventListener("pageshow", () => {
+    clearActiveForecastWarning();
+    loadLatestForecast().catch((error) => {
+        setMessage(error.message, "error");
+    });
+});
 
 MoneySnapshotI18n.init({
     endpoint: "/api/savings-planning-generator/messages",
     onLanguageChange: ({messages: nextMessages}) => {
         messages = nextMessages;
         document.title = `${messages["savingsPlanningGenerator.heading.title"]} | ${messages["app.name"]}`;
-        syncDurationLabel();
+        syncActiveRangeTick();
         syncWarningText();
+        requestAnimationFrame(layoutRangeTicks);
     }
 })
         .then(() => MoneySnapshotUi.loadUserSettings())
@@ -133,7 +186,8 @@ MoneySnapshotI18n.init({
             if (!startDateInput.value) {
                 startDateInput.value = todayIsoDate();
             }
-            syncDurationLabel();
+            syncActiveRangeTick();
+            requestAnimationFrame(layoutRangeTicks);
         })
         .then(loadLatestForecast)
         .catch((error) => {

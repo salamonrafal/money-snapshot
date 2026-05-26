@@ -608,6 +608,56 @@ h1 {
     padding: 10px 12px;
 }
 
+.savings-planning-settings-panel {
+    width: min(100%, 980px);
+    margin-inline: auto;
+}
+
+.savings-planning-settings-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.savings-planning-settings-table {
+    min-width: 760px;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(1),
+.reports-table.savings-planning-settings-table td:nth-child(1) {
+    width: 34%;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(2),
+.reports-table.savings-planning-settings-table td:nth-child(2) {
+    width: 20%;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(3),
+.reports-table.savings-planning-settings-table td:nth-child(3) {
+    width: 16%;
+    text-align: center;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(4),
+.reports-table.savings-planning-settings-table td:nth-child(4) {
+    width: 30%;
+    text-align: left;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(3),
+.reports-table.savings-planning-settings-table td:nth-child(3) {
+    padding-right: 18px;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(4),
+.reports-table.savings-planning-settings-table td:nth-child(4) {
+    padding-left: 18px;
+}
+
+.savings-planning-settings-table .forecast-input {
+    width: min(100%, 160px);
+}
+
 .form-helper {
     margin: 18px 0 0;
     color: var(--muted);
@@ -624,6 +674,10 @@ h1 {
     border: 1px solid #f4b942;
     border-radius: 8px;
     background: rgba(244, 185, 66, 0.14);
+}
+
+.planner-warning[hidden] {
+    display: none;
 }
 
 .planner-warning-icon {
@@ -656,25 +710,48 @@ h1 {
     line-height: 1.5;
 }
 
-.range-value {
-    display: inline-flex;
-    align-items: center;
-    min-height: 32px;
-    font-weight: 800;
+.range-control {
+    --range-thumb-offset: 10px;
+    display: grid;
+    gap: 2px;
+    position: relative;
+}
+
+.duration-range-input {
+    width: 100%;
+    margin: 0;
+    --range-thumb-offset: 10px;
+}
+
+.field input.duration-range-input:focus {
+    border-color: transparent;
+    outline: none;
 }
 
 .range-ticks {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 8px;
+    position: relative;
+    height: 1.9em;
+    margin-top: 0;
+    overflow: hidden;
     color: var(--muted);
     font-size: 0.74rem;
 }
 
 .range-ticks span {
+    position: absolute;
+    top: 0;
     text-align: center;
     line-height: 1.2;
+    white-space: nowrap;
+    color: var(--muted);
+    font-weight: 700;
+    transition: color 0.14s ease, font-weight 0.14s ease, text-shadow 0.14s ease;
+}
+
+.range-ticks span.is-active {
+    color: var(--text);
+    font-weight: 900;
+    text-shadow: 0 0 0 currentColor;
 }
 
 .savings-forecast-summary {
@@ -701,25 +778,61 @@ h1 {
     color: var(--muted);
 }
 
+.savings-planning-tool-menu {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(15, 139, 141, 0.05));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.savings-planning-tool-menu .button,
+.savings-planning-tool-menu .icon-button {
+    flex: 0 0 auto;
+}
+
+.savings-planning-tool-menu .icon-button {
+    width: 32px;
+    height: 32px;
+}
+
+.savings-planning-tool-menu .icon-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.button.compact.savings-planning-generate-button {
+    min-height: 32px;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.82rem;
+}
+
 .savings-forecast-table {
+    --savings-forecast-column-count: 1;
+    --savings-forecast-column-min-width: 9rem;
     border-top: 1px solid var(--line);
     border-collapse: collapse;
-    width: 100%;
-    min-width: 980px;
+    width: max(100%, calc(var(--savings-forecast-column-count) * var(--savings-forecast-column-min-width)));
+    min-width: 100%;
     table-layout: fixed;
     font-size: 0.82rem;
 }
 
 .savings-forecast-date-col {
-    width: 128px;
+    width: calc(100% / var(--savings-forecast-column-count));
 }
 
 .savings-forecast-account-col {
-    width: 164px;
+    width: calc(100% / var(--savings-forecast-column-count));
 }
 
 .savings-forecast-summary-col {
-    width: 164px;
+    width: calc(100% / var(--savings-forecast-column-count));
 }
 
 .savings-forecast-table th,
@@ -775,6 +888,11 @@ h1 {
     white-space: nowrap;
 }
 
+#savings-planning-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
 .savings-forecast-account-head {
     text-align: center;
 }
@@ -811,20 +929,8 @@ h1 {
 
 @media (max-width: 1180px) {
     .savings-forecast-table {
-        min-width: 860px;
+        --savings-forecast-column-min-width: 8rem;
         font-size: 0.8rem;
-    }
-
-    .savings-forecast-date-col {
-        width: 112px;
-    }
-
-    .savings-forecast-account-col {
-        width: 152px;
-    }
-
-    .savings-forecast-summary-col {
-        width: 152px;
     }
 }
 
@@ -1289,6 +1395,14 @@ h1 {
 .overview-content .report-chart {
     min-height: 0;
     align-self: start;
+}
+
+.average-contributions-content {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.average-contributions-content .table-wrap {
+    width: 100%;
 }
 
 .report-chart-layout {
@@ -1886,6 +2000,47 @@ td:nth-child(5) {
     white-space: nowrap;
 }
 
+.average-contributions-table-wrap {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+.report-content .reports-table.average-contributions-table {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    font-size: 0.88rem;
+}
+
+.average-contributions-table th:nth-child(1),
+.average-contributions-table td:nth-child(1) {
+    width: 30%;
+}
+
+.average-contributions-table th:nth-child(2),
+.average-contributions-table td:nth-child(2) {
+    width: 22%;
+}
+
+.average-contributions-table th:nth-child(3),
+.average-contributions-table td:nth-child(3) {
+    width: 14%;
+}
+
+.average-contributions-table th:nth-child(4),
+.average-contributions-table td:nth-child(4) {
+    width: 34%;
+    text-align: right;
+    white-space: normal;
+}
+
+.average-contributions-total-row td {
+    font-weight: 800;
+    background: rgba(15, 139, 141, 0.05);
+}
+
 .history-table {
     width: max(100%, max-content);
     min-width: 100%;
@@ -1895,9 +2050,9 @@ td:nth-child(5) {
 
 .history-table.reports-table th:nth-child(1),
 .history-table.reports-table td:nth-child(1) {
-    width: 44px;
-    min-width: 44px;
-    max-width: 44px;
+    width: 92px;
+    min-width: 92px;
+    max-width: 92px;
     text-align: left;
 }
 
@@ -1922,9 +2077,9 @@ td:nth-child(5) {
     z-index: 1;
     background: var(--surface);
     padding: 4px 3px;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
     line-height: 1.1;
 }
 
@@ -1935,6 +2090,7 @@ td:nth-child(5) {
 .history-date-cell {
     font-weight: 800;
     font-size: 0.68rem;
+    white-space: nowrap;
 }
 
 .history-account-head {
@@ -2063,6 +2219,22 @@ td:nth-child(5) {
     border: 0;
     border-radius: 8px;
     cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.14s ease, background-color 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+}
+
+.icon-button.secondary {
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.icon-button.secondary:hover,
+.icon-button.secondary:focus-visible {
+    color: var(--accent-strong);
+    border-color: rgba(15, 139, 141, 0.28);
+    background: rgba(15, 139, 141, 0.08);
 }
 
 .has-app-tooltip {
@@ -2108,6 +2280,11 @@ td:nth-child(5) {
 
 .icon-button.danger:hover {
     background: rgba(163, 59, 47, 0.2);
+}
+
+.icon-button:disabled {
+    opacity: 0.56;
+    cursor: not-allowed;
 }
 
 .modal-backdrop {
@@ -2245,6 +2422,11 @@ td:nth-child(5) {
         min-width: 500px;
         font-size: 0.84rem;
     }
+
+    .report-content .reports-table.average-contributions-table {
+        min-width: 100%;
+        font-size: 0.84rem;
+    }
 }
 
 @media (max-width: 1180px) {
@@ -2285,6 +2467,10 @@ td:nth-child(5) {
 
     .overview-table {
         min-width: 560px;
+    }
+
+    .report-content .reports-table.average-contributions-table {
+        min-width: 100%;
     }
 
     .reports-table th,
@@ -2411,6 +2597,10 @@ td:nth-child(5) {
 
     .overview-table {
         min-width: 520px;
+    }
+
+    .report-content .reports-table.average-contributions-table {
+        min-width: 100%;
     }
 
     .report-panel .section-actions.report-controls {

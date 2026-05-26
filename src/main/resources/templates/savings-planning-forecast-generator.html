@@ -33,28 +33,30 @@
             </label>
             <label class="field">
                 <span data-i18n="savingsPlanningGenerator.form.duration">Czas trwania</span>
-                <input id="savings-planning-generator-duration"
-                       type="range"
-                       min="0"
-                       max="4"
-                       step="1"
-                       value="1"
-                       list="savings-planning-generator-duration-options">
-                <datalist id="savings-planning-generator-duration-options">
-                    <option value="0"></option>
-                    <option value="1"></option>
-                    <option value="2"></option>
-                    <option value="3"></option>
-                    <option value="4"></option>
-                </datalist>
-                <div class="range-ticks" aria-hidden="true">
-                    <span data-i18n="savingsPlanningGenerator.form.duration.6m">6 miesięcy</span>
-                    <span data-i18n="savingsPlanningGenerator.form.duration.1y">1 rok</span>
-                    <span data-i18n="savingsPlanningGenerator.form.duration.2y">2 lata</span>
-                    <span data-i18n="savingsPlanningGenerator.form.duration.5y">5 lat</span>
-                    <span data-i18n="savingsPlanningGenerator.form.duration.10y">10 lat</span>
+                <div class="range-control">
+                    <input id="savings-planning-generator-duration"
+                           class="duration-range-input"
+                           type="range"
+                           min="0"
+                           max="4"
+                           step="1"
+                           value="1"
+                           list="savings-planning-generator-duration-options">
+                    <datalist id="savings-planning-generator-duration-options">
+                        <option value="0"></option>
+                        <option value="1"></option>
+                        <option value="2"></option>
+                        <option value="3"></option>
+                        <option value="4"></option>
+                    </datalist>
+                    <div class="range-ticks" aria-hidden="true">
+                        <span data-range-index="0" data-i18n="savingsPlanningGenerator.form.duration.6m">6 miesięcy</span>
+                        <span data-range-index="1" data-i18n="savingsPlanningGenerator.form.duration.1y">1 rok</span>
+                        <span data-range-index="2" data-i18n="savingsPlanningGenerator.form.duration.2y">2 lata</span>
+                        <span data-range-index="3" data-i18n="savingsPlanningGenerator.form.duration.5y">5 lat</span>
+                        <span data-range-index="4" data-i18n="savingsPlanningGenerator.form.duration.10y">10 lat</span>
+                    </div>
                 </div>
-                <span class="range-value" id="savings-planning-generator-duration-value">1 rok</span>
             </label>
             <p class="form-helper" data-i18n="savingsPlanningGenerator.form.hint">Generowanie obejmuje wszystkie konta użytkownika z ostatnim znanym saldem oraz ustawioną miesięczną wpłatą.</p>
             <div class="form-actions">
