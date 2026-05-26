@@ -847,7 +847,6 @@ function renderAverageContributions(rows, totals) {
         if (row.sampleFromDate && row.sampleToDate) {
             const sampleRange = `${formatDate(row.sampleFromDate)} - ${formatDate(row.sampleToDate)}`;
             averageCell.setAttribute("aria-label", `${averageCell.textContent}. ${sampleRange}`);
-            averageCell.tabIndex = 0;
             MoneySnapshotUi.setTooltip(averageCell, sampleRange);
         }
 

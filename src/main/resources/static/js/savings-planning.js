@@ -40,7 +40,6 @@ tooltipMeasureElement.style.whiteSpace = "nowrap";
 tooltipMeasureElement.style.padding = "8px 10px";
 tooltipMeasureElement.style.fontSize = "0.78rem";
 tooltipMeasureElement.style.fontWeight = "800";
-tooltipMeasureElement.style.maxWidth = "min(24rem, calc(100vw - 24px))";
 document.body.append(tooltipMeasureElement);
 
 function setMessage(text, type = "") {
@@ -86,9 +85,10 @@ function setTableColumnMetrics(columnCount) {
     stickyHeadTable.style.setProperty("--savings-forecast-column-count", String(Math.max(columnCount, 1)));
 }
 
-function measureTooltipWidth(text) {
+function measureTooltipWidth(text, maxWidth) {
     tooltipMeasureElement.textContent = text;
-    return Math.min(tooltipMeasureElement.getBoundingClientRect().width, window.innerWidth - 24);
+    tooltipMeasureElement.style.maxWidth = `${maxWidth}px`;
+    return Math.min(tooltipMeasureElement.getBoundingClientRect().width, maxWidth);
 }
 
 function updateStickyTooltipPlacement(target) {
@@ -103,8 +103,9 @@ function updateStickyTooltipPlacement(target) {
 
     const wrapRect = stickyHeadWrap.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
-    const tooltipWidth = measureTooltipWidth(tooltipText);
     const edgePadding = 8;
+    const availableWidth = Math.max(wrapRect.width - (edgePadding * 2), 0);
+    const tooltipWidth = measureTooltipWidth(tooltipText, availableWidth);
     const minCenter = wrapRect.left + edgePadding + (tooltipWidth / 2);
     const maxCenter = wrapRect.right - edgePadding - (tooltipWidth / 2);
     const visibleLeft = Math.max(targetRect.left, wrapRect.left + edgePadding);
@@ -117,6 +118,7 @@ function updateStickyTooltipPlacement(target) {
     const centerOffset = clampedCenter - targetRect.left;
 
     target.style.setProperty("--sticky-tooltip-center-x", `${centerOffset}px`);
+    target.style.setProperty("--sticky-tooltip-max-width", `${availableWidth}px`);
 }
 
 function syncStickyHeaderScroll() {
@@ -158,10 +160,16 @@ function renderEmptyState() {
 
 function resetTableHead() {
     setTableColumnMetrics(1);
+    const dateLabel = messages["savingsPlanning.table.date"] ?? "Data";
     const accessibleTh = document.createElement("th");
     accessibleTh.scope = "col";
-    accessibleTh.textContent = messages["savingsPlanning.table.date"] ?? "Data";
-    const stickyTh = accessibleTh.cloneNode(true);
+    const accessibleLabel = document.createElement("span");
+    accessibleLabel.className = "savings-forecast-accessible-label";
+    accessibleLabel.textContent = dateLabel;
+    accessibleTh.append(accessibleLabel);
+    const stickyTh = document.createElement("th");
+    stickyTh.scope = "col";
+    stickyTh.textContent = dateLabel;
     tableHeadRow.replaceChildren(accessibleTh);
     stickyHeadRow.replaceChildren(stickyTh);
     tableColgroup.replaceChildren(Object.assign(document.createElement("col"), {
@@ -183,15 +191,20 @@ function createAccountHeadCell(entry, tooltipEnabled) {
     const fullLabel = `${accountLabel} · ${entry.bankName}`;
 
     headContent.className = "savings-forecast-head-content";
-    accountLine.textContent = accountLabel;
-    bankLine.textContent = entry.bankName;
     th.setAttribute("aria-label", fullLabel);
 
     if (tooltipEnabled) {
+        accountLine.textContent = accountLabel;
+        bankLine.textContent = entry.bankName;
         MoneySnapshotUi.setTooltip(headContent, fullLabel);
+    } else {
+        headContent.classList.add("savings-forecast-accessible-label");
+        headContent.textContent = fullLabel;
     }
 
-    headContent.append(accountLine, bankLine);
+    if (tooltipEnabled) {
+        headContent.append(accountLine, bankLine);
+    }
     th.append(headContent);
     return th;
 }
@@ -205,14 +218,19 @@ function createSummaryHeadCell(currencyCode, tooltipEnabled) {
     const summaryLabel = `${messages["savingsPlanning.table.summary"] ?? "Podsumowanie"} [${currencyCode}]`;
 
     headContent.className = "savings-forecast-head-content";
-    summaryLine.textContent = summaryLabel;
     th.setAttribute("aria-label", summaryLabel);
 
     if (tooltipEnabled) {
+        summaryLine.textContent = summaryLabel;
         MoneySnapshotUi.setTooltip(headContent, summaryLabel);
+    } else {
+        headContent.classList.add("savings-forecast-accessible-label");
+        headContent.textContent = summaryLabel;
     }
 
-    headContent.append(summaryLine);
+    if (tooltipEnabled) {
+        headContent.append(summaryLine);
+    }
     th.append(headContent);
     return th;
 }
