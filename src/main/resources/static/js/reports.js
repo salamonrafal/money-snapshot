@@ -745,6 +745,10 @@ function buildOverviewRows(snapshots, toDate, scope) {
 function buildAverageContributionRows(snapshots) {
     const grouped = new Map();
     snapshots.forEach((snapshot) => {
+        if (snapshot.snapshotType !== "FINAL") {
+            return;
+        }
+
         const key = `${snapshot.accountId}|${snapshot.currencyCode}`;
         const entry = grouped.get(key) ?? {
             accountName: snapshot.accountName,
@@ -753,17 +757,16 @@ function buildAverageContributionRows(snapshots) {
             finalSnapshots: []
         };
 
-        if (snapshot.snapshotType === "FINAL") {
-            entry.finalSnapshots.push({
-                snapshotDate: snapshot.snapshotDate,
-                balance: Number(snapshot.balance)
-            });
-        }
+        entry.finalSnapshots.push({
+            snapshotDate: snapshot.snapshotDate,
+            balance: Number(snapshot.balance)
+        });
 
         grouped.set(key, entry);
     });
 
     const rows = [...grouped.values()]
+            .filter((entry) => entry.finalSnapshots.length >= 2)
             .map((entry) => {
                 const balances = [...entry.finalSnapshots]
                         .sort((left, right) => right.snapshotDate.localeCompare(left.snapshotDate))
@@ -779,9 +782,7 @@ function buildAverageContributionRows(snapshots) {
                     name: entry.accountName,
                     bankName: entry.bankName,
                     currencyCode: entry.currencyCode,
-                    averageContribution: changes.length === 0
-                            ? null
-                            : changes.reduce((sum, value) => sum + value, 0) / changes.length,
+                    averageContribution: changes.reduce((sum, value) => sum + value, 0) / changes.length,
                     sampleFromDate: balances[0]?.snapshotDate ?? null,
                     sampleToDate: balances.at(-1)?.snapshotDate ?? null
                 };
@@ -789,10 +790,6 @@ function buildAverageContributionRows(snapshots) {
             .sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode));
 
     const totals = [...rows.reduce((accumulator, row) => {
-        if (row.averageContribution === null) {
-            return accumulator;
-        }
-
         accumulator.set(
                 row.currencyCode,
                 (accumulator.get(row.currencyCode) ?? 0) + row.averageContribution
