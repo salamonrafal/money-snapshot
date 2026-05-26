@@ -787,7 +787,7 @@ function buildAverageContributionRows(snapshots) {
                     sampleToDate: balances.at(-1)?.snapshotDate ?? null
                 };
             })
-            .sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode));
+            .sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode, locale()));
 
     const totals = [...rows.reduce((accumulator, row) => {
         accumulator.set(
@@ -797,7 +797,7 @@ function buildAverageContributionRows(snapshots) {
         return accumulator;
     }, new Map()).entries()]
             .map(([currencyCode, averageContribution]) => ({currencyCode, averageContribution}))
-            .sort((left, right) => left.currencyCode.localeCompare(right.currencyCode));
+            .sort((left, right) => left.currencyCode.localeCompare(right.currencyCode, locale()));
 
     return {rows, totals};
 }
