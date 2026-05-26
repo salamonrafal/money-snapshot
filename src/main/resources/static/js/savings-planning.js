@@ -159,6 +159,7 @@ function renderEmptyState() {
 function resetTableHead() {
     setTableColumnMetrics(1);
     const accessibleTh = document.createElement("th");
+    accessibleTh.scope = "col";
     accessibleTh.textContent = messages["savingsPlanning.table.date"] ?? "Data";
     const stickyTh = accessibleTh.cloneNode(true);
     tableHeadRow.replaceChildren(accessibleTh);
@@ -173,6 +174,7 @@ function resetTableHead() {
 
 function createAccountHeadCell(entry, tooltipEnabled) {
     const th = document.createElement("th");
+    th.scope = "col";
     th.className = "savings-forecast-account-head";
     const headContent = document.createElement("div");
     const accountLine = document.createElement("span");
@@ -196,6 +198,7 @@ function createAccountHeadCell(entry, tooltipEnabled) {
 
 function createSummaryHeadCell(currencyCode, tooltipEnabled) {
     const th = document.createElement("th");
+    th.scope = "col";
     th.className = "savings-forecast-account-head savings-forecast-summary-head";
     const headContent = document.createElement("div");
     const summaryLine = document.createElement("span");

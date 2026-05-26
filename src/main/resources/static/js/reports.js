@@ -52,6 +52,9 @@ let currentOverviewScope = "accounts";
 let currentHistoryPage = 0;
 let historyMatrixCache = null;
 let historyMatrixCacheKey = "";
+let averageContributionReportCache = null;
+let averageContributionReportCacheKey = "";
+let snapshotsVersion = 0;
 let reportsNavStickyEnabled = reportsNavStickyMedia.matches;
 let reportsNavStickyFramePending = false;
 let userSettings = null;
@@ -801,6 +804,22 @@ function buildAverageContributionRows(snapshots) {
     return {rows, totals};
 }
 
+function invalidateAverageContributionReportCache() {
+    averageContributionReportCache = null;
+    averageContributionReportCacheKey = "";
+}
+
+function getAverageContributionReport(snapshots) {
+    const cacheKey = `${snapshotsVersion}|${locale()}`;
+    if (averageContributionReportCache && averageContributionReportCacheKey === cacheKey) {
+        return averageContributionReportCache;
+    }
+
+    averageContributionReportCache = buildAverageContributionRows(snapshots);
+    averageContributionReportCacheKey = cacheKey;
+    return averageContributionReportCache;
+}
+
 function renderAverageContributionsEmpty(message) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
@@ -828,6 +847,7 @@ function renderAverageContributions(rows, totals) {
         if (row.sampleFromDate && row.sampleToDate) {
             const sampleRange = `${formatDate(row.sampleFromDate)} - ${formatDate(row.sampleToDate)}`;
             averageCell.setAttribute("aria-label", `${averageCell.textContent}. ${sampleRange}`);
+            averageCell.tabIndex = 0;
             MoneySnapshotUi.setTooltip(averageCell, sampleRange);
         }
 
@@ -1123,7 +1143,7 @@ function renderReports() {
     try {
         setMessage("");
         const range = resolveDateRange();
-        const averageContributionReport = buildAverageContributionRows(cachedSnapshots);
+        const averageContributionReport = getAverageContributionReport(cachedSnapshots);
         const {rows, step, checkpoints} = buildRows(cachedSnapshots, range, currentScope);
         if (averageContributionReport.rows.length === 0) {
             renderAverageContributionsEmpty(messages["reports.average.empty"]);
@@ -1168,6 +1188,8 @@ async function loadReports() {
 
     cachedSnapshots = await response.json();
     snapshotsLoaded = true;
+    snapshotsVersion += 1;
+    invalidateAverageContributionReportCache();
     invalidateHistoryCache();
     renderReports();
 }
@@ -1175,6 +1197,7 @@ async function loadReports() {
 function handleLanguageChange(nextLanguage, nextMessages) {
     currentLanguage = nextLanguage;
     messages = nextMessages;
+    invalidateAverageContributionReportCache();
     invalidateHistoryCache();
     document.title = `${messages["reports.heading.title"]} | ${messages["app.name"]}`;
     chartElement.setAttribute("aria-label", messages["reports.chart.aria.changes"]);
