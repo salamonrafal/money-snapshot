@@ -842,7 +842,7 @@ function renderAverageContributions(rows, totals) {
         bankCell.textContent = row.bankName;
         currencyCell.textContent = row.currencyCode;
         averageCell.className = "numeric-cell";
-        averageCell.textContent = row.averageContribution === null ? "-" : formatChange(row.averageContribution);
+        averageCell.textContent = formatChange(row.averageContribution);
 
         if (row.sampleFromDate && row.sampleToDate) {
             const sampleRange = `${formatDate(row.sampleFromDate)} - ${formatDate(row.sampleToDate)}`;
