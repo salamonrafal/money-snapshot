@@ -31,6 +31,7 @@ let lastStickyHeadWidth = 0;
 const tooltipMeasureElement = document.createElement("span");
 let tooltipMeasureElementReady = false;
 
+tooltipMeasureElement.setAttribute("aria-hidden", "true");
 tooltipMeasureElement.style.position = "fixed";
 tooltipMeasureElement.style.left = "-9999px";
 tooltipMeasureElement.style.top = "-9999px";

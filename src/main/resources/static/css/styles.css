@@ -2087,6 +2087,8 @@ td:nth-child(5) {
     width: 100%;
     min-width: 0;
     overflow-x: auto;
+    padding-top: 44px;
+    margin-top: -44px;
 }
 
 .report-content .reports-table.average-contributions-table {
