@@ -822,7 +822,12 @@ h1 {
     top: 0;
     z-index: 12;
     margin-top: 22px;
-    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    overflow-y: visible;
+    padding-bottom: 44px;
+    margin-bottom: -44px;
 }
 
 .savings-forecast-table {
@@ -886,6 +891,29 @@ h1 {
     text-align: center;
 }
 
+.savings-forecast-accessible-head th {
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top: 0;
+    border-bottom: 0;
+    background: transparent;
+    color: transparent;
+    line-height: 0;
+    font-size: 0;
+}
+
+.savings-forecast-accessible-head .savings-forecast-head-content > span {
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.savings-forecast-accessible-head .savings-forecast-head-content > span:first-child,
+.savings-forecast-accessible-head .savings-forecast-head-content > span:nth-child(2) {
+    margin-top: 0;
+    line-height: 0;
+    font-size: 0;
+}
+
 .savings-forecast-table tbody td:first-child {
     text-align: left;
 }
@@ -928,6 +956,9 @@ h1 {
     top: calc(100% + 8px);
     bottom: auto;
     transform: translateX(-50%) translateY(-4px);
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 24px));
+    white-space: nowrap;
 }
 
 .savings-forecast-sticky-head-table .has-app-tooltip:hover::after,
