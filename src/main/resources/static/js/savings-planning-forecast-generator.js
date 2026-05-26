@@ -35,6 +35,14 @@ function selectedDurationMonths() {
     return durations[Number(durationSlider.value)] ?? 12;
 }
 
+function syncDurationAriaValueText() {
+    if (!durationSlider) {
+        return;
+    }
+
+    durationSlider.setAttribute("aria-valuetext", durationLabel(selectedDurationMonths()));
+}
+
 function syncActiveRangeTick() {
     if (!rangeTicksElement || !durationSlider) {
         return;
@@ -157,11 +165,16 @@ form.addEventListener("submit", async (event) => {
 });
 
 durationSlider.addEventListener("input", () => {
+    syncDurationAriaValueText();
     syncActiveRangeTick();
 });
 window.addEventListener("resize", layoutRangeTicks);
 
-window.addEventListener("pageshow", () => {
+window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) {
+        return;
+    }
+
     clearActiveForecastWarning();
     loadLatestForecast().catch((error) => {
         setMessage(error.message, "error");
@@ -173,6 +186,7 @@ MoneySnapshotI18n.init({
     onLanguageChange: ({messages: nextMessages}) => {
         messages = nextMessages;
         document.title = `${messages["savingsPlanningGenerator.heading.title"]} | ${messages["app.name"]}`;
+        syncDurationAriaValueText();
         syncActiveRangeTick();
         syncWarningText();
         requestAnimationFrame(layoutRangeTicks);
@@ -186,6 +200,7 @@ MoneySnapshotI18n.init({
             if (!startDateInput.value) {
                 startDateInput.value = todayIsoDate();
             }
+            syncDurationAriaValueText();
             syncActiveRangeTick();
             requestAnimationFrame(layoutRangeTicks);
         })

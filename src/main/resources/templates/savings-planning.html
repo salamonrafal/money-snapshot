@@ -73,16 +73,23 @@
             <p data-i18n="savingsPlanning.empty.description">Wygeneruj pierwszy zestaw prognoz, aby zobaczyć przewidywane salda dla wszystkich kont.</p>
             <a href="/savings-planning/forecasts/new.html" class="button primary" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
         </div>
-        <div class="table-wrap" id="savings-planning-table-wrap" hidden>
-            <table class="savings-forecast-table">
-                <colgroup id="savings-planning-table-colgroup">
+        <div class="savings-forecast-sticky-head-wrap" id="savings-planning-sticky-head-wrap" hidden>
+            <table class="savings-forecast-table savings-forecast-sticky-head-table" id="savings-planning-sticky-head-table" aria-hidden="true">
+                <colgroup id="savings-planning-sticky-colgroup">
                     <col class="savings-forecast-date-col">
                 </colgroup>
-                <thead id="savings-planning-table-head">
-                <tr id="savings-planning-table-head-row">
+                <thead>
+                <tr id="savings-planning-sticky-head-row">
                     <th data-i18n="savingsPlanning.table.date">Data</th>
                 </tr>
                 </thead>
+            </table>
+        </div>
+        <div class="table-wrap" id="savings-planning-table-wrap" hidden>
+            <table class="savings-forecast-table" id="savings-planning-table">
+                <colgroup id="savings-planning-table-colgroup">
+                    <col class="savings-forecast-date-col">
+                </colgroup>
                 <tbody id="savings-planning-table-body">
                 <tr class="savings-forecast-empty-row">
                     <td class="savings-forecast-empty-cell" colspan="1" data-i18n="savingsPlanning.loading">Ładowanie...</td>

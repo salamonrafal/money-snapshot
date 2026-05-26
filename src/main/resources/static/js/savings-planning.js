@@ -2,10 +2,13 @@ const messageElement = document.querySelector("#savings-planning-message");
 const refreshButton = document.querySelector("#refresh-savings-planning");
 const deleteButton = document.querySelector("#delete-savings-planning-forecasts");
 const tableWrap = document.querySelector("#savings-planning-table-wrap");
-const tableElement = document.querySelector(".savings-forecast-table");
+const stickyHeadWrap = document.querySelector("#savings-planning-sticky-head-wrap");
+const tableElement = document.querySelector("#savings-planning-table");
+const stickyHeadTable = document.querySelector("#savings-planning-sticky-head-table");
 const tableBody = document.querySelector("#savings-planning-table-body");
-const tableHeadRow = document.querySelector("#savings-planning-table-head-row");
+const stickyHeadRow = document.querySelector("#savings-planning-sticky-head-row");
 const tableColgroup = document.querySelector("#savings-planning-table-colgroup");
+const stickyColgroup = document.querySelector("#savings-planning-sticky-colgroup");
 const emptyState = document.querySelector("#savings-planning-empty-state");
 const summaryElement = document.querySelector("#savings-planning-summary");
 const generatedAtElement = document.querySelector("#savings-planning-generated-at");
@@ -64,11 +67,24 @@ function durationLabel(durationMonths) {
 
 function setTableColumnMetrics(columnCount) {
     tableElement.style.setProperty("--savings-forecast-column-count", String(Math.max(columnCount, 1)));
+    stickyHeadTable.style.setProperty("--savings-forecast-column-count", String(Math.max(columnCount, 1)));
+}
+
+function syncStickyHeader() {
+    if (tableWrap.hidden) {
+        stickyHeadWrap.hidden = true;
+        return;
+    }
+
+    stickyHeadWrap.hidden = false;
+    stickyHeadTable.style.width = `${tableElement.offsetWidth}px`;
+    stickyHeadTable.style.transform = `translateX(${-tableWrap.scrollLeft}px)`;
 }
 
 function renderEmptyState() {
     currentForecast = null;
     tableWrap.hidden = true;
+    stickyHeadWrap.hidden = true;
     summaryElement.hidden = true;
     emptyState.hidden = false;
     deleteButton.disabled = true;
@@ -80,8 +96,11 @@ function resetTableHead() {
     setTableColumnMetrics(1);
     const th = document.createElement("th");
     th.textContent = messages["savingsPlanning.table.date"] ?? "Data";
-    tableHeadRow.replaceChildren(th);
+    stickyHeadRow.replaceChildren(th);
     tableColgroup.replaceChildren(Object.assign(document.createElement("col"), {
+        className: "savings-forecast-date-col"
+    }));
+    stickyColgroup.replaceChildren(Object.assign(document.createElement("col"), {
         className: "savings-forecast-date-col"
     }));
 }
@@ -106,6 +125,7 @@ function renderForecastTableEmptyRun(forecast) {
     cell.textContent = messages["savingsPlanning.empty.description"] ?? "";
     row.append(cell);
     tableBody.replaceChildren(row);
+    requestAnimationFrame(syncStickyHeader);
 }
 
 function renderForecastTable(forecast) {
@@ -126,18 +146,28 @@ function renderForecastTable(forecast) {
 
     resetTableHead();
     forecast.entries.forEach((entry) => {
-        const col = document.createElement("col");
-        col.className = "savings-forecast-account-col";
-        tableColgroup.append(col);
+        tableColgroup.append(Object.assign(document.createElement("col"), {
+            className: "savings-forecast-account-col"
+        }));
+        stickyColgroup.append(Object.assign(document.createElement("col"), {
+            className: "savings-forecast-account-col"
+        }));
 
         const th = document.createElement("th");
         th.className = "savings-forecast-account-head";
+        const headContent = document.createElement("div");
         const accountLine = document.createElement("span");
         const bankLine = document.createElement("span");
-        accountLine.textContent = `[${entry.currencyCode}] ${entry.accountName}`;
+        const accountLabel = `[${entry.currencyCode}] ${entry.accountName}`;
+        const fullLabel = `${accountLabel} · ${entry.bankName}`;
+        headContent.className = "savings-forecast-head-content";
+        accountLine.textContent = accountLabel;
         bankLine.textContent = entry.bankName;
-        th.append(accountLine, bankLine);
-        tableHeadRow.append(th);
+        th.setAttribute("aria-label", fullLabel);
+        MoneySnapshotUi.setTooltip(headContent, fullLabel);
+        headContent.append(accountLine, bankLine);
+        th.append(headContent);
+        stickyHeadRow.append(th);
     });
 
     const summaryByMonthAndCurrency = new Map(
@@ -151,16 +181,25 @@ function renderForecastTable(forecast) {
     setTableColumnMetrics(1 + forecast.entries.length + summaryCurrencies.length);
 
     summaryCurrencies.forEach((currencyCode) => {
-        const col = document.createElement("col");
-        col.className = "savings-forecast-summary-col";
-        tableColgroup.append(col);
+        tableColgroup.append(Object.assign(document.createElement("col"), {
+            className: "savings-forecast-summary-col"
+        }));
+        stickyColgroup.append(Object.assign(document.createElement("col"), {
+            className: "savings-forecast-summary-col"
+        }));
 
         const th = document.createElement("th");
         th.className = "savings-forecast-account-head savings-forecast-summary-head";
+        const headContent = document.createElement("div");
         const summaryLine = document.createElement("span");
-        summaryLine.textContent = `${messages["savingsPlanning.table.summary"] ?? "Podsumowanie"} [${currencyCode}]`;
-        th.append(summaryLine);
-        tableHeadRow.append(th);
+        const summaryLabel = `${messages["savingsPlanning.table.summary"] ?? "Podsumowanie"} [${currencyCode}]`;
+        headContent.className = "savings-forecast-head-content";
+        summaryLine.textContent = summaryLabel;
+        th.setAttribute("aria-label", summaryLabel);
+        MoneySnapshotUi.setTooltip(headContent, summaryLabel);
+        headContent.append(summaryLine);
+        th.append(headContent);
+        stickyHeadRow.append(th);
     });
 
     const monthLabels = forecast.forecastMonths ?? [];
@@ -192,6 +231,7 @@ function renderForecastTable(forecast) {
         });
         return row;
     }));
+    requestAnimationFrame(syncStickyHeader);
 }
 
 async function loadLatestForecast() {
@@ -231,6 +271,11 @@ refreshButton.addEventListener("click", () => {
     loadLatestForecast().catch((error) => {
         setMessage(error.message, "error");
     });
+});
+
+tableWrap.addEventListener("scroll", syncStickyHeader, {passive: true});
+window.addEventListener("resize", () => {
+    syncStickyHeader();
 });
 
 deleteButton.addEventListener("click", () => {
