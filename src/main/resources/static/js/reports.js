@@ -769,9 +769,8 @@ function buildAverageContributionRows(snapshots) {
             .filter((entry) => entry.finalSnapshots.length >= 2)
             .map((entry) => {
                 const balances = [...entry.finalSnapshots]
-                        .sort((left, right) => right.snapshotDate.localeCompare(left.snapshotDate))
-                        .slice(0, 3)
-                        .sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
+                        .sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate))
+                        .slice(-3);
 
                 const changes = [];
                 for (let index = 1; index < balances.length; index += 1) {
