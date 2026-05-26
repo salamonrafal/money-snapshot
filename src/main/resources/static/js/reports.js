@@ -826,7 +826,10 @@ function renderAverageContributions(rows, totals) {
         averageCell.textContent = row.averageContribution === null ? "-" : formatChange(row.averageContribution);
 
         if (row.sampleFromDate && row.sampleToDate) {
-            averageCell.dataset.tooltip = `${formatDate(row.sampleFromDate)} - ${formatDate(row.sampleToDate)}`;
+            const sampleRange = `${formatDate(row.sampleFromDate)} - ${formatDate(row.sampleToDate)}`;
+            averageCell.dataset.tooltip = sampleRange;
+            averageCell.setAttribute("aria-label", `${averageCell.textContent}. ${sampleRange}`);
+            averageCell.title = sampleRange;
             averageCell.classList.add("has-app-tooltip");
         }
 

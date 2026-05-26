@@ -28,6 +28,20 @@ let messages = {};
 let currentForecast = null;
 let userSettings = null;
 let lastStickyHeadWidth = 0;
+const tooltipMeasureElement = document.createElement("span");
+
+tooltipMeasureElement.style.position = "fixed";
+tooltipMeasureElement.style.left = "-9999px";
+tooltipMeasureElement.style.top = "-9999px";
+tooltipMeasureElement.style.visibility = "hidden";
+tooltipMeasureElement.style.pointerEvents = "none";
+tooltipMeasureElement.style.display = "inline-block";
+tooltipMeasureElement.style.whiteSpace = "nowrap";
+tooltipMeasureElement.style.padding = "8px 10px";
+tooltipMeasureElement.style.fontSize = "0.78rem";
+tooltipMeasureElement.style.fontWeight = "800";
+tooltipMeasureElement.style.maxWidth = "min(24rem, calc(100vw - 24px))";
+document.body.append(tooltipMeasureElement);
 
 function setMessage(text, type = "") {
     messageElement.textContent = text;
@@ -70,6 +84,39 @@ function durationLabel(durationMonths) {
 function setTableColumnMetrics(columnCount) {
     tableElement.style.setProperty("--savings-forecast-column-count", String(Math.max(columnCount, 1)));
     stickyHeadTable.style.setProperty("--savings-forecast-column-count", String(Math.max(columnCount, 1)));
+}
+
+function measureTooltipWidth(text) {
+    tooltipMeasureElement.textContent = text;
+    return Math.min(tooltipMeasureElement.getBoundingClientRect().width, window.innerWidth - 24);
+}
+
+function updateStickyTooltipPlacement(target) {
+    if (!target || !stickyHeadWrap.contains(target)) {
+        return;
+    }
+
+    const tooltipText = target.dataset.tooltip;
+    if (!tooltipText) {
+        return;
+    }
+
+    const wrapRect = stickyHeadWrap.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const tooltipWidth = measureTooltipWidth(tooltipText);
+    const edgePadding = 8;
+    const minCenter = wrapRect.left + edgePadding + (tooltipWidth / 2);
+    const maxCenter = wrapRect.right - edgePadding - (tooltipWidth / 2);
+    const visibleLeft = Math.max(targetRect.left, wrapRect.left + edgePadding);
+    const visibleRight = Math.min(targetRect.right, wrapRect.right - edgePadding);
+    const fallbackCenter = targetRect.left + (targetRect.width / 2);
+    const visibleCenter = visibleLeft < visibleRight
+            ? visibleLeft + ((visibleRight - visibleLeft) / 2)
+            : fallbackCenter;
+    const clampedCenter = Math.min(Math.max(visibleCenter, minCenter), maxCenter);
+    const centerOffset = clampedCenter - targetRect.left;
+
+    target.style.setProperty("--sticky-tooltip-center-x", `${centerOffset}px`);
 }
 
 function syncStickyHeaderScroll() {
@@ -139,6 +186,8 @@ function createAccountHeadCell(entry, tooltipEnabled) {
     th.setAttribute("aria-label", fullLabel);
 
     if (tooltipEnabled) {
+        headContent.tabIndex = 0;
+        headContent.setAttribute("aria-label", fullLabel);
         MoneySnapshotUi.setTooltip(headContent, fullLabel);
     }
 
@@ -159,6 +208,8 @@ function createSummaryHeadCell(currencyCode, tooltipEnabled) {
     th.setAttribute("aria-label", summaryLabel);
 
     if (tooltipEnabled) {
+        headContent.tabIndex = 0;
+        headContent.setAttribute("aria-label", summaryLabel);
         MoneySnapshotUi.setTooltip(headContent, summaryLabel);
     }
 
@@ -313,6 +364,18 @@ refreshButton.addEventListener("click", () => {
 tableWrap.addEventListener("scroll", syncStickyHeaderScroll, {passive: true});
 window.addEventListener("resize", () => {
     syncStickyHeaderLayout();
+});
+stickyHeadWrap.addEventListener("pointerover", (event) => {
+    const tooltipTarget = event.target.closest(".has-app-tooltip");
+    if (tooltipTarget) {
+        updateStickyTooltipPlacement(tooltipTarget);
+    }
+});
+stickyHeadWrap.addEventListener("focusin", (event) => {
+    const tooltipTarget = event.target.closest(".has-app-tooltip");
+    if (tooltipTarget) {
+        updateStickyTooltipPlacement(tooltipTarget);
+    }
 });
 
 deleteButton.addEventListener("click", () => {
