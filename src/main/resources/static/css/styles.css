@@ -964,7 +964,8 @@ h1 {
     transform: translateX(-50%) translateY(-4px);
     width: max-content;
     max-width: var(--sticky-tooltip-max-width, min(24rem, calc(100vw - 24px)));
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .savings-forecast-sticky-head-table .has-app-tooltip:hover::after,
