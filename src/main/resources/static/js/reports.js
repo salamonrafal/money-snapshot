@@ -827,10 +827,8 @@ function renderAverageContributions(rows, totals) {
 
         if (row.sampleFromDate && row.sampleToDate) {
             const sampleRange = `${formatDate(row.sampleFromDate)} - ${formatDate(row.sampleToDate)}`;
-            averageCell.dataset.tooltip = sampleRange;
             averageCell.setAttribute("aria-label", `${averageCell.textContent}. ${sampleRange}`);
-            averageCell.title = sampleRange;
-            averageCell.classList.add("has-app-tooltip");
+            MoneySnapshotUi.setTooltip(averageCell, sampleRange);
         }
 
         tableRow.append(nameCell, bankCell, currencyCell, averageCell);
@@ -1231,7 +1229,9 @@ refreshButton.addEventListener("click", () => {
     loadReports().catch((error) => {
         renderEmpty(error.message);
         renderOverviewEmpty(error.message);
+        renderAverageContributionsEmpty(error.message);
         setMessage(error.message, "error");
+        setAverageContributionsMessage(error.message, "error");
     });
 });
 

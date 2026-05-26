@@ -186,8 +186,6 @@ function createAccountHeadCell(entry, tooltipEnabled) {
     th.setAttribute("aria-label", fullLabel);
 
     if (tooltipEnabled) {
-        headContent.tabIndex = 0;
-        headContent.setAttribute("aria-label", fullLabel);
         MoneySnapshotUi.setTooltip(headContent, fullLabel);
     }
 
@@ -208,8 +206,6 @@ function createSummaryHeadCell(currencyCode, tooltipEnabled) {
     th.setAttribute("aria-label", summaryLabel);
 
     if (tooltipEnabled) {
-        headContent.tabIndex = 0;
-        headContent.setAttribute("aria-label", summaryLabel);
         MoneySnapshotUi.setTooltip(headContent, summaryLabel);
     }
 
@@ -366,12 +362,6 @@ window.addEventListener("resize", () => {
     syncStickyHeaderLayout();
 });
 stickyHeadWrap.addEventListener("pointerover", (event) => {
-    const tooltipTarget = event.target.closest(".has-app-tooltip");
-    if (tooltipTarget) {
-        updateStickyTooltipPlacement(tooltipTarget);
-    }
-});
-stickyHeadWrap.addEventListener("focusin", (event) => {
     const tooltipTarget = event.target.closest(".has-app-tooltip");
     if (tooltipTarget) {
         updateStickyTooltipPlacement(tooltipTarget);
