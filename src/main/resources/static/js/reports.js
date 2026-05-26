@@ -8,12 +8,11 @@ const refreshButton = document.querySelector("#refresh-reports");
 const messageElement = document.querySelector("#reports-message");
 const chartElement = document.querySelector("#reports-chart");
 const tableBody = document.querySelector("#reports-table-body");
-const overviewPeriodSelect = document.querySelector("#overview-period");
-const overviewDateFromInput = document.querySelector("#overview-date-from");
-const overviewDateToInput = document.querySelector("#overview-date-to");
-const overviewCustomPeriodFields = document.querySelectorAll(".overview-custom-period-field");
 const overviewChartElement = document.querySelector("#overview-chart");
 const overviewTableBody = document.querySelector("#overview-table-body");
+const averageContributionsMessageElement = document.querySelector("#average-contributions-message");
+const averageContributionsTableBody = document.querySelector("#average-contributions-table-body");
+const averageContributionsTableFoot = document.querySelector("#average-contributions-table-foot");
 const reportScopeTabs = document.querySelector("#report-scope-tabs");
 const overviewScopeTabs = document.querySelector("#overview-scope-tabs");
 const historyPeriodSelect = document.querySelector("#history-period");
@@ -53,6 +52,9 @@ let currentOverviewScope = "accounts";
 let currentHistoryPage = 0;
 let historyMatrixCache = null;
 let historyMatrixCacheKey = "";
+let averageContributionReportCache = null;
+let averageContributionReportCacheKey = "";
+let snapshotsVersion = 0;
 let reportsNavStickyEnabled = reportsNavStickyMedia.matches;
 let reportsNavStickyFramePending = false;
 let userSettings = null;
@@ -171,28 +173,6 @@ function resolveDateRange() {
     };
 }
 
-function resolveOverviewRange() {
-    if (overviewPeriodSelect.value === "custom") {
-        const fromDate = overviewDateFromInput.value;
-        const toDate = overviewDateToInput.value;
-        if (!fromDate || !toDate || fromDate > toDate) {
-            throw new Error(messages["reports.error.customRange"]);
-        }
-
-        return {fromDate, toDate};
-    }
-
-    if (overviewPeriodSelect.value === "billing") {
-        return billingRange();
-    }
-
-    const toDate = todayIsoDate();
-    return {
-        fromDate: shiftDate(toDate, periodOffsets[overviewPeriodSelect.value]),
-        toDate
-    };
-}
-
 function syncRangeInputs(periodValue, resolveRange, fromInput, toInput) {
     if (periodValue === "custom") {
         return;
@@ -249,6 +229,11 @@ function setMessage(text, type = "") {
 function setHistoryMessage(text, type = "") {
     historyMessageElement.textContent = text;
     historyMessageElement.dataset.type = type;
+}
+
+function setAverageContributionsMessage(text, type = "") {
+    averageContributionsMessageElement.textContent = text;
+    averageContributionsMessageElement.dataset.type = type;
 }
 
 function invalidateHistoryCache() {
@@ -760,6 +745,132 @@ function buildOverviewRows(snapshots, toDate, scope) {
             .sort((left, right) => right.balance - left.balance);
 }
 
+function buildAverageContributionRows(snapshots) {
+    const grouped = new Map();
+    snapshots.forEach((snapshot) => {
+        if (snapshot.snapshotType !== "FINAL") {
+            return;
+        }
+
+        const key = `${snapshot.accountId}|${snapshot.currencyCode}`;
+        const entry = grouped.get(key) ?? {
+            accountName: snapshot.accountName,
+            bankName: snapshot.bankName,
+            currencyCode: snapshot.currencyCode,
+            finalSnapshots: []
+        };
+
+        entry.finalSnapshots.push({
+            snapshotDate: snapshot.snapshotDate,
+            balance: Number(snapshot.balance)
+        });
+
+        grouped.set(key, entry);
+    });
+
+    const rows = [...grouped.values()]
+            .filter((entry) => entry.finalSnapshots.length >= 2)
+            .map((entry) => {
+                const balances = [...entry.finalSnapshots]
+                        .sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate))
+                        .slice(-3);
+
+                const changes = [];
+                for (let index = 1; index < balances.length; index += 1) {
+                    changes.push(balances[index].balance - balances[index - 1].balance);
+                }
+
+                return {
+                    name: entry.accountName,
+                    bankName: entry.bankName,
+                    currencyCode: entry.currencyCode,
+                    averageContribution: changes.reduce((sum, value) => sum + value, 0) / changes.length,
+                    sampleFromDate: balances[0]?.snapshotDate ?? null,
+                    sampleToDate: balances.at(-1)?.snapshotDate ?? null
+                };
+            })
+            .sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode, locale()));
+
+    const totals = [...rows.reduce((accumulator, row) => {
+        accumulator.set(
+                row.currencyCode,
+                (accumulator.get(row.currencyCode) ?? 0) + row.averageContribution
+        );
+        return accumulator;
+    }, new Map()).entries()]
+            .map(([currencyCode, averageContribution]) => ({currencyCode, averageContribution}))
+            .sort((left, right) => left.currencyCode.localeCompare(right.currencyCode, locale()));
+
+    return {rows, totals};
+}
+
+function invalidateAverageContributionReportCache() {
+    averageContributionReportCache = null;
+    averageContributionReportCacheKey = "";
+}
+
+function getAverageContributionReport(snapshots) {
+    const cacheKey = `${snapshotsVersion}|${locale()}`;
+    if (averageContributionReportCache && averageContributionReportCacheKey === cacheKey) {
+        return averageContributionReportCache;
+    }
+
+    averageContributionReportCache = buildAverageContributionRows(snapshots);
+    averageContributionReportCacheKey = cacheKey;
+    return averageContributionReportCache;
+}
+
+function renderAverageContributionsEmpty(message) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 4;
+    cell.textContent = message;
+    row.append(cell);
+    averageContributionsTableBody.replaceChildren(row);
+    averageContributionsTableFoot.replaceChildren();
+}
+
+function renderAverageContributions(rows, totals) {
+    averageContributionsTableBody.replaceChildren(...rows.map((row) => {
+        const tableRow = document.createElement("tr");
+        const nameCell = document.createElement("td");
+        const bankCell = document.createElement("td");
+        const currencyCell = document.createElement("td");
+        const averageCell = document.createElement("td");
+
+        nameCell.textContent = row.name;
+        bankCell.textContent = row.bankName;
+        currencyCell.textContent = row.currencyCode;
+        averageCell.className = "numeric-cell";
+        averageCell.textContent = formatChange(row.averageContribution);
+
+        if (row.sampleFromDate && row.sampleToDate) {
+            const sampleRange = `${formatDate(row.sampleFromDate)} - ${formatDate(row.sampleToDate)}`;
+            averageCell.setAttribute("aria-label", `${averageCell.textContent}. ${sampleRange}`);
+            MoneySnapshotUi.setTooltip(averageCell, sampleRange);
+        }
+
+        tableRow.append(nameCell, bankCell, currencyCell, averageCell);
+        return tableRow;
+    }));
+
+    averageContributionsTableFoot.replaceChildren(...totals.map((total) => {
+        const tableRow = document.createElement("tr");
+        tableRow.className = "average-contributions-total-row";
+
+        const labelCell = document.createElement("td");
+        labelCell.colSpan = 3;
+        labelCell.textContent = `${messages["reports.average.total"] ?? "Średnia dla wszystkich kont"} [${total.currencyCode}]`;
+
+        const valueCell = document.createElement("td");
+        valueCell.className = "numeric-cell";
+        valueCell.textContent = formatChange(total.averageContribution);
+
+        tableRow.append(labelCell, valueCell);
+        return tableRow;
+    }));
+}
+
 function renderOverviewChart(rows) {
     if (rows.length === 0) {
         overviewChartElement.innerHTML = `<div class="chart-empty">${escapeHtml(messages["reports.overview.empty"])}</div>`;
@@ -980,14 +1091,14 @@ function renderHistory() {
     const matrix = historyMatrixForRange(range);
     if (matrix.accounts.length === 0) {
         renderHistoryEmpty(messages["reports.history.empty"]);
-        setHistoryMessage(displayRangeLabel(range, historyPeriodSelect.value));
+        setHistoryMessage("");
         return;
     }
 
     const pagedMatrix = paginateHistoryMatrix(matrix);
     renderHistoryTable(pagedMatrix);
     renderHistoryPagination(pagedMatrix);
-    setHistoryMessage(displayRangeLabel(range, historyPeriodSelect.value));
+    setHistoryMessage("");
 }
 
 function updateCustomPeriodVisibility() {
@@ -1002,14 +1113,6 @@ function updateHistoryCustomPeriodVisibility() {
     syncRangeInputs(historyPeriodSelect.value, resolveHistoryRange, historyDateFromInput, historyDateToInput);
     const isCustom = historyPeriodSelect.value === "custom";
     historyCustomPeriodFields.forEach((field) => {
-        field.hidden = !isCustom;
-    });
-}
-
-function updateOverviewCustomPeriodVisibility() {
-    syncRangeInputs(overviewPeriodSelect.value, resolveOverviewRange, overviewDateFromInput, overviewDateToInput);
-    const isCustom = overviewPeriodSelect.value === "custom";
-    overviewCustomPeriodFields.forEach((field) => {
         field.hidden = !isCustom;
     });
 }
@@ -1039,8 +1142,16 @@ function renderReports() {
     try {
         setMessage("");
         const range = resolveDateRange();
-        const overviewRange = resolveOverviewRange();
+        const averageContributionReport = getAverageContributionReport(cachedSnapshots);
         const {rows, step, checkpoints} = buildRows(cachedSnapshots, range, currentScope);
+        if (averageContributionReport.rows.length === 0) {
+            renderAverageContributionsEmpty(messages["reports.average.empty"]);
+            setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
+        } else {
+            renderAverageContributions(averageContributionReport.rows, averageContributionReport.totals);
+            setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
+        }
+
         if (rows.length === 0) {
             renderEmpty(messages["reports.empty"]);
             renderOverviewEmpty(messages["reports.overview.empty"]);
@@ -1052,13 +1163,15 @@ function renderReports() {
         setMessage(displayRangeLabel(range, periodSelect.value));
         renderChart(rows, step, checkpoints);
         renderTable(rows);
-        renderOverview(overviewRange.toDate);
+        renderOverview(todayIsoDate());
         renderHistorySection();
     } catch (error) {
         renderEmpty(error.message);
         renderOverviewEmpty(error.message);
+        renderAverageContributionsEmpty(error.message);
         renderHistoryEmpty(error.message);
         setMessage(error.message, "error");
+        setAverageContributionsMessage(error.message, "error");
         setHistoryMessage(error.message, "error");
     } finally {
         updateReportsNavActiveState();
@@ -1074,6 +1187,8 @@ async function loadReports() {
 
     cachedSnapshots = await response.json();
     snapshotsLoaded = true;
+    snapshotsVersion += 1;
+    invalidateAverageContributionReportCache();
     invalidateHistoryCache();
     renderReports();
 }
@@ -1081,6 +1196,7 @@ async function loadReports() {
 function handleLanguageChange(nextLanguage, nextMessages) {
     currentLanguage = nextLanguage;
     messages = nextMessages;
+    invalidateAverageContributionReportCache();
     invalidateHistoryCache();
     document.title = `${messages["reports.heading.title"]} | ${messages["app.name"]}`;
     chartElement.setAttribute("aria-label", messages["reports.chart.aria.changes"]);
@@ -1100,12 +1216,6 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     }
     if (!historyDateFromInput.value) {
         historyDateFromInput.value = shiftDate(todayIsoDate(), periodOffsets["1m"]);
-    }
-    if (!overviewDateToInput.value) {
-        overviewDateToInput.value = todayIsoDate();
-    }
-    if (!overviewDateFromInput.value) {
-        overviewDateFromInput.value = shiftDate(todayIsoDate(), periodOffsets["1m"]);
     }
     renderReports();
 }
@@ -1141,7 +1251,9 @@ refreshButton.addEventListener("click", () => {
     loadReports().catch((error) => {
         renderEmpty(error.message);
         renderOverviewEmpty(error.message);
+        renderAverageContributionsEmpty(error.message);
         setMessage(error.message, "error");
+        setAverageContributionsMessage(error.message, "error");
     });
 });
 
@@ -1170,17 +1282,9 @@ historyPageSizeSelect.addEventListener("change", () => {
 });
 
 updateCustomPeriodVisibility();
-updateOverviewCustomPeriodVisibility();
 updateHistoryCustomPeriodVisibility();
 updateReportsNavActiveState();
 updateReportsNavPanelStickyState();
-
-[overviewPeriodSelect, overviewDateFromInput, overviewDateToInput].forEach((input) => {
-    input.addEventListener("change", () => {
-        updateOverviewCustomPeriodVisibility();
-        renderReports();
-    });
-});
 
 [historyPeriodSelect, historyDateFromInput, historyDateToInput].forEach((input) => {
     input.addEventListener("change", () => {
@@ -1207,8 +1311,11 @@ MoneySnapshotI18n.init({
         })
         .then(loadReports)
         .catch((error) => {
-            renderEmpty(error.message);
-            renderOverviewEmpty(error.message);
-            renderHistoryEmpty(error.message);
-            setHistoryMessage(error.message, "error");
-        });
+        renderEmpty(error.message);
+        renderOverviewEmpty(error.message);
+        renderAverageContributionsEmpty(error.message);
+        renderHistoryEmpty(error.message);
+        setMessage(error.message, "error");
+        setAverageContributionsMessage(error.message, "error");
+        setHistoryMessage(error.message, "error");
+    });

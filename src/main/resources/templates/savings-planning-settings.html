@@ -11,18 +11,14 @@
         <p data-i18n="savingsPlanningSettings.heading.subtitle">Ustaw prognozowaną miesięczną wpłatę dla każdego konta w jego walucie.</p>
     </section>
 
-    <section class="table-panel table-panel-wide" aria-labelledby="savings-planning-settings-title">
+    <section class="table-panel table-panel-wide savings-planning-settings-panel" aria-labelledby="savings-planning-settings-title">
         <div class="section-header">
             <h2 id="savings-planning-settings-title" data-i18n="savingsPlanningSettings.table.title">Miesięczne wpłaty na konta</h2>
-            <div class="section-actions">
-                <a href="/savings-planning.html" class="button secondary compact" data-i18n="savingsPlanningSettings.actions.back">Powrót</a>
-                <button type="button" class="button secondary compact" id="refresh-savings-planning-settings" data-i18n="savingsPlanningSettings.actions.refresh">Odśwież</button>
-            </div>
         </div>
         <p class="form-message" id="savings-planning-settings-message" role="status"></p>
         <form id="savings-planning-settings-form">
-            <div class="table-wrap">
-                <table class="reports-table">
+            <div class="table-wrap savings-planning-settings-table-wrap">
+                <table class="reports-table savings-planning-settings-table">
                     <thead>
                     <tr>
                         <th data-i18n="savingsPlanningSettings.table.account">Konto</th>
@@ -41,6 +37,7 @@
             <p class="form-helper" data-i18n="savingsPlanningSettings.form.hint">Pozostaw puste pole, jeśli konto nie ma stałej miesięcznej wpłaty.</p>
             <div class="form-actions">
                 <button type="submit" class="button primary" data-i18n="savingsPlanningSettings.form.submit">Zapisz ustawienia</button>
+                <a href="/savings-planning.html" class="button secondary" data-i18n="savingsPlanningSettings.actions.back">Powrót</a>
             </div>
         </form>
     </section>

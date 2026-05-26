@@ -357,6 +357,11 @@ public class MessageBundleService {
 
     private static final Set<String> REPORT_PAGE_KEYS = Set.of(
             "reports.actions.refresh",
+            "reports.average.account",
+            "reports.average.empty",
+            "reports.average.hint",
+            "reports.average.title",
+            "reports.average.total",
             "reports.chart.empty",
             "reports.chart.aria.changes",
             "reports.chart.aria.overview",

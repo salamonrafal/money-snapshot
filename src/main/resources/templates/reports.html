@@ -77,25 +77,6 @@
                     <button type="button" class="report-tab overview-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
                     <button type="button" class="report-tab overview-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
                 </div>
-                <label class="compact-field">
-                    <span data-i18n="reports.controls.period">Okres</span>
-                    <select id="overview-period">
-                        <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
-                        <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
-                        <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
-                        <option value="1y" data-i18n="reports.period.1y">1 rok</option>
-                        <option value="2y" data-i18n="reports.period.2y">2 lata</option>
-                        <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
-                    </select>
-                </label>
-                <label class="compact-field overview-custom-period-field" hidden>
-                    <span data-i18n="reports.controls.from">Od</span>
-                    <input type="date" id="overview-date-from">
-                </label>
-                <label class="compact-field overview-custom-period-field" hidden>
-                    <span data-i18n="reports.controls.to">Do</span>
-                    <input type="date" id="overview-date-to">
-                </label>
             </div>
         </div>
         <div class="report-content overview-content">
@@ -115,6 +96,33 @@
                         <td colspan="4" data-i18n="reports.loading">Ładowanie...</td>
                     </tr>
                     </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-panel table-panel-wide report-panel" id="reports-average-contributions-section" aria-labelledby="average-contributions-title">
+        <div class="section-header">
+            <h2 id="average-contributions-title" data-i18n="reports.average.title">Średnie wpłaty</h2>
+        </div>
+        <p class="form-message" id="average-contributions-message" role="status"></p>
+        <div class="report-content average-contributions-content">
+            <div class="table-wrap average-contributions-table-wrap">
+                <table class="reports-table average-contributions-table">
+                    <thead>
+                    <tr>
+                        <th scope="col" data-i18n="reports.table.name">Nazwa</th>
+                        <th scope="col" data-i18n="reports.history.bank">Bank</th>
+                        <th scope="col" data-i18n="reports.table.currency">Waluta</th>
+                        <th scope="col" data-i18n="reports.average.account">Średnia wpłata</th>
+                    </tr>
+                    </thead>
+                    <tbody id="average-contributions-table-body">
+                    <tr>
+                        <td colspan="4" data-i18n="reports.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                    <tfoot id="average-contributions-table-foot"></tfoot>
                 </table>
             </div>
         </div>
@@ -184,6 +192,7 @@
             <nav class="reports-nav" aria-label="Raporty">
                 <a href="#reports-summary-section" data-target="reports-summary-section" data-i18n="reports.table.title">Zestawienie zmian</a>
                 <a href="#reports-overview-section" data-target="reports-overview-section" data-i18n="reports.overview.title">Przegląd sald</a>
+                <a href="#reports-average-contributions-section" data-target="reports-average-contributions-section" data-i18n="reports.average.title">Średnie wpłaty</a>
                 <a href="#reports-history-section" data-target="reports-history-section" data-i18n="reports.history.title">Historia środków</a>
             </nav>
         </aside>

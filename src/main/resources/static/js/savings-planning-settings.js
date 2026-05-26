@@ -1,5 +1,4 @@
 const tableBody = document.querySelector("#savings-planning-settings-table-body");
-const refreshButton = document.querySelector("#refresh-savings-planning-settings");
 const form = document.querySelector("#savings-planning-settings-form");
 const formMessage = document.querySelector("#savings-planning-settings-message");
 
@@ -119,13 +118,6 @@ async function saveAccounts(payload) {
     renderAccounts(await response.json());
 }
 
-refreshButton.addEventListener("click", () => {
-    setMessage("");
-    loadAccounts().catch((error) => {
-        renderEmpty(error.message);
-    });
-});
-
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const payload = collectPayload();
@@ -136,7 +128,6 @@ form.addEventListener("submit", async (event) => {
 
     const submitButton = form.querySelector("button[type='submit']");
     submitButton.disabled = true;
-    refreshButton.disabled = true;
     setMessage("");
 
     try {
@@ -146,7 +137,6 @@ form.addEventListener("submit", async (event) => {
         setMessage(error.message, "error");
     } finally {
         submitButton.disabled = false;
-        refreshButton.disabled = false;
     }
 });
 
