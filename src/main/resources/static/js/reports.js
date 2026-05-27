@@ -953,11 +953,13 @@ function buildPlanningRows(snapshots) {
                     break;
                 }
             }
-            const yearlyPlanValue = yearlyPlanTargetMonth < cachedSavingsForecast.forecastStartDate
-                    || yearlyPlanTargetMonth > cachedSavingsForecast.forecastEndDate
-                    ? null
-                    : monthlyBalances
-                            .find((monthValue) => monthKey(monthValue.forecastMonth) === yearlyPlanTargetMonth);
+            let yearlyPlanValue = null;
+            for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
+                if (monthKey(monthlyBalances[index].forecastMonth) <= yearlyPlanTargetMonth) {
+                    yearlyPlanValue = monthlyBalances[index];
+                    break;
+                }
+            }
 
             if (currentPlanValue) {
                 currentPlanByAccountKey.set(
@@ -1023,9 +1025,7 @@ function buildPlanningRows(snapshots) {
             currentBalanceCount: 0,
             averageContributionCount: 0,
             currentPlanCount: 0,
-            yearlyPlanCount: 0,
-            hasCurrentPlanData: false,
-            hasPlanData: false
+            yearlyPlanCount: 0
         };
         nextValue.accountCount += 1;
         if (row.currentBalance !== null) {
@@ -1045,12 +1045,10 @@ function buildPlanningRows(snapshots) {
         if (row.currentPlannedBalance !== null) {
             nextValue.currentPlannedBalance += row.currentPlannedBalance;
             nextValue.currentPlanCount += 1;
-            nextValue.hasCurrentPlanData = true;
         }
         if (row.plannedBalance !== null) {
             nextValue.plannedBalance += row.plannedBalance;
             nextValue.yearlyPlanCount += 1;
-            nextValue.hasPlanData = true;
         }
         accumulator.set(row.currencyCode, nextValue);
         return accumulator;
@@ -1526,8 +1524,6 @@ function renderReports() {
         if (averageContributionReport.rows.length === 0) {
             renderAverageContributionsEmpty(messages["reports.average.empty"]);
             setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
-            renderPlanningEmpty(messages["reports.planning.empty"]);
-            setPlanningMessage(messages["reports.planning.hint"] ?? "");
         } else {
             renderAverageContributions(averageContributionReport.rows, averageContributionReport.totals);
             setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
