@@ -895,6 +895,7 @@ function buildPlanningRows(snapshots) {
     const latestBalanceByAccountKey = new Map();
     const accountMetaByAccountKey = new Map();
     const today = todayIsoDate();
+    const yearlyPlanTargetMonth = addMonths(today, 11);
     const noDataValue = null;
 
     averageContributionReport.rows.forEach((row) => {
@@ -944,11 +945,19 @@ function buildPlanningRows(snapshots) {
                     snapshotDate: entry.latestSnapshotDate ?? ""
                 });
             }
-            const currentPlanValue = [...(entry.monthlyBalances ?? [])]
-                    .filter((monthValue) => monthKey(monthValue.forecastMonth) <= today)
-                    .sort((left, right) => monthKey(right.forecastMonth).localeCompare(monthKey(left.forecastMonth)))[0];
-            const yearlyPlanValue = (entry.monthlyBalances ?? [])
-                    .find((monthValue) => monthKey(monthValue.forecastMonth) === addMonths(cachedSavingsForecast.forecastStartDate, 11));
+            const monthlyBalances = entry.monthlyBalances ?? [];
+            let currentPlanValue = null;
+            for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
+                if (monthKey(monthlyBalances[index].forecastMonth) <= today) {
+                    currentPlanValue = monthlyBalances[index];
+                    break;
+                }
+            }
+            const yearlyPlanValue = yearlyPlanTargetMonth < cachedSavingsForecast.forecastStartDate
+                    || yearlyPlanTargetMonth > cachedSavingsForecast.forecastEndDate
+                    ? null
+                    : monthlyBalances
+                            .find((monthValue) => monthKey(monthValue.forecastMonth) === yearlyPlanTargetMonth);
 
             if (currentPlanValue) {
                 currentPlanByAccountKey.set(
@@ -1571,7 +1580,9 @@ async function loadReports() {
     cachedSnapshots = await snapshotsResponse.json();
 
     try {
-        const savingsForecastResponse = await fetch("/api/savings-planning/forecasts/latest");
+        const savingsForecastResponse = await fetch("/api/savings-planning/forecasts/latest", {
+            cache: "no-store"
+        });
         if (savingsForecastResponse.status === 204) {
             cachedSavingsForecast = null;
         } else if (savingsForecastResponse.ok) {
