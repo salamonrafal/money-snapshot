@@ -1073,10 +1073,6 @@ function buildPlanningRows(snapshots) {
     }, new Map()).values()]
             .map((total) => ({
                 ...total,
-                hasCompleteCurrentBalanceData: total.accountCount > 0 && total.currentBalanceCount === total.accountCount,
-                hasCompleteAverageContributionData: total.accountCount > 0 && total.averageContributionCount === total.accountCount,
-                hasCompleteCurrentPlanData: total.accountCount > 0 && total.currentPlanCount === total.accountCount,
-                hasCompleteYearlyPlanData: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount,
                 currentBalance: total.accountCount > 0 && total.currentBalanceCount === total.accountCount
                         ? total.currentBalance
                         : null,
