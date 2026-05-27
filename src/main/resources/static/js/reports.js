@@ -1581,23 +1581,30 @@ function renderReports() {
 }
 
 async function loadReports() {
-    const snapshotsPromise = fetch("/api/snapshots");
-    const savingsForecastPromise = fetch("/api/savings-planning/forecasts/latest", {
-        cache: "no-store"
-    }).catch((error) => {
-        console.warn("Failed to fetch latest savings forecast for reports.", error);
-        return null;
-    });
-
-    const snapshotsResponse = await snapshotsPromise;
+    const snapshotsResponse = await fetch("/api/snapshots");
 
     if (!snapshotsResponse.ok) {
         throw new Error(messages["reports.error.load"]);
     }
 
     cachedSnapshots = await snapshotsResponse.json();
+    snapshotsLoaded = true;
+    snapshotsVersion += 1;
+    invalidateAverageContributionReportCache();
+    invalidateHistoryCache();
+    renderReports();
 
-    const savingsForecastResponse = await savingsForecastPromise;
+    void loadLatestSavingsForecastForReports();
+}
+
+async function loadLatestSavingsForecastForReports() {
+    const savingsForecastResponse = await fetch("/api/savings-planning/forecasts/latest", {
+        cache: "no-store"
+    }).catch((error) => {
+        console.warn("Failed to fetch latest savings forecast for reports.", error);
+        return null;
+    });
+
     if (!savingsForecastResponse) {
         cachedSavingsForecast = null;
     } else if (savingsForecastResponse.status === 204) {
@@ -1612,11 +1619,9 @@ async function loadReports() {
         cachedSavingsForecast = null;
     }
 
-    snapshotsLoaded = true;
-    snapshotsVersion += 1;
-    invalidateAverageContributionReportCache();
-    invalidateHistoryCache();
-    renderReports();
+    if (snapshotsLoaded) {
+        renderReports();
+    }
 }
 
 function handleLanguageChange(nextLanguage, nextMessages) {

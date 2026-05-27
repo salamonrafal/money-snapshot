@@ -2214,8 +2214,9 @@ td:nth-child(5) {
     line-height: 1.2;
 }
 
-.planning-table th:nth-child(n + 2),
-.planning-table td:nth-child(n + 2) {
+.planning-table thead tr:nth-child(2) th:nth-child(n + 1),
+.planning-table tbody td:nth-child(n + 2),
+.planning-table tfoot td:nth-child(n + 2) {
     width: auto;
     min-width: 120px;
     text-align: right;
