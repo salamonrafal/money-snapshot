@@ -889,10 +889,23 @@ function renderAverageContributions(rows, totals) {
 
 function buildPlanningRows(snapshots) {
     const averageContributionReport = getAverageContributionReport(snapshots);
+    const averageContributionByAccountKey = new Map();
     const currentPlanByAccountKey = new Map();
     const yearlyPlanByAccountKey = new Map();
     const latestBalanceByAccountKey = new Map();
+    const accountMetaByAccountKey = new Map();
     const today = todayIsoDate();
+    const noDataValue = null;
+
+    averageContributionReport.rows.forEach((row) => {
+        averageContributionByAccountKey.set(`${row.accountId}|${row.currencyCode}`, row);
+        accountMetaByAccountKey.set(`${row.accountId}|${row.currencyCode}`, {
+            accountId: row.accountId,
+            name: row.name,
+            bankName: row.bankName,
+            currencyCode: row.currencyCode
+        });
+    });
 
     snapshots.forEach((snapshot) => {
         if (snapshot.snapshotDate > today) {
@@ -900,6 +913,16 @@ function buildPlanningRows(snapshots) {
         }
 
         const key = `${snapshot.accountId}|${snapshot.currencyCode}`;
+        const currentMeta = accountMetaByAccountKey.get(key);
+        if (!currentMeta || currentMeta.snapshotDate < snapshot.snapshotDate) {
+            accountMetaByAccountKey.set(key, {
+                accountId: snapshot.accountId,
+                name: snapshot.accountName,
+                bankName: snapshot.bankName,
+                currencyCode: snapshot.currencyCode,
+                snapshotDate: snapshot.snapshotDate
+            });
+        }
         const currentLatest = latestBalanceByAccountKey.get(key);
         if (!currentLatest || currentLatest.snapshotDate < snapshot.snapshotDate) {
             latestBalanceByAccountKey.set(key, {
@@ -911,6 +934,16 @@ function buildPlanningRows(snapshots) {
 
     if (cachedSavingsForecast?.entries) {
         cachedSavingsForecast.entries.forEach((entry) => {
+            const key = `${entry.accountId}|${entry.currencyCode}`;
+            if (!accountMetaByAccountKey.has(key)) {
+                accountMetaByAccountKey.set(key, {
+                    accountId: entry.accountId,
+                    name: entry.accountName,
+                    bankName: entry.bankName,
+                    currencyCode: entry.currencyCode,
+                    snapshotDate: entry.latestSnapshotDate ?? ""
+                });
+            }
             const currentPlanValue = [...(entry.monthlyBalances ?? [])]
                     .filter((monthValue) => monthKey(monthValue.forecastMonth) <= today)
                     .sort((left, right) => monthKey(right.forecastMonth).localeCompare(monthKey(left.forecastMonth)))[0];
@@ -919,37 +952,51 @@ function buildPlanningRows(snapshots) {
 
             if (currentPlanValue) {
                 currentPlanByAccountKey.set(
-                        `${entry.accountId}|${entry.currencyCode}`,
+                        key,
                         Number(currentPlanValue.balance)
                 );
             }
 
             if (yearlyPlanValue) {
                 yearlyPlanByAccountKey.set(
-                        `${entry.accountId}|${entry.currencyCode}`,
+                        key,
                         Number(yearlyPlanValue.balance)
                 );
             }
         });
     }
 
-    const rows = averageContributionReport.rows
-            .map((row) => {
-                const currentBalance = latestBalanceByAccountKey.get(`${row.accountId}|${row.currencyCode}`)?.balance ?? 0;
-                const yearlyChange = row.averageContribution * 12;
-                const projectedBalance = currentBalance + yearlyChange;
-                const currentPlannedBalance = currentPlanByAccountKey.get(`${row.accountId}|${row.currencyCode}`) ?? null;
-                const plannedBalance = yearlyPlanByAccountKey.get(`${row.accountId}|${row.currencyCode}`) ?? null;
+    const accountKeys = [...new Set([
+        ...accountMetaByAccountKey.keys(),
+        ...latestBalanceByAccountKey.keys(),
+        ...currentPlanByAccountKey.keys(),
+        ...yearlyPlanByAccountKey.keys()
+    ])];
+
+    const rows = accountKeys
+            .map((accountKey) => {
+                const averageContributionRow = averageContributionByAccountKey.get(accountKey);
+                const metadata = accountMetaByAccountKey.get(accountKey);
+                const currentBalance = latestBalanceByAccountKey.get(accountKey)?.balance ?? 0;
+                const averageContribution = averageContributionRow?.averageContribution ?? noDataValue;
+                const yearlyChange = averageContribution === null ? null : averageContribution * 12;
+                const projectedBalance = yearlyChange === null ? null : currentBalance + yearlyChange;
+                const currentPlannedBalance = currentPlanByAccountKey.get(accountKey) ?? null;
+                const plannedBalance = yearlyPlanByAccountKey.get(accountKey) ?? null;
                 return {
-                    ...row,
+                    accountId: metadata?.accountId ?? "",
+                    name: metadata?.name ?? "",
+                    bankName: metadata?.bankName ?? "",
+                    currencyCode: metadata?.currencyCode ?? "",
+                    averageContribution,
                     currentBalance,
                     currentPlannedBalance,
                     currentDifferenceToPlan: currentPlannedBalance === null ? null : currentBalance - currentPlannedBalance,
                     projectedBalance,
                     yearlyChange,
-                    projectedChangePercent: currentBalance === 0 ? null : (yearlyChange * 100) / currentBalance,
+                    projectedChangePercent: yearlyChange === null || currentBalance === 0 ? null : (yearlyChange * 100) / currentBalance,
                     plannedBalance,
-                    differenceToPlan: plannedBalance === null ? null : projectedBalance - plannedBalance
+                    differenceToPlan: projectedBalance === null || plannedBalance === null ? null : projectedBalance - plannedBalance
                 };
             })
             .sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode, locale()));
@@ -964,6 +1011,7 @@ function buildPlanningRows(snapshots) {
             yearlyChange: 0,
             currentPlannedBalance: 0,
             plannedBalance: 0,
+            averageContributionCount: 0,
             currentPlanCount: 0,
             yearlyPlanCount: 0,
             hasCurrentPlanData: false,
@@ -971,9 +1019,16 @@ function buildPlanningRows(snapshots) {
         };
         nextValue.accountCount += 1;
         nextValue.currentBalance += row.currentBalance;
-        nextValue.averageContribution += row.averageContribution;
-        nextValue.projectedBalance += row.projectedBalance;
-        nextValue.yearlyChange += row.yearlyChange;
+        if (row.averageContribution !== null) {
+            nextValue.averageContribution += row.averageContribution;
+            nextValue.averageContributionCount += 1;
+        }
+        if (row.projectedBalance !== null) {
+            nextValue.projectedBalance += row.projectedBalance;
+        }
+        if (row.yearlyChange !== null) {
+            nextValue.yearlyChange += row.yearlyChange;
+        }
         if (row.currentPlannedBalance !== null) {
             nextValue.currentPlannedBalance += row.currentPlannedBalance;
             nextValue.currentPlanCount += 1;
@@ -989,9 +1044,23 @@ function buildPlanningRows(snapshots) {
     }, new Map()).values()]
             .map((total) => ({
                 ...total,
+                hasCompleteAverageContributionData: total.accountCount > 0 && total.averageContributionCount === total.accountCount,
                 hasCompleteCurrentPlanData: total.accountCount > 0 && total.currentPlanCount === total.accountCount,
                 hasCompleteYearlyPlanData: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount,
-                projectedChangePercent: total.currentBalance === 0 ? null : (total.yearlyChange * 100) / total.currentBalance,
+                averageContribution: total.accountCount > 0 && total.averageContributionCount === total.accountCount
+                        ? total.averageContribution
+                        : null,
+                projectedBalance: total.accountCount > 0 && total.averageContributionCount === total.accountCount
+                        ? total.projectedBalance
+                        : null,
+                yearlyChange: total.accountCount > 0 && total.averageContributionCount === total.accountCount
+                        ? total.yearlyChange
+                        : null,
+                projectedChangePercent: total.accountCount > 0
+                        && total.averageContributionCount === total.accountCount
+                        && total.currentBalance !== 0
+                        ? (total.yearlyChange * 100) / total.currentBalance
+                        : null,
                 currentPlannedBalance: total.accountCount > 0 && total.currentPlanCount === total.accountCount
                         ? total.currentPlannedBalance
                         : null,
@@ -1001,7 +1070,9 @@ function buildPlanningRows(snapshots) {
                 plannedBalance: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount
                         ? total.plannedBalance
                         : null,
-                differenceToPlan: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount
+                differenceToPlan: total.accountCount > 0
+                        && total.averageContributionCount === total.accountCount
+                        && total.yearlyPlanCount === total.accountCount
                         ? total.projectedBalance - total.plannedBalance
                         : null
             }))
@@ -1042,11 +1113,11 @@ function renderPlanningSummary(totals) {
                 </div>
                 <div>
                     <dt>${escapeHtml(messages["reports.planning.yearTarget"] ?? "Za rok")}</dt>
-                    <dd>${escapeHtml(formatAmount(total.projectedBalance))}</dd>
+                    <dd>${escapeHtml(total.projectedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(total.projectedBalance))}</dd>
                 </div>
                 <div>
                     <dt>${escapeHtml(messages["reports.planning.yearChange"] ?? "Zmiana roczna")}</dt>
-                    <dd>${escapeHtml(`${formatChange(total.yearlyChange)} · ${formatPercent(total.projectedChangePercent)}`)}</dd>
+                    <dd>${escapeHtml(total.yearlyChange === null ? (messages["reports.planning.noData"] ?? "brak danych") : `${formatChange(total.yearlyChange)} · ${formatPercent(total.projectedChangePercent)}`)}</dd>
                 </div>
                 <div>
                     <dt>${escapeHtml(messages["reports.planning.planTarget"] ?? "Według planu")}</dt>
@@ -1072,8 +1143,8 @@ function renderPlanning(rows, totals) {
             formatAmount(row.currentBalance),
             row.currentPlannedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.currentPlannedBalance),
             row.currentDifferenceToPlan === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.currentDifferenceToPlan),
-            formatChange(row.averageContribution),
-            formatAmount(row.projectedBalance),
+            row.averageContribution === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.averageContribution),
+            row.projectedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.projectedBalance),
             row.plannedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.plannedBalance),
             row.differenceToPlan === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.differenceToPlan)
         ];
@@ -1113,11 +1184,15 @@ function renderPlanning(rows, totals) {
 
         const monthlyCell = document.createElement("td");
         monthlyCell.className = "numeric-cell";
-        monthlyCell.textContent = formatChange(total.averageContribution);
+        monthlyCell.textContent = total.averageContribution === null
+                ? (messages["reports.planning.noData"] ?? "brak danych")
+                : formatChange(total.averageContribution);
 
         const projectedCell = document.createElement("td");
         projectedCell.className = "numeric-cell";
-        projectedCell.textContent = formatAmount(total.projectedBalance);
+        projectedCell.textContent = total.projectedBalance === null
+                ? (messages["reports.planning.noData"] ?? "brak danych")
+                : formatAmount(total.projectedBalance);
 
         const plannedCell = document.createElement("td");
         plannedCell.className = "numeric-cell";
@@ -1429,6 +1504,12 @@ function renderReports() {
         } else {
             renderAverageContributions(averageContributionReport.rows, averageContributionReport.totals);
             setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
+        }
+
+        if (planningReport.rows.length === 0) {
+            renderPlanningEmpty(messages["reports.planning.empty"]);
+            setPlanningMessage(messages["reports.planning.hint"] ?? "");
+        } else {
             renderPlanning(planningReport.rows, planningReport.totals);
             setPlanningMessage(messages["reports.planning.hint"] ?? "");
         }
@@ -1463,23 +1544,27 @@ function renderReports() {
 }
 
 async function loadReports() {
-    const [snapshotsResponse, savingsForecastResponse] = await Promise.all([
-        fetch("/api/snapshots"),
-        fetch("/api/savings-planning/forecasts/latest")
-    ]);
+    const snapshotsResponse = await fetch("/api/snapshots");
 
     if (!snapshotsResponse.ok) {
         throw new Error(messages["reports.error.load"]);
     }
 
     cachedSnapshots = await snapshotsResponse.json();
-    if (savingsForecastResponse.status === 204) {
-        cachedSavingsForecast = null;
-    } else if (savingsForecastResponse.ok) {
-        cachedSavingsForecast = await savingsForecastResponse.json();
-    } else {
+
+    try {
+        const savingsForecastResponse = await fetch("/api/savings-planning/forecasts/latest");
+        if (savingsForecastResponse.status === 204) {
+            cachedSavingsForecast = null;
+        } else if (savingsForecastResponse.ok) {
+            cachedSavingsForecast = await savingsForecastResponse.json();
+        } else {
+            cachedSavingsForecast = null;
+        }
+    } catch {
         cachedSavingsForecast = null;
     }
+
     snapshotsLoaded = true;
     snapshotsVersion += 1;
     invalidateAverageContributionReportCache();
