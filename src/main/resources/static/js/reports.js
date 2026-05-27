@@ -217,6 +217,19 @@ function formatPercent(value) {
     return `${sign}${numericValue.toFixed(1)}%`;
 }
 
+function formatChangeWithOptionalPercent(change, percent) {
+    if (change === null || change === undefined) {
+        return messages["reports.planning.noData"] ?? "brak danych";
+    }
+
+    const changeLabel = formatChange(change);
+    if (percent === null || percent === undefined) {
+        return changeLabel;
+    }
+
+    return `${changeLabel} · ${formatPercent(percent)}`;
+}
+
 function escapeHtml(value) {
     return String(value)
             .replaceAll("&", "&amp;")
@@ -1145,7 +1158,7 @@ function renderPlanningSummary(totals) {
                 </div>
                 <div>
                     <dt>${escapeHtml(messages["reports.planning.yearChange"] ?? "Zmiana roczna")}</dt>
-                    <dd>${escapeHtml(total.yearlyChange === null ? (messages["reports.planning.noData"] ?? "brak danych") : `${formatChange(total.yearlyChange)} · ${formatPercent(total.projectedChangePercent)}`)}</dd>
+                    <dd>${escapeHtml(formatChangeWithOptionalPercent(total.yearlyChange, total.projectedChangePercent))}</dd>
                 </div>
                 <div>
                     <dt>${escapeHtml(messages["reports.planning.planTarget"] ?? "Według planu")}</dt>
