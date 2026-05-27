@@ -1572,7 +1572,15 @@ function renderReports() {
 }
 
 async function loadReports() {
-    const snapshotsResponse = await fetch("/api/snapshots");
+    const snapshotsPromise = fetch("/api/snapshots");
+    const savingsForecastPromise = fetch("/api/savings-planning/forecasts/latest", {
+        cache: "no-store"
+    }).catch((error) => {
+        console.warn("Failed to fetch latest savings forecast for reports.", error);
+        return null;
+    });
+
+    const snapshotsResponse = await snapshotsPromise;
 
     if (!snapshotsResponse.ok) {
         throw new Error(messages["reports.error.load"]);
@@ -1580,18 +1588,18 @@ async function loadReports() {
 
     cachedSnapshots = await snapshotsResponse.json();
 
-    try {
-        const savingsForecastResponse = await fetch("/api/savings-planning/forecasts/latest", {
-            cache: "no-store"
-        });
-        if (savingsForecastResponse.status === 204) {
-            cachedSavingsForecast = null;
-        } else if (savingsForecastResponse.ok) {
-            cachedSavingsForecast = await savingsForecastResponse.json();
-        } else {
-            cachedSavingsForecast = null;
-        }
-    } catch {
+    const savingsForecastResponse = await savingsForecastPromise;
+    if (!savingsForecastResponse) {
+        cachedSavingsForecast = null;
+    } else if (savingsForecastResponse.status === 204) {
+        cachedSavingsForecast = null;
+    } else if (savingsForecastResponse.ok) {
+        cachedSavingsForecast = await savingsForecastResponse.json();
+    } else {
+        console.warn(
+                "Failed to load latest savings forecast for reports.",
+                {status: savingsForecastResponse.status}
+        );
         cachedSavingsForecast = null;
     }
 
