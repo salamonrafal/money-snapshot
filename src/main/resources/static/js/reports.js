@@ -965,10 +965,12 @@ function buildPlanningRows(snapshots) {
             }
             const monthlyBalances = entry.monthlyBalances ?? [];
             let currentPlanValue = null;
-            for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
-                if (monthKey(monthlyBalances[index].forecastMonth) <= today) {
-                    currentPlanValue = monthlyBalances[index];
-                    break;
+            if (today >= cachedSavingsForecast.forecastStartDate && today <= cachedSavingsForecast.forecastEndDate) {
+                for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
+                    if (monthKey(monthlyBalances[index].forecastMonth) <= today) {
+                        currentPlanValue = monthlyBalances[index];
+                        break;
+                    }
                 }
             }
             let yearlyPlanValue = null;
