@@ -914,7 +914,7 @@ function buildPlanningRows(snapshots) {
 
         const key = `${snapshot.accountId}|${snapshot.currencyCode}`;
         const currentMeta = accountMetaByAccountKey.get(key);
-        if (!currentMeta || currentMeta.snapshotDate < snapshot.snapshotDate) {
+        if (!currentMeta || (currentMeta.snapshotDate ?? "") < snapshot.snapshotDate) {
             accountMetaByAccountKey.set(key, {
                 accountId: snapshot.accountId,
                 name: snapshot.accountName,
@@ -977,10 +977,10 @@ function buildPlanningRows(snapshots) {
             .map((accountKey) => {
                 const averageContributionRow = averageContributionByAccountKey.get(accountKey);
                 const metadata = accountMetaByAccountKey.get(accountKey);
-                const currentBalance = latestBalanceByAccountKey.get(accountKey)?.balance ?? 0;
+                const currentBalance = latestBalanceByAccountKey.get(accountKey)?.balance ?? null;
                 const averageContribution = averageContributionRow?.averageContribution ?? noDataValue;
                 const yearlyChange = averageContribution === null ? null : averageContribution * 12;
-                const projectedBalance = yearlyChange === null ? null : currentBalance + yearlyChange;
+                const projectedBalance = yearlyChange === null || currentBalance === null ? null : currentBalance + yearlyChange;
                 const currentPlannedBalance = currentPlanByAccountKey.get(accountKey) ?? null;
                 const plannedBalance = yearlyPlanByAccountKey.get(accountKey) ?? null;
                 return {
@@ -991,10 +991,10 @@ function buildPlanningRows(snapshots) {
                     averageContribution,
                     currentBalance,
                     currentPlannedBalance,
-                    currentDifferenceToPlan: currentPlannedBalance === null ? null : currentBalance - currentPlannedBalance,
+                    currentDifferenceToPlan: currentBalance === null || currentPlannedBalance === null ? null : currentBalance - currentPlannedBalance,
                     projectedBalance,
                     yearlyChange,
-                    projectedChangePercent: yearlyChange === null || currentBalance === 0 ? null : (yearlyChange * 100) / currentBalance,
+                    projectedChangePercent: yearlyChange === null || currentBalance === null || currentBalance === 0 ? null : (yearlyChange * 100) / currentBalance,
                     plannedBalance,
                     differenceToPlan: projectedBalance === null || plannedBalance === null ? null : projectedBalance - plannedBalance
                 };
@@ -1011,6 +1011,7 @@ function buildPlanningRows(snapshots) {
             yearlyChange: 0,
             currentPlannedBalance: 0,
             plannedBalance: 0,
+            currentBalanceCount: 0,
             averageContributionCount: 0,
             currentPlanCount: 0,
             yearlyPlanCount: 0,
@@ -1018,7 +1019,10 @@ function buildPlanningRows(snapshots) {
             hasPlanData: false
         };
         nextValue.accountCount += 1;
-        nextValue.currentBalance += row.currentBalance;
+        if (row.currentBalance !== null) {
+            nextValue.currentBalance += row.currentBalance;
+            nextValue.currentBalanceCount += 1;
+        }
         if (row.averageContribution !== null) {
             nextValue.averageContribution += row.averageContribution;
             nextValue.averageContributionCount += 1;
@@ -1044,19 +1048,28 @@ function buildPlanningRows(snapshots) {
     }, new Map()).values()]
             .map((total) => ({
                 ...total,
+                hasCompleteCurrentBalanceData: total.accountCount > 0 && total.currentBalanceCount === total.accountCount,
                 hasCompleteAverageContributionData: total.accountCount > 0 && total.averageContributionCount === total.accountCount,
                 hasCompleteCurrentPlanData: total.accountCount > 0 && total.currentPlanCount === total.accountCount,
                 hasCompleteYearlyPlanData: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount,
+                currentBalance: total.accountCount > 0 && total.currentBalanceCount === total.accountCount
+                        ? total.currentBalance
+                        : null,
                 averageContribution: total.accountCount > 0 && total.averageContributionCount === total.accountCount
                         ? total.averageContribution
                         : null,
-                projectedBalance: total.accountCount > 0 && total.averageContributionCount === total.accountCount
+                projectedBalance: total.accountCount > 0
+                        && total.currentBalanceCount === total.accountCount
+                        && total.averageContributionCount === total.accountCount
                         ? total.projectedBalance
                         : null,
-                yearlyChange: total.accountCount > 0 && total.averageContributionCount === total.accountCount
+                yearlyChange: total.accountCount > 0
+                        && total.currentBalanceCount === total.accountCount
+                        && total.averageContributionCount === total.accountCount
                         ? total.yearlyChange
                         : null,
                 projectedChangePercent: total.accountCount > 0
+                        && total.currentBalanceCount === total.accountCount
                         && total.averageContributionCount === total.accountCount
                         && total.currentBalance !== 0
                         ? (total.yearlyChange * 100) / total.currentBalance
@@ -1064,13 +1077,16 @@ function buildPlanningRows(snapshots) {
                 currentPlannedBalance: total.accountCount > 0 && total.currentPlanCount === total.accountCount
                         ? total.currentPlannedBalance
                         : null,
-                currentDifferenceToPlan: total.accountCount > 0 && total.currentPlanCount === total.accountCount
+                currentDifferenceToPlan: total.accountCount > 0
+                        && total.currentBalanceCount === total.accountCount
+                        && total.currentPlanCount === total.accountCount
                         ? total.currentBalance - total.currentPlannedBalance
                         : null,
                 plannedBalance: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount
                         ? total.plannedBalance
                         : null,
                 differenceToPlan: total.accountCount > 0
+                        && total.currentBalanceCount === total.accountCount
                         && total.averageContributionCount === total.accountCount
                         && total.yearlyPlanCount === total.accountCount
                         ? total.projectedBalance - total.plannedBalance
@@ -1101,7 +1117,7 @@ function renderPlanningSummary(totals) {
             <dl class="planning-summary-card-values">
                 <div>
                     <dt>${escapeHtml(messages["reports.planning.current"] ?? "Obecne środki")}</dt>
-                    <dd>${escapeHtml(formatAmount(total.currentBalance))}</dd>
+                    <dd>${escapeHtml(total.currentBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(total.currentBalance))}</dd>
                 </div>
                 <div>
                     <dt>${escapeHtml(messages["reports.planning.currentPlan"] ?? "Obecnie według planu")}</dt>
@@ -1140,7 +1156,7 @@ function renderPlanning(rows, totals) {
         `;
 
         const values = [
-            formatAmount(row.currentBalance),
+            row.currentBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.currentBalance),
             row.currentPlannedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.currentPlannedBalance),
             row.currentDifferenceToPlan === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.currentDifferenceToPlan),
             row.averageContribution === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.averageContribution),
@@ -1168,7 +1184,9 @@ function renderPlanning(rows, totals) {
 
         const currentCell = document.createElement("td");
         currentCell.className = "numeric-cell";
-        currentCell.textContent = formatAmount(total.currentBalance);
+        currentCell.textContent = total.currentBalance === null
+                ? (messages["reports.planning.noData"] ?? "brak danych")
+                : formatAmount(total.currentBalance);
 
         const currentPlannedCell = document.createElement("td");
         currentPlannedCell.className = "numeric-cell";
