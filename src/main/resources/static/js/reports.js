@@ -972,10 +972,12 @@ function buildPlanningRows(snapshots) {
                 }
             }
             let yearlyPlanValue = null;
-            for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
-                if (monthBucket(monthlyBalances[index].forecastMonth) <= yearlyPlanTargetMonthBucket) {
-                    yearlyPlanValue = monthlyBalances[index];
-                    break;
+            if (monthBucket(cachedSavingsForecast.forecastEndDate) >= yearlyPlanTargetMonthBucket) {
+                for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
+                    if (monthBucket(monthlyBalances[index].forecastMonth) <= yearlyPlanTargetMonthBucket) {
+                        yearlyPlanValue = monthlyBalances[index];
+                        break;
+                    }
                 }
             }
 
