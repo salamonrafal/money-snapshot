@@ -2200,8 +2200,9 @@ td:nth-child(5) {
     table-layout: auto;
 }
 
-.planning-table th:nth-child(1),
-.planning-table td:nth-child(1) {
+.planning-table thead tr:first-child th:first-child,
+.planning-table tbody td:nth-child(1),
+.planning-table tfoot td:nth-child(1) {
     width: auto;
     min-width: 0;
     text-align: left;

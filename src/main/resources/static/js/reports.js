@@ -264,7 +264,7 @@ function invalidateHistoryCache() {
     historyMatrixCacheKey = "";
 }
 
-function monthKey(date) {
+function isoDateKey(date) {
     return String(date).slice(0, 10);
 }
 
@@ -967,7 +967,7 @@ function buildPlanningRows(snapshots) {
             let currentPlanValue = null;
             if (today >= cachedSavingsForecast.forecastStartDate && today <= cachedSavingsForecast.forecastEndDate) {
                 for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
-                    if (monthKey(monthlyBalances[index].forecastMonth) <= today) {
+                    if (isoDateKey(monthlyBalances[index].forecastMonth) <= today) {
                         currentPlanValue = monthlyBalances[index];
                         break;
                     }
