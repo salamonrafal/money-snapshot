@@ -255,6 +255,10 @@ function monthKey(date) {
     return String(date).slice(0, 10);
 }
 
+function monthBucket(date) {
+    return String(date).slice(0, 7);
+}
+
 function updateReportsNavActiveState() {
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
     let activeTarget = "";
@@ -896,6 +900,7 @@ function buildPlanningRows(snapshots) {
     const accountMetaByAccountKey = new Map();
     const today = todayIsoDate();
     const yearlyPlanTargetMonth = addMonths(today, 11);
+    const yearlyPlanTargetMonthBucket = monthBucket(yearlyPlanTargetMonth);
     const noDataValue = null;
 
     averageContributionReport.rows.forEach((row) => {
@@ -955,7 +960,7 @@ function buildPlanningRows(snapshots) {
             }
             let yearlyPlanValue = null;
             for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
-                if (monthKey(monthlyBalances[index].forecastMonth) <= yearlyPlanTargetMonth) {
+                if (monthBucket(monthlyBalances[index].forecastMonth) <= yearlyPlanTargetMonthBucket) {
                     yearlyPlanValue = monthlyBalances[index];
                     break;
                 }
