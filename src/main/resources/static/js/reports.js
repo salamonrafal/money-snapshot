@@ -69,7 +69,7 @@ function locale() {
 }
 
 function todayIsoDate() {
-    return new Date().toISOString().slice(0, 10);
+    return MoneySnapshotUi.localIsoDate();
 }
 
 function shiftDate(date, offset) {
