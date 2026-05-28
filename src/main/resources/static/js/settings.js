@@ -1,5 +1,6 @@
 const settingsForm = document.querySelector("#settings-form");
 const defaultCurrencySelect = document.querySelector("#settings-default-currency");
+const themeSelect = document.querySelector("#settings-theme");
 const dateTimeFormatInput = document.querySelector("#settings-date-time-format");
 const moneyFormatInput = document.querySelector("#settings-money-format");
 const billingMonthStartDayInput = document.querySelector("#settings-billing-month-start-day");
@@ -33,9 +34,11 @@ function normalizedBillingMonthStartDayValue() {
 
 function fillSettings(settings) {
     defaultCurrencySelect.value = settings.defaultCurrency ?? "PLN";
+    themeSelect.value = settings.theme ?? "light";
     dateTimeFormatInput.value = settings.dateTimeFormat ?? "Y-m-d H:m";
     moneyFormatInput.value = settings.moneyFormat ?? "### ###,00 zł";
     billingMonthStartDayInput.value = settings.billingMonthStartDay ?? 1;
+    MoneySnapshotUi.applyTheme(themeSelect.value);
 }
 
 async function loadSettings() {
@@ -55,6 +58,7 @@ async function saveSettings() {
         body: JSON.stringify({
             values: {
                 defaultCurrency: defaultCurrencySelect.value,
+                theme: themeSelect.value,
                 dateTimeFormat: dateTimeFormatInput.value.trim(),
                 moneyFormat: moneyFormatInput.value.trim(),
                 billingMonthStartDay

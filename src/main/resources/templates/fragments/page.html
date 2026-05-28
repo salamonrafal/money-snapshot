@@ -4,11 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title}">Money Snapshot</title>
-    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260523-favicon-fix')}">
+    <script>
+        try {
+            const theme = localStorage.getItem("money-snapshot-theme");
+            if (theme === "dark") {
+                document.documentElement.dataset.theme = "dark";
+            }
+        } catch {
+        }
+    </script>
+    <link rel="stylesheet" th:href="@{/css/styles.css(v='20260528-direct-pdf-download')}">
     <link rel="icon" type="image/svg+xml" th:href="@{/images/money_snapshot_mark.svg}">
     <script defer th:src="@{/js/i18n.js(v='20260524-banks-accounts-ui')}"></script>
-    <script defer th:src="@{/js/shared-ui.js(v='20260524-banks-accounts-ui')}"></script>
-    <script defer th:src="@{/js/{script}(script=${pageScript},v='20260524-banks-accounts-ui')}"></script>
+    <script defer th:src="@{/js/shared-ui.js(v='20260528-direct-pdf-download')}"></script>
+    <script defer th:src="@{/js/{script}(script=${pageScript},v='20260528-direct-pdf-download')}"></script>
 </head>
 <body>
 <header class="topbar" th:fragment="header(activePage)">

@@ -14,12 +14,14 @@ import org.springframework.stereotype.Service;
 public class UserSettingsService {
 
     public static final String DEFAULT_CURRENCY = "defaultCurrency";
+    public static final String THEME = "theme";
     public static final String DATE_TIME_FORMAT = "dateTimeFormat";
     public static final String MONEY_FORMAT = "moneyFormat";
     public static final String BILLING_MONTH_START_DAY = "billingMonthStartDay";
 
     private static final Map<String, String> DEFAULT_VALUES = Map.of(
             DEFAULT_CURRENCY, "PLN",
+            THEME, "light",
             DATE_TIME_FORMAT, "Y-m-d H:m",
             MONEY_FORMAT, "### ###,00 zł",
             BILLING_MONTH_START_DAY, "1"
@@ -106,6 +108,10 @@ public class UserSettingsService {
             }
         }
 
+        if (THEME.equals(key)) {
+            return "dark".equals(normalizedValue) || "light".equals(normalizedValue) ? normalizedValue : null;
+        }
+
         return normalizedValue;
     }
 
@@ -116,6 +122,7 @@ public class UserSettingsService {
         Map<String, String> immutableValues = Map.copyOf(sanitizedValues);
         return new UserSettingsResponse(
                 sanitizedValues.get(DEFAULT_CURRENCY),
+                sanitizedValues.get(THEME),
                 sanitizedValues.get(DATE_TIME_FORMAT),
                 sanitizedValues.get(MONEY_FORMAT),
                 billingMonthStartDay,
