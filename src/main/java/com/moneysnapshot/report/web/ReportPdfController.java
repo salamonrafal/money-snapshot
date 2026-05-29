@@ -1,6 +1,7 @@
 package com.moneysnapshot.report.web;
 
 import com.moneysnapshot.report.ReportPdfService;
+import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import org.springframework.http.CacheControl;
@@ -35,7 +36,7 @@ public class ReportPdfController {
     }
 
     @PostMapping("/{sectionKey}")
-    public ResponseEntity<byte[]> generatePdf(@PathVariable String sectionKey, @RequestBody ReportPdfRequest request) {
+    public ResponseEntity<byte[]> generatePdf(@PathVariable String sectionKey, @Valid @RequestBody ReportPdfRequest request) {
         if (!SUPPORTED_SECTION_KEYS.contains(sectionKey)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported report section.");
         }

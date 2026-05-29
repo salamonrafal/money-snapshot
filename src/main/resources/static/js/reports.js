@@ -2000,18 +2000,6 @@ function reportPdfFilename(title) {
     return `${slug}.pdf`;
 }
 
-function binaryStringToBytes(value) {
-    const bytes = new Uint8Array(value.length);
-    for (let index = 0; index < value.length; index += 1) {
-        bytes[index] = value.charCodeAt(index);
-    }
-    return bytes;
-}
-
-function asciiBytes(value) {
-    return binaryStringToBytes(value);
-}
-
 function normalizePdfText(value) {
     const replacements = new Map([
         ["ą", "a"], ["ć", "c"], ["ę", "e"], ["ł", "l"], ["ń", "n"],

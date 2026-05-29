@@ -13,10 +13,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,7 +25,8 @@ public class ReportPdfService {
     private static final double PAGE_WIDTH = 841.89d;
     private static final double PAGE_HEIGHT = 595.28d;
     private static final double MARGIN = 28d;
-    private static final int MAX_CACHE_ENTRIES = 256;
+    private static final long MAX_CACHE_BYTES = 16L * 1024L * 1024L;
+    private static final long MAX_CACHEABLE_PDF_BYTES = 2L * 1024L * 1024L;
     private static final PdfColor TEXT = new PdfColor(24, 33, 47);
     private static final PdfColor MUTED = new PdfColor(97, 112, 132);
     private static final PdfColor LINE = new PdfColor(223, 229, 220);
@@ -52,7 +52,8 @@ public class ReportPdfService {
 
     private final ObjectMapper objectMapper;
     private final ReportDataVersionService reportDataVersionService;
-    private final Map<String, byte[]> pdfCache = new ConcurrentHashMap<>();
+    private final LinkedHashMap<String, byte[]> pdfCache = new LinkedHashMap<>(16, 0.75f, true);
+    private long pdfCacheBytes = 0L;
 
     public ReportPdfService(
             ObjectMapper objectMapper,
@@ -64,16 +65,13 @@ public class ReportPdfService {
 
     public byte[] generatePdf(String sectionKey, ReportPdfRequest request) {
         String cacheKey = cacheKey(sectionKey, request);
-        byte[] cached = pdfCache.get(cacheKey);
+        byte[] cached = getCachedPdf(cacheKey);
         if (cached != null) {
             return cached;
         }
 
         byte[] pdf = renderPdf(request);
-        if (pdfCache.size() >= MAX_CACHE_ENTRIES) {
-            pdfCache.clear();
-        }
-        pdfCache.put(cacheKey, pdf);
+        cachePdf(cacheKey, pdf);
         return pdf;
     }
 
@@ -95,6 +93,32 @@ public class ReportPdfService {
             return sha256(objectMapper.writeValueAsBytes(request));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Failed to serialize report PDF request.", exception);
+        }
+    }
+
+    private synchronized byte[] getCachedPdf(String cacheKey) {
+        return pdfCache.get(cacheKey);
+    }
+
+    private synchronized void cachePdf(String cacheKey, byte[] pdf) {
+        if (pdf.length > MAX_CACHEABLE_PDF_BYTES) {
+            return;
+        }
+
+        byte[] previous = pdfCache.remove(cacheKey);
+        if (previous != null) {
+            pdfCacheBytes -= previous.length;
+        }
+
+        pdfCache.put(cacheKey, pdf);
+        pdfCacheBytes += pdf.length;
+
+        while (pdfCacheBytes > MAX_CACHE_BYTES && !pdfCache.isEmpty()) {
+            String eldestKey = pdfCache.keySet().iterator().next();
+            byte[] removed = pdfCache.remove(eldestKey);
+            if (removed != null) {
+                pdfCacheBytes -= removed.length;
+            }
         }
     }
 
