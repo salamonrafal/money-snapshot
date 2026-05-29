@@ -14,6 +14,9 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.Test;
 
 class ReportPdfServiceTest {
@@ -67,12 +70,11 @@ class ReportPdfServiceTest {
                 List.of(List.of("Ćma (A/B)"))
         );
 
-        String pdf = new String(service.generatePdf("summary", request), StandardCharsets.US_ASCII);
+        String pdfText = extractText(service.generatePdf("summary", request));
 
-        assertThat(pdf).contains("%PDF-1.4");
-        assertThat(pdf).contains("\\(test\\)");
-        assertThat(pdf).contains("proba");
-        assertThat(pdf).contains("Cma \\(A/B\\)");
+        assertThat(pdfText).contains("Zażółć (test)");
+        assertThat(pdfText).contains("Łódź · próba");
+        assertThat(pdfText).contains("Ćma (A/B)");
     }
 
     @Test
@@ -96,10 +98,11 @@ class ReportPdfServiceTest {
                 rows
         );
 
-        String pdf = new String(service.generatePdf("history", request), StandardCharsets.US_ASCII);
-
-        assertThat(countOccurrences(pdf, "/Type /Page ")).isGreaterThan(1);
-        assertThat(pdf).contains("/Count ");
+        try (PDDocument document = Loader.loadPDF(service.generatePdf("history", request))) {
+            assertThat(document.getNumberOfPages()).isGreaterThan(1);
+        } catch (Exception exception) {
+            throw new AssertionError("Failed to inspect generated PDF", exception);
+        }
     }
 
     private ReportPdfRequest requestWithTable(
@@ -128,13 +131,11 @@ class ReportPdfServiceTest {
         );
     }
 
-    private int countOccurrences(String value, String token) {
-        int count = 0;
-        int index = 0;
-        while ((index = value.indexOf(token, index)) >= 0) {
-            count += 1;
-            index += token.length();
+    private String extractText(byte[] pdfBytes) {
+        try (PDDocument document = Loader.loadPDF(pdfBytes)) {
+            return new PDFTextStripper().getText(document);
+        } catch (Exception exception) {
+            throw new AssertionError("Failed to extract text from generated PDF", exception);
         }
-        return count;
     }
 }

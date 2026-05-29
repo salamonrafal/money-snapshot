@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moneysnapshot.report.web.ReportPdfRequest;
 import com.moneysnapshot.report.web.ReportPdfTableRequest;
-import java.nio.charset.StandardCharsets;
+import java.awt.Color;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
@@ -15,18 +18,28 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ReportPdfService {
 
     private static final DateTimeFormatter DOWNLOAD_FILENAME_TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm");
-    private static final double PAGE_WIDTH = 841.89d;
-    private static final double PAGE_HEIGHT = 595.28d;
-    private static final double MARGIN = 28d;
+    private static final float PAGE_WIDTH = PDRectangle.A4.getHeight();
+    private static final float PAGE_HEIGHT = PDRectangle.A4.getWidth();
+    private static final float MARGIN = 28f;
+    private static final float BOTTOM_MARGIN = 28f;
+    private static final float USABLE_WIDTH = PAGE_WIDTH - (MARGIN * 2f);
     private static final long MAX_CACHE_BYTES = 16L * 1024L * 1024L;
     private static final long MAX_CACHEABLE_PDF_BYTES = 2L * 1024L * 1024L;
+
     private static final PdfColor TEXT = new PdfColor(24, 33, 47);
     private static final PdfColor MUTED = new PdfColor(97, 112, 132);
     private static final PdfColor LINE = new PdfColor(223, 229, 220);
@@ -55,10 +68,7 @@ public class ReportPdfService {
     private final LinkedHashMap<String, byte[]> pdfCache = new LinkedHashMap<>(16, 0.75f, true);
     private long pdfCacheBytes = 0L;
 
-    public ReportPdfService(
-            ObjectMapper objectMapper,
-            ReportDataVersionService reportDataVersionService
-    ) {
+    public ReportPdfService(ObjectMapper objectMapper, ReportDataVersionService reportDataVersionService) {
         this.objectMapper = objectMapper;
         this.reportDataVersionService = reportDataVersionService;
     }
@@ -76,8 +86,11 @@ public class ReportPdfService {
     }
 
     public String filenameFor(String title) {
-        String normalized = normalizePdfText(Objects.requireNonNullElse(title, "Raport")).toLowerCase();
-        String slug = normalized.replaceAll("[^a-z0-9]+", "-").replaceAll("(^-+|-+$)", "");
+        String normalized = Normalizer.normalize(Objects.requireNonNullElse(title, "Raport"), Normalizer.Form.NFKD)
+                .replaceAll("\\p{M}+", "");
+        String slug = normalized.toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{Alnum}]+", "-")
+                .replaceAll("(^-+|-+$)", "");
         if (slug.isBlank()) {
             slug = "raport";
         }
@@ -132,34 +145,54 @@ public class ReportPdfService {
     }
 
     private byte[] renderPdf(ReportPdfRequest request) {
-        PdfCanvas canvas = new PdfCanvas(request.title(), request.subtitle());
-        if ("line".equals(request.chartType())) {
-            drawLineChart(canvas, request.chart());
-        } else if ("pie".equals(request.chartType())) {
-            drawPieChart(canvas, request.chart());
+        try (PDDocument document = new PDDocument();
+             InputStream regularStream = fontStream("DejaVuSans.ttf");
+             InputStream boldStream = fontStream("DejaVuSans-Bold.ttf")) {
+            PDFont regularFont = PDType0Font.load(document, regularStream, true);
+            PDFont boldFont = PDType0Font.load(document, boldStream, true);
+            try (PdfCanvas canvas = new PdfCanvas(document, regularFont, boldFont, request.title(), request.subtitle())) {
+                if ("line".equals(request.chartType())) {
+                    drawLineChart(canvas, request.chart());
+                } else if ("pie".equals(request.chartType())) {
+                    drawPieChart(canvas, request.chart());
+                }
+                drawTable(canvas, request.table());
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            document.save(outputStream);
+            return outputStream.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to render report PDF.", exception);
         }
-        drawTable(canvas, request.table());
-        return canvas.build();
     }
 
-    private void drawLineChart(PdfCanvas canvas, JsonNode chart) {
+    private InputStream fontStream(String resourceName) {
+        InputStream stream = ReportPdfService.class.getResourceAsStream("/fonts/" + resourceName);
+        if (stream == null) {
+            throw new IllegalStateException("Missing PDF font resource: " + resourceName);
+        }
+        return stream;
+    }
+
+    private void drawLineChart(PdfCanvas canvas, JsonNode chart) throws IOException {
         JsonNode rows = chart == null ? null : chart.path("rows");
         JsonNode checkpoints = chart == null ? null : chart.path("checkpoints");
         if (rows == null || !rows.isArray() || checkpoints == null || !checkpoints.isArray() || rows.isEmpty() || checkpoints.isEmpty()) {
             return;
         }
 
-        canvas.ensureSpace(190d);
-        double chartX = MARGIN;
-        double chartY = canvas.currentY() - 170d;
-        double chartW = canvas.usableWidth();
-        double chartH = 150d;
-        canvas.rect(chartX, chartY, chartW, chartH, WASH, LINE);
+        canvas.ensureSpace(190f);
+        float chartX = MARGIN;
+        float chartY = canvas.currentY() - 170f;
+        float chartW = USABLE_WIDTH;
+        float chartH = 150f;
+        canvas.rect(chartX, chartY, chartW, chartH, WASH, LINE, true, true);
 
-        double plotX = chartX + 46d;
-        double plotY = chartY + 28d;
-        double plotW = chartW - 62d;
-        double plotH = chartH - 52d;
+        float plotX = chartX + 46f;
+        float plotY = chartY + 28f;
+        float plotW = chartW - 62f;
+        float plotH = chartH - 52f;
 
         long startTime = isoDate(checkpoints.get(0).asText());
         long endTime = isoDate(checkpoints.get(checkpoints.size() - 1).asText());
@@ -176,9 +209,9 @@ public class ReportPdfService {
         }
         double changeRange = Math.max(1d, maxChange - minChange);
 
-        double zeroY = plotY + ((0d - minChange) * plotH) / changeRange;
-        canvas.line(plotX, zeroY, plotX + plotW, zeroY, MUTED, 0.5d);
-        canvas.text("0", chartX + 18d, zeroY - 3d, 7d, "F1", MUTED);
+        float zeroY = (float) (plotY + ((0d - minChange) * plotH) / changeRange);
+        canvas.line(plotX, zeroY, plotX + plotW, zeroY, MUTED, 0.5f);
+        canvas.text("0", chartX + 18f, zeroY - 3f, 7f, false, MUTED);
 
         int legendIndex = 0;
         for (JsonNode row : rows) {
@@ -186,31 +219,32 @@ public class ReportPdfService {
             List<PdfPoint> linePoints = new ArrayList<>();
             for (JsonNode point : row.path("series")) {
                 long pointTime = isoDate(point.path("date").asText());
-                double x = plotX + ((double) (pointTime - startTime) * plotW) / timeRange;
-                double y = plotY + ((point.path("change").asDouble(0d) - minChange) * plotH) / changeRange;
+                float x = (float) (plotX + ((double) (pointTime - startTime) * plotW) / timeRange);
+                float y = (float) (plotY + ((point.path("change").asDouble(0d) - minChange) * plotH) / changeRange);
                 linePoints.add(new PdfPoint(x, y));
             }
-            canvas.polyline(linePoints, color, 1.5d);
+            canvas.polyline(linePoints, color, 1.5f);
+
             for (JsonNode point : row.path("points")) {
                 long pointTime = isoDate(point.path("date").asText());
-                double x = plotX + ((double) (pointTime - startTime) * plotW) / timeRange;
-                double y = plotY + ((point.path("change").asDouble(0d) - minChange) * plotH) / changeRange;
-                canvas.circle(x, y, 2.2d, color);
+                float x = (float) (plotX + ((double) (pointTime - startTime) * plotW) / timeRange);
+                float y = (float) (plotY + ((point.path("change").asDouble(0d) - minChange) * plotH) / changeRange);
+                canvas.circle(x, y, 2.2f, color);
             }
 
             if (legendIndex < 8) {
-                double legendX = chartX + 52d + (legendIndex % 4) * 170d;
-                double legendY = chartY + chartH - 18d - Math.floor(legendIndex / 4d) * 11d;
-                canvas.rect(legendX, legendY - 2d, 7d, 7d, color, null);
-                canvas.text(row.path("name").asText(""), legendX + 11d, legendY - 1d, 6.5d, "F1", TEXT);
+                float legendX = chartX + 52f + (legendIndex % 4) * 170f;
+                float legendY = (float) (chartY + chartH - 18f - Math.floor(legendIndex / 4d) * 11f);
+                canvas.rect(legendX, legendY - 2f, 7f, 7f, color, null, true, false);
+                canvas.text(row.path("name").asText(""), legendX + 11f, legendY - 1f, 6.5f, false, TEXT);
             }
             legendIndex += 1;
         }
 
-        canvas.setCurrentY(chartY - 16d);
+        canvas.setCurrentY(chartY - 16f);
     }
 
-    private void drawPieChart(PdfCanvas canvas, JsonNode chart) {
+    private void drawPieChart(PdfCanvas canvas, JsonNode chart) throws IOException {
         JsonNode rows = chart == null ? null : chart.path("rows");
         if (rows == null || !rows.isArray() || rows.isEmpty()) {
             return;
@@ -226,16 +260,16 @@ public class ReportPdfService {
             return;
         }
 
-        canvas.ensureSpace(170d);
-        double chartX = MARGIN;
-        double chartY = canvas.currentY() - 150d;
-        double chartW = canvas.usableWidth();
-        double chartH = 132d;
-        canvas.rect(chartX, chartY, chartW, chartH, WASH, LINE);
+        canvas.ensureSpace(170f);
+        float chartX = MARGIN;
+        float chartY = canvas.currentY() - 150f;
+        float chartW = USABLE_WIDTH;
+        float chartH = 132f;
+        canvas.rect(chartX, chartY, chartW, chartH, WASH, LINE, true, true);
 
-        double centerX = chartX + 80d;
-        double centerY = chartY + 66d;
-        double radius = 48d;
+        float centerX = chartX + 80f;
+        float centerY = chartY + 66f;
+        float radius = 48f;
         double angle = -Math.PI / 2d;
 
         for (int index = 0; index < Math.min(visibleRows.size(), 10); index += 1) {
@@ -248,43 +282,42 @@ public class ReportPdfService {
             for (int step = 0; step <= steps; step += 1) {
                 double currentAngle = angle + ((nextAngle - angle) * step) / steps;
                 points.add(new PdfPoint(
-                        centerX + Math.cos(currentAngle) * radius,
-                        centerY - Math.sin(currentAngle) * radius
+                        (float) (centerX + Math.cos(currentAngle) * radius),
+                        (float) (centerY - Math.sin(currentAngle) * radius)
                 ));
             }
             PdfColor color = CHART_COLORS.get(index % CHART_COLORS.size());
             canvas.filledPolygon(points, color);
 
-            double legendX = chartX + 160d + (index % 2) * 285d;
-            double legendY = chartY + chartH - 24d - Math.floor(index / 2d) * 18d;
-            canvas.rect(legendX, legendY - 2d, 8d, 8d, color, null);
+            float legendX = chartX + 160f + (index % 2) * 285f;
+            float legendY = (float) (chartY + chartH - 24f - Math.floor(index / 2d) * 18f);
+            canvas.rect(legendX, legendY - 2f, 8f, 8f, color, null, true, false);
             String label = row.path("name").asText("")
                     + " (" + row.path("currencyCode").asText("") + ") "
-                    + String.format(java.util.Locale.US, "%.1f%%", row.path("sharePercent").asDouble(0d));
-            canvas.text(label, legendX + 13d, legendY - 1d, 7d, "F1", TEXT);
+                    + String.format(Locale.US, "%.1f%%", row.path("sharePercent").asDouble(0d));
+            canvas.text(label, legendX + 13f, legendY - 1f, 7f, false, TEXT);
             angle = nextAngle;
         }
 
-        canvas.setCurrentY(chartY - 16d);
+        canvas.setCurrentY(chartY - 16f);
     }
 
-    private void drawTable(PdfCanvas canvas, ReportPdfTableRequest table) {
+    private void drawTable(PdfCanvas canvas, ReportPdfTableRequest table) throws IOException {
         List<String> columns = table == null || table.columns() == null ? List.of() : table.columns();
         List<List<String>> rows = table == null || table.rows() == null ? List.of() : table.rows();
         if (columns.isEmpty()) {
-            canvas.text("No data", MARGIN, canvas.currentY(), 10d, "F1", TEXT);
+            canvas.text("No data", MARGIN, canvas.currentY(), 10f, false, TEXT);
             return;
         }
 
         int columnCount = columns.size();
-        double columnWidth = canvas.usableWidth() / columnCount;
-        double fontSize = columnCount > 8 ? 5.8d : (columnCount > 6 ? 6.5d : 7.5d);
-        double lineHeight = fontSize + 2.5d;
-        int maxChars = Math.max(7, (int) Math.floor(columnWidth / (fontSize * 0.5d)));
+        float columnWidth = USABLE_WIDTH / columnCount;
+        float fontSize = columnCount > 8 ? 5.8f : (columnCount > 6 ? 6.5f : 7.5f);
+        float lineHeight = fontSize + 2.5f;
 
-        drawTableRow(canvas, columns, -1, columnCount, columnWidth, fontSize, lineHeight, maxChars);
+        drawTableRow(canvas, columns, -1, columnCount, columnWidth, fontSize, lineHeight);
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex += 1) {
-            drawTableRow(canvas, rows.get(rowIndex), rowIndex, columnCount, columnWidth, fontSize, lineHeight, maxChars);
+            drawTableRow(canvas, rows.get(rowIndex), rowIndex, columnCount, columnWidth, fontSize, lineHeight);
         }
     }
 
@@ -293,16 +326,15 @@ public class ReportPdfService {
             List<String> row,
             int rowIndex,
             int columnCount,
-            double columnWidth,
-            double fontSize,
-            double lineHeight,
-            int maxChars
-    ) {
+            float columnWidth,
+            float fontSize,
+            float lineHeight
+    ) throws IOException {
         boolean isHeader = rowIndex < 0;
         List<List<String>> wrappedCells = new ArrayList<>();
         int maxLines = 1;
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
-            List<String> lines = wrapPdfText(columnIndex < row.size() ? row.get(columnIndex) : "", maxChars);
+            List<String> lines = canvas.wrapText(columnIndex < row.size() ? row.get(columnIndex) : "", columnWidth - 8f, fontSize, isHeader);
             if (lines.size() > 4) {
                 lines = lines.subList(0, 4);
             }
@@ -310,320 +342,230 @@ public class ReportPdfService {
             maxLines = Math.max(maxLines, lines.size());
         }
 
-        double rowHeight = maxLines * lineHeight + 9d;
-        canvas.ensureSpace(rowHeight + 2d);
-        double rowTop = canvas.currentY();
-        double rowBottom = rowTop - rowHeight;
+        float rowHeight = maxLines * lineHeight + 9f;
+        canvas.ensureSpace(rowHeight + 2f);
+        float rowTop = canvas.currentY();
+        float rowBottom = rowTop - rowHeight;
         PdfColor fillColor = isHeader ? HEADER : (rowIndex % 2 == 1 ? ROW_ALT : WHITE);
-        canvas.rect(MARGIN, rowBottom, canvas.usableWidth(), rowHeight, fillColor, LINE);
+        canvas.rect(MARGIN, rowBottom, USABLE_WIDTH, rowHeight, fillColor, LINE, true, true);
 
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
-            double x = MARGIN + (columnIndex * columnWidth) + 4d;
-            String font = isHeader ? "F2" : "F1";
+            float x = MARGIN + (columnIndex * columnWidth) + 4f;
             PdfColor color = isHeader ? WHITE : TEXT;
             List<String> lines = wrappedCells.get(columnIndex);
             for (int lineIndex = 0; lineIndex < lines.size(); lineIndex += 1) {
-                canvas.text(lines.get(lineIndex), x, rowTop - 12d - (lineIndex * lineHeight), fontSize, font, color);
+                canvas.text(lines.get(lineIndex), x, rowTop - 12f - (lineIndex * lineHeight), fontSize, isHeader, color);
             }
             if (columnIndex > 0) {
-                double columnX = MARGIN + (columnIndex * columnWidth);
-                canvas.line(columnX, rowTop, columnX, rowBottom, isHeader ? HEADER_DARK : LINE, 0.45d);
+                float columnX = MARGIN + (columnIndex * columnWidth);
+                canvas.line(columnX, rowTop, columnX, rowBottom, isHeader ? HEADER_DARK : LINE, 0.45f);
             }
         }
 
         canvas.setCurrentY(rowBottom);
     }
 
-    private List<String> wrapPdfText(String value, int maxLength) {
-        String text = normalizePdfText(value);
-        if (text.isBlank()) {
-            return List.of("");
-        }
-
-        String[] words = text.split(" ");
-        List<String> lines = new ArrayList<>();
-        StringBuilder line = new StringBuilder();
-        for (String word : words) {
-            if (line.length() == 0) {
-                line.append(word);
-            } else if (line.length() + 1 + word.length() <= maxLength) {
-                line.append(' ').append(word);
-            } else {
-                lines.add(line.toString());
-                line = new StringBuilder(word);
-            }
-        }
-        if (line.length() > 0) {
-            lines.add(line.toString());
-        }
-        return lines.isEmpty() ? List.of("") : lines;
-    }
-
-    private String normalizePdfText(String value) {
-        String normalized = Normalizer.normalize(Objects.requireNonNullElse(value, ""), Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "")
-                .replace('·', '-')
-                .replace('–', '-')
-                .replace('—', '-')
-                .replace("…", "...");
-        return normalized.replaceAll("[^\\x20-\\x7E]", " ").replaceAll("\\s+", " ").trim();
-    }
-
     private long isoDate(String value) {
         return java.time.LocalDate.parse(value).toEpochDay();
     }
 
-    private final class PdfCanvas {
-        private final List<String> pages = new ArrayList<>();
+    private static final class PdfCanvas implements AutoCloseable {
+        private final PDDocument document;
+        private final PDFont regularFont;
+        private final PDFont boldFont;
         private final String title;
         private final String subtitle;
-        private StringBuilder commands = new StringBuilder();
-        private double y = PAGE_HEIGHT - MARGIN;
+        private PDPage page;
+        private PDPageContentStream stream;
+        private float y = PAGE_HEIGHT - MARGIN;
 
-        private PdfCanvas(String title, String subtitle) {
-            this.title = normalizePdfText(Objects.requireNonNullElse(title, "Report"));
-            this.subtitle = normalizePdfText(Objects.requireNonNullElse(subtitle, ""));
+        private PdfCanvas(PDDocument document, PDFont regularFont, PDFont boldFont, String title, String subtitle) throws IOException {
+            this.document = document;
+            this.regularFont = regularFont;
+            this.boldFont = boldFont;
+            this.title = Objects.requireNonNullElse(title, "Report");
+            this.subtitle = Objects.requireNonNullElse(subtitle, "");
             addPage();
             drawPageHeader();
         }
 
-        private double currentY() {
+        private float currentY() {
             return y;
         }
 
-        private void setCurrentY(double value) {
+        private void setCurrentY(float value) {
             y = value;
         }
 
-        private double usableWidth() {
-            return PAGE_WIDTH - (MARGIN * 2d);
-        }
-
-        private void addPage() {
-            if (commands.length() > 0) {
-                pages.add(commands.toString());
+        private void addPage() throws IOException {
+            if (stream != null) {
+                stream.close();
             }
-            commands = new StringBuilder();
+            page = new PDPage(new PDRectangle(PAGE_WIDTH, PAGE_HEIGHT));
+            document.addPage(page);
+            stream = new PDPageContentStream(document, page);
             y = PAGE_HEIGHT - MARGIN;
-            stroke(LINE);
-            fill(TEXT);
         }
 
-        private void ensureSpace(double height) {
-            if (y - height < 28d) {
+        private void ensureSpace(float height) throws IOException {
+            if (y - height < BOTTOM_MARGIN) {
                 addPage();
                 drawPageHeader();
             }
         }
 
-        private void drawPageHeader() {
-            double headerTop = PAGE_HEIGHT - MARGIN;
-            double headerHeight = 86d;
-            rect(MARGIN, headerTop - headerHeight, usableWidth(), headerHeight, NAVY, null);
-            rect(MARGIN, headerTop - headerHeight, usableWidth(), 5d, GOLD, null);
-            drawBrandMark(MARGIN + 18d, headerTop - 18d, 42d);
-            text("Money Snapshot", MARGIN + 72d, headerTop - 34d, 10d, "F2", GOLD);
-            text(title, MARGIN + 72d, headerTop - 57d, 20d, "F2", WHITE);
-            text(subtitle.isBlank() ? title : subtitle, MARGIN + 72d, headerTop - 75d, 8d, "F1", WHITE);
-            y = headerTop - headerHeight - 18d;
+        private void drawPageHeader() throws IOException {
+            float headerTop = PAGE_HEIGHT - MARGIN;
+            float headerHeight = 86f;
+            rect(MARGIN, headerTop - headerHeight, USABLE_WIDTH, headerHeight, NAVY, null, true, false);
+            rect(MARGIN, headerTop - headerHeight, USABLE_WIDTH, 5f, GOLD, null, true, false);
+            drawBrandMark(MARGIN + 18f, headerTop - 18f, 42f);
+            text("Money Snapshot", MARGIN + 72f, headerTop - 34f, 10f, true, GOLD);
+            text(title, MARGIN + 72f, headerTop - 57f, 20f, true, WHITE);
+            text(subtitle.isBlank() ? title : subtitle, MARGIN + 72f, headerTop - 75f, 8f, false, WHITE);
+            y = headerTop - headerHeight - 18f;
         }
 
-        private void drawBrandMark(double x, double topY, double size) {
-            double bottomY = topY - size;
-            rect(x, bottomY, size, size, WHITE, null);
-            rect(x + 3d, bottomY + 3d, size - 6d, size - 6d, NAVY, null);
-            double barWidth = size * 0.1d;
-            double barGap = size * 0.08d;
-            double baseY = bottomY + size * 0.2d;
-            double startX = x + size * 0.22d;
-            double[] ratios = {0.28d, 0.42d, 0.56d, 0.72d};
+        private void drawBrandMark(float x, float topY, float size) throws IOException {
+            float bottomY = topY - size;
+            rect(x, bottomY, size, size, WHITE, null, true, false);
+            rect(x + 3f, bottomY + 3f, size - 6f, size - 6f, NAVY, null, true, false);
+            float barWidth = size * 0.1f;
+            float barGap = size * 0.08f;
+            float baseY = bottomY + size * 0.2f;
+            float startX = x + size * 0.22f;
+            float[] ratios = {0.28f, 0.42f, 0.56f, 0.72f};
             for (int index = 0; index < ratios.length; index += 1) {
-                rect(startX + index * (barWidth + barGap), baseY, barWidth, size * ratios[index], index % 2 == 0 ? TEAL : MINT, null);
+                rect(startX + index * (barWidth + barGap), baseY, barWidth, size * ratios[index], index % 2 == 0 ? TEAL : MINT, null, true, false);
             }
             List<PdfPoint> points = List.of(
-                    new PdfPoint(x + size * 0.25d, bottomY + size * 0.43d),
-                    new PdfPoint(x + size * 0.43d, bottomY + size * 0.56d),
-                    new PdfPoint(x + size * 0.61d, bottomY + size * 0.68d),
-                    new PdfPoint(x + size * 0.8d, bottomY + size * 0.82d)
+                    new PdfPoint(x + size * 0.25f, bottomY + size * 0.43f),
+                    new PdfPoint(x + size * 0.43f, bottomY + size * 0.56f),
+                    new PdfPoint(x + size * 0.61f, bottomY + size * 0.68f),
+                    new PdfPoint(x + size * 0.8f, bottomY + size * 0.82f)
             );
-            polyline(points, GOLD, 2d);
+            polyline(points, GOLD, 2f);
             for (PdfPoint point : points) {
-                circle(point.x(), point.y(), size * 0.035d, GOLD);
+                circle(point.x(), point.y(), size * 0.035f, GOLD);
             }
         }
 
-        private void text(String text, double x, double textY, double size, String font, PdfColor color) {
-            fill(color);
-            commands.append("BT /")
-                    .append(font)
-                    .append(' ')
-                    .append(format(size))
-                    .append(" Tf ")
-                    .append(format(x))
-                    .append(' ')
-                    .append(format(textY))
-                    .append(" Td (")
-                    .append(escapePdfText(text))
-                    .append(") Tj ET\n");
+        private void text(String text, float x, float baselineY, float fontSize, boolean bold, PdfColor color) throws IOException {
+            stream.beginText();
+            stream.setNonStrokingColor(color.awt());
+            stream.setFont(bold ? boldFont : regularFont, fontSize);
+            stream.newLineAtOffset(x, baselineY);
+            stream.showText(Objects.requireNonNullElse(text, ""));
+            stream.endText();
         }
 
-        private void line(double x1, double y1, double x2, double y2, PdfColor color, double width) {
-            stroke(color);
-            commands.append(format(width)).append(" w ")
-                    .append(format(x1)).append(' ').append(format(y1)).append(" m ")
-                    .append(format(x2)).append(' ').append(format(y2)).append(" l S\n");
+        private float textWidth(String text, float fontSize, boolean bold) throws IOException {
+            PDFont font = bold ? boldFont : regularFont;
+            return font.getStringWidth(Objects.requireNonNullElse(text, "")) / 1000f * fontSize;
         }
 
-        private void rect(double x, double rectY, double width, double height, PdfColor fillColor, PdfColor strokeColor) {
-            if (fillColor != null) {
-                fill(fillColor);
-                commands.append(format(x)).append(' ').append(format(rectY)).append(' ')
-                        .append(format(width)).append(' ').append(format(height)).append(" re f\n");
+        private List<String> wrapText(String text, float maxWidth, float fontSize, boolean bold) throws IOException {
+            String normalized = Objects.requireNonNullElse(text, "").replaceAll("\\s+", " ").trim();
+            if (normalized.isEmpty()) {
+                return List.of("");
             }
-            if (strokeColor != null) {
-                stroke(strokeColor);
-                commands.append(format(x)).append(' ').append(format(rectY)).append(' ')
-                        .append(format(width)).append(' ').append(format(height)).append(" re S\n");
+
+            String[] words = normalized.split(" ");
+            List<String> lines = new ArrayList<>();
+            StringBuilder currentLine = new StringBuilder();
+            for (String word : words) {
+                String candidate = currentLine.length() == 0 ? word : currentLine + " " + word;
+                if (textWidth(candidate, fontSize, bold) <= maxWidth || currentLine.length() == 0) {
+                    currentLine.setLength(0);
+                    currentLine.append(candidate);
+                } else {
+                    lines.add(currentLine.toString());
+                    currentLine.setLength(0);
+                    currentLine.append(word);
+                }
+            }
+            if (currentLine.length() > 0) {
+                lines.add(currentLine.toString());
+            }
+            return lines.isEmpty() ? List.of("") : lines;
+        }
+
+        private void line(float x1, float y1, float x2, float y2, PdfColor color, float width) throws IOException {
+            stream.setStrokingColor(color.awt());
+            stream.setLineWidth(width);
+            stream.moveTo(x1, y1);
+            stream.lineTo(x2, y2);
+            stream.stroke();
+        }
+
+        private void rect(float x, float y, float width, float height, PdfColor fillColor, PdfColor strokeColor, boolean fill, boolean stroke) throws IOException {
+            stream.addRect(x, y, width, height);
+            if (fill && stroke && fillColor != null && strokeColor != null) {
+                stream.setNonStrokingColor(fillColor.awt());
+                stream.setStrokingColor(strokeColor.awt());
+                stream.fillAndStroke();
+            } else if (fill && fillColor != null) {
+                stream.setNonStrokingColor(fillColor.awt());
+                stream.fill();
+            } else if (stroke && strokeColor != null) {
+                stream.setStrokingColor(strokeColor.awt());
+                stream.stroke();
             }
         }
 
-        private void polyline(List<PdfPoint> points, PdfColor color, double width) {
+        private void polyline(List<PdfPoint> points, PdfColor color, float width) throws IOException {
             if (points.size() < 2) {
                 return;
             }
-            stroke(color);
-            commands.append(format(width)).append(" w ");
-            for (int index = 0; index < points.size(); index += 1) {
-                PdfPoint point = points.get(index);
-                commands.append(format(point.x())).append(' ').append(format(point.y())).append(index == 0 ? " m " : " l ");
+            stream.setStrokingColor(color.awt());
+            stream.setLineWidth(width);
+            stream.moveTo(points.get(0).x(), points.get(0).y());
+            for (int index = 1; index < points.size(); index += 1) {
+                stream.lineTo(points.get(index).x(), points.get(index).y());
             }
-            commands.append("S\n");
+            stream.stroke();
         }
 
-        private void filledPolygon(List<PdfPoint> points, PdfColor color) {
+        private void filledPolygon(List<PdfPoint> points, PdfColor color) throws IOException {
             if (points.size() < 3) {
                 return;
             }
-            fill(color);
-            for (int index = 0; index < points.size(); index += 1) {
-                PdfPoint point = points.get(index);
-                commands.append(format(point.x())).append(' ').append(format(point.y())).append(index == 0 ? " m " : " l ");
+            stream.setNonStrokingColor(color.awt());
+            stream.moveTo(points.get(0).x(), points.get(0).y());
+            for (int index = 1; index < points.size(); index += 1) {
+                stream.lineTo(points.get(index).x(), points.get(index).y());
             }
-            commands.append("h f\n");
+            stream.closePath();
+            stream.fill();
         }
 
-        private void circle(double cx, double cy, double radius, PdfColor color) {
-            fill(color);
-            double k = 0.5522847498d * radius;
-            commands.append(format(cx + radius)).append(' ').append(format(cy)).append(" m ")
-                    .append(format(cx + radius)).append(' ').append(format(cy + k)).append(' ')
-                    .append(format(cx + k)).append(' ').append(format(cy + radius)).append(' ')
-                    .append(format(cx)).append(' ').append(format(cy + radius)).append(" c ")
-                    .append(format(cx - k)).append(' ').append(format(cy + radius)).append(' ')
-                    .append(format(cx - radius)).append(' ').append(format(cy + k)).append(' ')
-                    .append(format(cx - radius)).append(' ').append(format(cy)).append(" c ")
-                    .append(format(cx - radius)).append(' ').append(format(cy - k)).append(' ')
-                    .append(format(cx - k)).append(' ').append(format(cy - radius)).append(' ')
-                    .append(format(cx)).append(' ').append(format(cy - radius)).append(" c ")
-                    .append(format(cx + k)).append(' ').append(format(cy - radius)).append(' ')
-                    .append(format(cx + radius)).append(' ').append(format(cy - k)).append(' ')
-                    .append(format(cx + radius)).append(' ').append(format(cy)).append(" c f\n");
-        }
-
-        private void stroke(PdfColor color) {
-            commands.append(color.rgb()).append(" RG\n");
-        }
-
-        private void fill(PdfColor color) {
-            commands.append(color.rgb()).append(" rg\n");
-        }
-
-        private String escapePdfText(String value) {
-            return normalizePdfText(value).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)");
-        }
-
-        private byte[] build() {
-            if (commands.length() > 0) {
-                pages.add(commands.toString());
-                commands = new StringBuilder();
+        private void circle(float cx, float cy, float radius, PdfColor color) throws IOException {
+            List<PdfPoint> points = new ArrayList<>();
+            int segments = 10;
+            for (int index = 0; index < segments; index += 1) {
+                double angle = (Math.PI * 2d * index) / segments;
+                points.add(new PdfPoint(
+                        (float) (cx + Math.cos(angle) * radius),
+                        (float) (cy + Math.sin(angle) * radius)
+                ));
             }
-
-            List<String> objects = new ArrayList<>();
-            int catalogId = addObject(objects, "<< /Type /Catalog /Pages 2 0 R >>");
-            int pagesId = addObject(objects, "");
-            int fontId = addObject(objects, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
-            int boldFontId = addObject(objects, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
-            List<Integer> pageIds = new ArrayList<>();
-
-            for (String content : pages) {
-                byte[] contentBytes = content.getBytes(StandardCharsets.US_ASCII);
-                int contentId = addObject(objects, "<< /Length " + contentBytes.length + " >>\nstream\n" + content + "\nendstream");
-                int pageId = addObject(objects, "<< /Type /Page /Parent " + pagesId + " 0 R /MediaBox [0 0 " + PAGE_WIDTH + " " + PAGE_HEIGHT
-                        + "] /Resources << /Font << /F1 " + fontId + " 0 R /F2 " + boldFontId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
-                pageIds.add(pageId);
-            }
-
-            objects.set(pagesId - 1, "<< /Type /Pages /Kids [" + pageIds.stream().map(id -> id + " 0 R").reduce((l, r) -> l + " " + r).orElse("")
-                    + "] /Count " + pageIds.size() + " >>");
-
-            List<byte[]> parts = new ArrayList<>();
-            parts.add("%PDF-1.4\n".getBytes(StandardCharsets.US_ASCII));
-            List<Integer> offsets = new ArrayList<>();
-            offsets.add(0);
-            int byteOffset = parts.get(0).length;
-
-            for (int index = 0; index < objects.size(); index += 1) {
-                offsets.add(byteOffset);
-                byte[] objectBytes = ((index + 1) + " 0 obj\n" + objects.get(index) + "\nendobj\n").getBytes(StandardCharsets.US_ASCII);
-                parts.add(objectBytes);
-                byteOffset += objectBytes.length;
-            }
-
-            int xrefOffset = byteOffset;
-            StringBuilder xref = new StringBuilder("xref\n0 ").append(objects.size() + 1).append('\n');
-            for (int index = 0; index < offsets.size(); index += 1) {
-                if (index == 0) {
-                    xref.append("0000000000 65535 f \n");
-                } else {
-                    xref.append(String.format(java.util.Locale.US, "%010d 00000 n %n", offsets.get(index)));
-                }
-            }
-            xref.append("trailer\n<< /Size ").append(objects.size() + 1).append(" /Root ").append(catalogId).append(" 0 R >>\n")
-                    .append("startxref\n").append(xrefOffset).append("\n%%EOF");
-            parts.add(xref.toString().getBytes(StandardCharsets.US_ASCII));
-
-            int totalLength = parts.stream().mapToInt(part -> part.length).sum();
-            byte[] result = new byte[totalLength];
-            int position = 0;
-            for (byte[] part : parts) {
-                System.arraycopy(part, 0, result, position, part.length);
-                position += part.length;
-            }
-            return result;
+            filledPolygon(points, color);
         }
 
-        private int addObject(List<String> objects, String content) {
-            objects.add(content);
-            return objects.size();
-        }
-
-        private String format(double value) {
-            return String.format(java.util.Locale.US, "%.2f", value);
+        @Override
+        public void close() throws IOException {
+            if (stream != null) {
+                stream.close();
+            }
         }
     }
 
     private record PdfColor(int red, int green, int blue) {
-        private String rgb() {
-            return String.format(
-                    java.util.Locale.US,
-                    "%.3f %.3f %.3f",
-                    red / 255d,
-                    green / 255d,
-                    blue / 255d
-            );
+        private Color awt() {
+            return new Color(red, green, blue);
         }
     }
 
-    private record PdfPoint(double x, double y) {
+    private record PdfPoint(float x, float y) {
     }
 }

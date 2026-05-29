@@ -1993,7 +1993,7 @@ function reportExportTitle(section) {
 
 function reportPdfFilename(title) {
     const slug = title.toLowerCase()
-            .normalize("NFD")
+            .normalize("NFKD")
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "") || "raport";
@@ -2024,7 +2024,11 @@ function parseFilenameFromDisposition(headerValue) {
 
     const utfMatch = headerValue.match(/filename\*=UTF-8''([^;]+)/i);
     if (utfMatch) {
-        return decodeURIComponent(utfMatch[1]);
+        try {
+            return decodeURIComponent(utfMatch[1]);
+        } catch {
+            return utfMatch[1];
+        }
     }
 
     const plainMatch = headerValue.match(/filename=\"?([^\";]+)\"?/i);
