@@ -14,10 +14,46 @@
     <section class="table-panel table-panel-wide" aria-labelledby="snapshot-list-title">
         <div class="section-header">
             <h2 id="snapshot-list-title" data-i18n="snapshots.table.title">Lista migawek</h2>
-            <div class="section-actions">
-                <a href="/snapshots/new.html" class="button primary compact" data-i18n="snapshots.actions.add">Dodaj migawkę</a>
-                <a href="/snapshots/bulk.html" class="button secondary compact" data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
-                <button type="button" class="button secondary compact" id="refresh-snapshots" data-i18n="snapshots.actions.refresh">Odśwież</button>
+            <div class="section-actions savings-planning-tool-menu">
+                <a href="/snapshots/new.html"
+                   class="icon-button secondary"
+                   id="new-snapshot-action"
+                   title="Dodaj migawkę"
+                   data-i18n-title="snapshots.actions.add"
+                   data-i18n-aria-label="snapshots.actions.add"
+                   aria-label="Dodaj migawkę">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14"></path>
+                        <path d="M5 12h14"></path>
+                        <path d="M7 3h7l3 3v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"></path>
+                    </svg>
+                </a>
+                <a href="/snapshots/bulk.html"
+                   class="icon-button secondary"
+                   id="new-bulk-snapshots-action"
+                   title="Dodaj wiele migawek"
+                   data-i18n-title="snapshots.actions.addBulk"
+                   data-i18n-aria-label="snapshots.actions.addBulk"
+                   aria-label="Dodaj wiele migawek">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 9h11v11H9z"></path>
+                        <path d="M4 4h11v11H4z"></path>
+                        <path d="M9 14h6"></path>
+                        <path d="M12 11v6"></path>
+                    </svg>
+                </a>
+                <button type="button"
+                        class="icon-button secondary"
+                        id="refresh-snapshots"
+                        title="Odśwież"
+                        data-i18n-title="snapshots.actions.refresh"
+                        data-i18n-aria-label="snapshots.actions.refresh"
+                        aria-label="Odśwież">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                        <path d="M21 3v6h-6"></path>
+                    </svg>
+                </button>
             </div>
         </div>
         <p class="form-message" id="snapshots-list-message" role="status"></p>

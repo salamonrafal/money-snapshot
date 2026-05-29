@@ -1,5 +1,7 @@
 const tableBody = document.querySelector("#snapshots-table-body");
 const refreshButton = document.querySelector("#refresh-snapshots");
+const newSnapshotAction = document.querySelector("#new-snapshot-action");
+const newBulkSnapshotsAction = document.querySelector("#new-bulk-snapshots-action");
 const listMessage = document.querySelector("#snapshots-list-message");
 const previousPageButton = document.querySelector("#snapshots-prev-page");
 const nextPageButton = document.querySelector("#snapshots-next-page");
@@ -75,6 +77,9 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     currentLanguage = nextLanguage;
     messages = nextMessages;
     document.title = `${messages["snapshots.heading.title"]} | ${messages["app.name"]}`;
+    MoneySnapshotUi.setTooltip(newSnapshotAction, messages["snapshots.actions.add"]);
+    MoneySnapshotUi.setTooltip(newBulkSnapshotsAction, messages["snapshots.actions.addBulk"]);
+    MoneySnapshotUi.setTooltip(refreshButton, messages["snapshots.actions.refresh"]);
     updateClearFiltersButton();
     if (snapshotsLoaded) {
         renderAccountFilterOptions();

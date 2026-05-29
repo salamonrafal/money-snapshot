@@ -1,12 +1,15 @@
 window.MoneySnapshotUi = (() => {
     const bulkSnapshotSuccessKey = "money-snapshot-bulk-snapshot-success-count";
+    const themeStorageKey = "money-snapshot-theme";
     const defaultSettings = {
         defaultCurrency: "PLN",
+        theme: "light",
         dateTimeFormat: "Y-m-d H:m",
         moneyFormat: "### ###,00 zł",
         billingMonthStartDay: 1,
         values: {
             defaultCurrency: "PLN",
+            theme: "light",
             dateTimeFormat: "Y-m-d H:m",
             moneyFormat: "### ###,00 zł",
             billingMonthStartDay: "1"
@@ -214,6 +217,19 @@ window.MoneySnapshotUi = (() => {
         return settingsPromise;
     }
 
+    function normalizeTheme(theme) {
+        return theme === "dark" ? "dark" : "light";
+    }
+
+    function applyTheme(theme) {
+        const normalizedTheme = normalizeTheme(theme);
+        document.documentElement.dataset.theme = normalizedTheme;
+        try {
+            localStorage.setItem(themeStorageKey, normalizedTheme);
+        } catch {
+        }
+    }
+
     function clearUserSettingsCache() {
         settingsPromise = null;
     }
@@ -360,9 +376,11 @@ window.MoneySnapshotUi = (() => {
 
     document.addEventListener("DOMContentLoaded", () => {
         initializeMobileNavigation();
+        loadUserSettings().then((settings) => applyTheme(settings.theme));
     });
 
     return {
+        applyTheme,
         bulkSnapshotSuccessKey,
         clearUserSettingsCache,
         createAddIcon,

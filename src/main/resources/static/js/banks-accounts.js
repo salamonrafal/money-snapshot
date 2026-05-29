@@ -1,6 +1,8 @@
 const tableBody = document.querySelector("#bank-account-table-body");
 const listMessage = document.querySelector("#bank-account-list-message");
 const refreshButton = document.querySelector("#refresh-bank-account-list");
+const newBankAction = document.querySelector("#new-bank-action");
+const newAccountAction = document.querySelector("#new-account-action");
 const pageParams = new URLSearchParams(window.location.search);
 const infoModal = document.querySelector("#entity-info-modal");
 const infoModalTitle = document.querySelector("#entity-info-title");
@@ -147,6 +149,9 @@ function buildAccountInfoFields(account) {
 function handleLanguageChange(nextMessages) {
     messages = nextMessages;
     document.title = `${messages["banksAccounts.heading.title"]} | ${messages["app.name"]}`;
+    MoneySnapshotUi.setTooltip(newBankAction, messages["banks.actions.add"]);
+    MoneySnapshotUi.setTooltip(newAccountAction, messages["accounts.actions.add"]);
+    MoneySnapshotUi.setTooltip(refreshButton, messages["banks.actions.refresh"]);
     if (!infoModal.hidden) {
         renderInfoModal();
     }

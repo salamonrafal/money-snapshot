@@ -17,10 +17,47 @@
         <section class="table-panel" aria-labelledby="bank-account-list-title">
             <div class="section-header">
                 <h2 id="bank-account-list-title" data-i18n="banksAccounts.heading.title">Banki i Konta</h2>
-                <div class="section-actions">
-                    <a href="/banks/new.html?returnTo=%2Fbanks-accounts.html" class="button primary compact" data-i18n="banks.actions.add">Nowy bank</a>
-                    <a href="/accounts/new.html?returnTo=%2Fbanks-accounts.html" class="button secondary compact" data-i18n="accounts.actions.add">Dodaj konto</a>
-                    <button type="button" class="button secondary compact" id="refresh-bank-account-list" data-i18n="banks.actions.refresh">Odśwież</button>
+                <div class="section-actions savings-planning-tool-menu">
+                    <a href="/banks/new.html?returnTo=%2Fbanks-accounts.html"
+                       class="icon-button secondary"
+                       id="new-bank-action"
+                       title="Nowy bank"
+                       data-i18n-title="banks.actions.add"
+                       data-i18n-aria-label="banks.actions.add"
+                       aria-label="Nowy bank">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 10 12 4l9 6"></path>
+                            <path d="M5 10v8"></path>
+                            <path d="M9 10v8"></path>
+                            <path d="M15 10v8"></path>
+                            <path d="M19 10v8"></path>
+                            <path d="M3 20h18"></path>
+                        </svg>
+                    </a>
+                    <a href="/accounts/new.html?returnTo=%2Fbanks-accounts.html"
+                       class="icon-button secondary"
+                       id="new-account-action"
+                       title="Dodaj konto"
+                       data-i18n-title="accounts.actions.add"
+                       data-i18n-aria-label="accounts.actions.add"
+                       aria-label="Dodaj konto">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 5v14"></path>
+                            <path d="M5 12h14"></path>
+                        </svg>
+                    </a>
+                    <button type="button"
+                            class="icon-button secondary"
+                            id="refresh-bank-account-list"
+                            title="Odśwież"
+                            data-i18n-title="banks.actions.refresh"
+                            data-i18n-aria-label="banks.actions.refresh"
+                            aria-label="Odśwież">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                            <path d="M21 3v6h-6"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
             <p class="form-message" id="bank-account-list-message" role="status"></p>
