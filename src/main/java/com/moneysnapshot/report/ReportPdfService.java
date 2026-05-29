@@ -346,7 +346,7 @@ public class ReportPdfService {
         List<String> lines = new ArrayList<>();
         StringBuilder line = new StringBuilder();
         for (String word : words) {
-            if (line.isEmpty()) {
+            if (line.length() == 0) {
                 line.append(word);
             } else if (line.length() + 1 + word.length() <= maxLength) {
                 line.append(' ').append(word);
@@ -355,7 +355,7 @@ public class ReportPdfService {
                 line = new StringBuilder(word);
             }
         }
-        if (!line.isEmpty()) {
+        if (line.length() > 0) {
             lines.add(line.toString());
         }
         return lines.isEmpty() ? List.of("") : lines;
@@ -402,7 +402,7 @@ public class ReportPdfService {
         }
 
         private void addPage() {
-            if (!commands.isEmpty()) {
+            if (commands.length() > 0) {
                 pages.add(commands.toString());
             }
             commands = new StringBuilder();
@@ -545,7 +545,7 @@ public class ReportPdfService {
         }
 
         private byte[] build() {
-            if (!commands.isEmpty()) {
+            if (commands.length() > 0) {
                 pages.add(commands.toString());
                 commands = new StringBuilder();
             }
