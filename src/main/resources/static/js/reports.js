@@ -2000,50 +2000,6 @@ function reportPdfFilename(title) {
     return `${slug}.pdf`;
 }
 
-function normalizePdfText(value) {
-    const replacements = new Map([
-        ["ą", "a"], ["ć", "c"], ["ę", "e"], ["ł", "l"], ["ń", "n"],
-        ["ó", "o"], ["ś", "s"], ["ż", "z"], ["ź", "z"],
-        ["Ą", "A"], ["Ć", "C"], ["Ę", "E"], ["Ł", "L"], ["Ń", "N"],
-        ["Ó", "O"], ["Ś", "S"], ["Ż", "Z"], ["Ź", "Z"],
-        ["·", "-"], ["–", "-"], ["—", "-"], ["…", "..."], ["%", "%"]
-    ]);
-    return String(value ?? "")
-            .replace(/[ąćęłńóśżźĄĆĘŁŃÓŚŻŹ·–—…]/g, (character) => replacements.get(character) ?? character)
-            .replace(/[^\x20-\x7E]/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-}
-
-function escapePdfText(value) {
-    return normalizePdfText(value).replace(/[\\()]/g, "\\$&");
-}
-
-function wrapPdfText(value, maxLength) {
-    const text = normalizePdfText(value);
-    if (!text) {
-        return [""];
-    }
-
-    const words = text.split(" ");
-    const lines = [];
-    let line = "";
-    words.forEach((word) => {
-        if (!line) {
-            line = word;
-        } else if (`${line} ${word}`.length <= maxLength) {
-            line = `${line} ${word}`;
-        } else {
-            lines.push(line);
-            line = word;
-        }
-    });
-    if (line) {
-        lines.push(line);
-    }
-    return lines.length > 0 ? lines : [""];
-}
-
 function extractPdfTables(section) {
     return [...section.querySelectorAll("table")].map((table) => {
         const rows = [...table.querySelectorAll("tr")].map((row) => [...row.children].map((cell) => cell.textContent.trim()));
@@ -2117,9 +2073,11 @@ async function exportReportSectionToPdf(key, button) {
             await renderReportSectionIfVisible(key);
         }
         await waitForSectionIdle(key);
+        const fallbackTable = extractPdfTables(sectionState.element).map((rows) => ({columns: rows[0] ?? [], rows: rows.slice(1)}))[0]
+                ?? {columns: [], rows: []};
         const data = reportPdfData[key] ?? {
             title: reportExportTitle(sectionState.element),
-            table: extractPdfTables(sectionState.element).map((rows) => ({columns: rows[0] ?? [], rows: rows.slice(1)}))[0]
+            table: fallbackTable
         };
         const pdf = await requestReportPdf(key, data);
         downloadBlob(pdf.blob, pdf.filename);

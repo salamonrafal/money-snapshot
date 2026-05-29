@@ -182,10 +182,6 @@ public class ReportPdfService {
 
         int legendIndex = 0;
         for (JsonNode row : rows) {
-            if (legendIndex >= 8) {
-                break;
-            }
-
             PdfColor color = CHART_COLORS.get(legendIndex % CHART_COLORS.size());
             List<PdfPoint> linePoints = new ArrayList<>();
             for (JsonNode point : row.path("series")) {
@@ -202,10 +198,12 @@ public class ReportPdfService {
                 canvas.circle(x, y, 2.2d, color);
             }
 
-            double legendX = chartX + 52d + (legendIndex % 4) * 170d;
-            double legendY = chartY + chartH - 18d - Math.floor(legendIndex / 4d) * 11d;
-            canvas.rect(legendX, legendY - 2d, 7d, 7d, color, null);
-            canvas.text(row.path("name").asText(""), legendX + 11d, legendY - 1d, 6.5d, "F1", TEXT);
+            if (legendIndex < 8) {
+                double legendX = chartX + 52d + (legendIndex % 4) * 170d;
+                double legendY = chartY + chartH - 18d - Math.floor(legendIndex / 4d) * 11d;
+                canvas.rect(legendX, legendY - 2d, 7d, 7d, color, null);
+                canvas.text(row.path("name").asText(""), legendX + 11d, legendY - 1d, 6.5d, "F1", TEXT);
+            }
             legendIndex += 1;
         }
 
@@ -558,7 +556,8 @@ public class ReportPdfService {
             List<Integer> pageIds = new ArrayList<>();
 
             for (String content : pages) {
-                int contentId = addObject(objects, "<< /Length " + content.length() + " >>\nstream\n" + content + "\nendstream");
+                byte[] contentBytes = content.getBytes(StandardCharsets.US_ASCII);
+                int contentId = addObject(objects, "<< /Length " + contentBytes.length + " >>\nstream\n" + content + "\nendstream");
                 int pageId = addObject(objects, "<< /Type /Page /Parent " + pagesId + " 0 R /MediaBox [0 0 " + PAGE_WIDTH + " " + PAGE_HEIGHT
                         + "] /Resources << /Font << /F1 " + fontId + " 0 R /F2 " + boldFontId + " 0 R >> >> /Contents " + contentId + " 0 R >>");
                 pageIds.add(pageId);
