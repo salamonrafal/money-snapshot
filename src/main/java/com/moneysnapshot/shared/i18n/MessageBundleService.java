@@ -359,7 +359,6 @@ public class MessageBundleService {
             "reports.actions.pdf",
             "reports.actions.filters",
             "reports.actions.refresh",
-            "reports.error.pdfBlocked",
             "reports.average.account",
             "reports.average.empty",
             "reports.average.hint",

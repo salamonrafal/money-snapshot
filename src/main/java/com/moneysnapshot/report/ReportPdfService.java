@@ -3,31 +3,19 @@ package com.moneysnapshot.report;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.moneysnapshot.account.Account;
-import com.moneysnapshot.account.AccountService;
-import com.moneysnapshot.account.Bank;
-import com.moneysnapshot.account.BankService;
 import com.moneysnapshot.report.web.ReportPdfRequest;
 import com.moneysnapshot.report.web.ReportPdfTableRequest;
-import com.moneysnapshot.savings.SavingsForecastRun;
-import com.moneysnapshot.savings.SavingsForecastRunRepository;
-import com.moneysnapshot.security.CurrentUserService;
-import com.moneysnapshot.snapshot.AccountSnapshot;
-import com.moneysnapshot.snapshot.AccountSnapshotService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
@@ -63,27 +51,15 @@ public class ReportPdfService {
     );
 
     private final ObjectMapper objectMapper;
-    private final CurrentUserService currentUserService;
-    private final AccountService accountService;
-    private final BankService bankService;
-    private final AccountSnapshotService accountSnapshotService;
-    private final SavingsForecastRunRepository savingsForecastRunRepository;
+    private final ReportDataVersionService reportDataVersionService;
     private final Map<String, byte[]> pdfCache = new ConcurrentHashMap<>();
 
     public ReportPdfService(
             ObjectMapper objectMapper,
-            CurrentUserService currentUserService,
-            AccountService accountService,
-            BankService bankService,
-            AccountSnapshotService accountSnapshotService,
-            SavingsForecastRunRepository savingsForecastRunRepository
+            ReportDataVersionService reportDataVersionService
     ) {
         this.objectMapper = objectMapper;
-        this.currentUserService = currentUserService;
-        this.accountService = accountService;
-        this.bankService = bankService;
-        this.accountSnapshotService = accountSnapshotService;
-        this.savingsForecastRunRepository = savingsForecastRunRepository;
+        this.reportDataVersionService = reportDataVersionService;
     }
 
     public byte[] generatePdf(String sectionKey, ReportPdfRequest request) {
@@ -111,30 +87,7 @@ public class ReportPdfService {
     }
 
     private String cacheKey(String sectionKey, ReportPdfRequest request) {
-        UUID ownerId = currentUserService.currentUserId();
-        return ownerId + "|" + sectionKey + "|" + dataSignature(ownerId) + "|" + requestHash(request);
-    }
-
-    private String dataSignature(UUID ownerId) {
-        List<Account> accounts = accountService.listAccounts();
-        List<Bank> banks = bankService.listBanks();
-        List<AccountSnapshot> snapshots = accountSnapshotService.listSnapshots();
-        SavingsForecastRun latestForecast = savingsForecastRunRepository.findFirstByOwnerIdOrderByGeneratedAtDesc(ownerId).orElse(null);
-
-        return String.join("|",
-                "accounts:" + accounts.size() + ":" + maxDate(accounts.stream().map(Account::getUpdatedAt).toList()),
-                "banks:" + banks.size() + ":" + maxDate(banks.stream().map(Bank::getUpdatedAt).toList()),
-                "snapshots:" + snapshots.size() + ":" + maxDate(snapshots.stream().map(AccountSnapshot::getUpdatedAt).toList()),
-                "forecast:" + (latestForecast == null ? "none" : latestForecast.getId() + ":" + latestForecast.getGeneratedAt())
-        );
-    }
-
-    private String maxDate(List<OffsetDateTime> values) {
-        return values.stream()
-                .filter(Objects::nonNull)
-                .max(Comparator.naturalOrder())
-                .map(OffsetDateTime::toString)
-                .orElse("none");
+        return sectionKey + "|" + reportDataVersionService.currentVersion().cacheToken() + "|" + requestHash(request);
     }
 
     private String requestHash(ReportPdfRequest request) {
