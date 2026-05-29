@@ -1997,7 +1997,7 @@ function reportPdfFilename(title) {
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "") || "raport";
-    return `${slug}-${todayIsoDate()}.pdf`;
+    return `${slug}.pdf`;
 }
 
 function binaryStringToBytes(value) {
@@ -2379,6 +2379,47 @@ function downloadBlob(blob, filename) {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function parseFilenameFromDisposition(headerValue) {
+    if (!headerValue) {
+        return "";
+    }
+
+    const utfMatch = headerValue.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utfMatch) {
+        return decodeURIComponent(utfMatch[1]);
+    }
+
+    const plainMatch = headerValue.match(/filename=\"?([^\";]+)\"?/i);
+    return plainMatch ? plainMatch[1] : "";
+}
+
+async function requestReportPdf(key, data) {
+    const response = await fetch(`/api/reports/pdf/${encodeURIComponent(key)}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        let message = messages["reports.error.load"];
+        try {
+            const error = await response.json();
+            if (error?.message) {
+                message = error.message;
+            }
+        } catch {
+        }
+        throw new Error(message);
+    }
+
+    return {
+        blob: await response.blob(),
+        filename: parseFilenameFromDisposition(response.headers.get("Content-Disposition")) || reportPdfFilename(data.title || "raport")
+    };
+}
+
 async function exportReportSectionToPdf(key, button) {
     const sectionState = reportSections[key];
     if (!sectionState?.element) {
@@ -2394,14 +2435,14 @@ async function exportReportSectionToPdf(key, button) {
             await renderReportSectionIfVisible(key);
         }
         await waitForSectionIdle(key);
-        const pdf = createTextPdfFromSection(sectionState.element);
-        downloadBlob(pdf.blob, reportPdfFilename(pdf.title));
+        const data = reportPdfData[key] ?? {
+            title: reportExportTitle(sectionState.element),
+            table: extractPdfTables(sectionState.element).map((rows) => ({columns: rows[0] ?? [], rows: rows.slice(1)}))[0]
+        };
+        const pdf = await requestReportPdf(key, data);
+        downloadBlob(pdf.blob, pdf.filename);
     } catch (error) {
-        if (error.message === messages["reports.error.pdfBlocked"]) {
-            window.alert(error.message);
-        } else {
-            renderReportSectionError(key, error);
-        }
+        renderReportSectionError(key, error);
     } finally {
         sectionState.visible = wasVisible;
         button.disabled = false;

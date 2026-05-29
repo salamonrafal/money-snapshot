@@ -616,6 +616,10 @@ h1 {
     min-width: 0;
 }
 
+.reports-main > .report-panel {
+    min-height: 320px;
+}
+
 .reports-nav {
     display: grid;
     gap: 10px;
