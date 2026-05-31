@@ -15,6 +15,7 @@ import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ public class ReportPdfService {
     private static final float MARGIN = 28f;
     private static final float BOTTOM_MARGIN = 28f;
     private static final float USABLE_WIDTH = PAGE_WIDTH - (MARGIN * 2f);
+    private static final int MAX_PIE_SLICES = 10;
     private static final long MAX_CACHE_BYTES = 16L * 1024L * 1024L;
     private static final long MAX_CACHEABLE_PDF_BYTES = 2L * 1024L * 1024L;
 
@@ -77,12 +79,12 @@ public class ReportPdfService {
         String cacheKey = cacheKey(sectionKey, request);
         byte[] cached = getCachedPdf(cacheKey);
         if (cached != null) {
-            return cached;
+            return cached.clone();
         }
 
         byte[] pdf = renderPdf(request);
         cachePdf(cacheKey, pdf);
-        return pdf;
+        return pdf.clone();
     }
 
     public String filenameFor(String title) {
@@ -123,8 +125,9 @@ public class ReportPdfService {
             pdfCacheBytes -= previous.length;
         }
 
-        pdfCache.put(cacheKey, pdf);
-        pdfCacheBytes += pdf.length;
+        byte[] cachedCopy = pdf.clone();
+        pdfCache.put(cacheKey, cachedCopy);
+        pdfCacheBytes += cachedCopy.length;
 
         while (pdfCacheBytes > MAX_CACHE_BYTES && !pdfCache.isEmpty()) {
             String eldestKey = pdfCache.keySet().iterator().next();
@@ -250,14 +253,29 @@ public class ReportPdfService {
             return;
         }
 
-        List<JsonNode> visibleRows = new ArrayList<>();
+        List<PieSlice> visibleRows = new ArrayList<>();
         for (JsonNode row : rows) {
-            if (row.path("sharePercent").asDouble(0d) > 0d) {
-                visibleRows.add(row);
+            double sharePercent = row.path("sharePercent").asDouble(0d);
+            if (sharePercent > 0d) {
+                visibleRows.add(new PieSlice(
+                        row.path("name").asText(""),
+                        row.path("currencyCode").asText(""),
+                        sharePercent
+                ));
             }
         }
         if (visibleRows.isEmpty()) {
             return;
+        }
+
+        visibleRows.sort(Comparator.comparingDouble(PieSlice::sharePercent).reversed());
+        if (visibleRows.size() > MAX_PIE_SLICES) {
+            List<PieSlice> topSlices = new ArrayList<>(visibleRows.subList(0, MAX_PIE_SLICES - 1));
+            double otherSharePercent = visibleRows.subList(MAX_PIE_SLICES - 1, visibleRows.size()).stream()
+                    .mapToDouble(PieSlice::sharePercent)
+                    .sum();
+            topSlices.add(new PieSlice("Other", "", otherSharePercent));
+            visibleRows = topSlices;
         }
 
         canvas.ensureSpace(170f);
@@ -272,9 +290,9 @@ public class ReportPdfService {
         float radius = 48f;
         double angle = -Math.PI / 2d;
 
-        for (int index = 0; index < Math.min(visibleRows.size(), 10); index += 1) {
-            JsonNode row = visibleRows.get(index);
-            double share = Math.abs(row.path("sharePercent").asDouble(0d)) / 100d;
+        for (int index = 0; index < visibleRows.size(); index += 1) {
+            PieSlice row = visibleRows.get(index);
+            double share = Math.abs(row.sharePercent()) / 100d;
             double nextAngle = angle + share * Math.PI * 2d;
             List<PdfPoint> points = new ArrayList<>();
             points.add(new PdfPoint(centerX, centerY));
@@ -292,9 +310,9 @@ public class ReportPdfService {
             float legendX = chartX + 160f + (index % 2) * 285f;
             float legendY = (float) (chartY + chartH - 24f - Math.floor(index / 2d) * 18f);
             canvas.rect(legendX, legendY - 2f, 8f, 8f, color, null, true, false);
-            String label = row.path("name").asText("")
-                    + " (" + row.path("currencyCode").asText("") + ") "
-                    + String.format(Locale.US, "%.1f%%", row.path("sharePercent").asDouble(0d));
+            String label = row.currencyCode().isBlank()
+                    ? row.name() + " " + String.format(Locale.US, "%.1f%%", row.sharePercent())
+                    : row.name() + " (" + row.currencyCode() + ") " + String.format(Locale.US, "%.1f%%", row.sharePercent());
             canvas.text(label, legendX + 13f, legendY - 1f, 7f, false, TEXT);
             angle = nextAngle;
         }
@@ -564,6 +582,9 @@ public class ReportPdfService {
         private Color awt() {
             return new Color(red, green, blue);
         }
+    }
+
+    private record PieSlice(String name, String currencyCode, double sharePercent) {
     }
 
     private record PdfPoint(float x, float y) {

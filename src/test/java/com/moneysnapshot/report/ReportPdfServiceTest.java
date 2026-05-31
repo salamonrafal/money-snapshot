@@ -38,7 +38,7 @@ class ReportPdfServiceTest {
         byte[] first = service.generatePdf("summary", request);
         byte[] second = service.generatePdf("summary", request);
 
-        assertThat(first).isSameAs(second);
+        assertThat(first).isEqualTo(second);
     }
 
     @Test

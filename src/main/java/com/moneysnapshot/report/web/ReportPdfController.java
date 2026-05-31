@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.moneysnapshot.report.ReportPdfService;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -28,6 +30,7 @@ public class ReportPdfController {
     private static final int MAX_CHART_NODE_COUNT = 4_000;
     private static final int MAX_CHART_ARRAY_ITEMS = 1_500;
     private static final int MAX_CHART_TEXT_LENGTH = 20_000;
+    private static final int MAX_CHART_DEPTH = 64;
     private static final Set<String> SUPPORTED_SECTION_KEYS = Set.of(
             "summary",
             "overview",
@@ -68,10 +71,19 @@ public class ReportPdfController {
         }
 
         AtomicInteger nodeCount = new AtomicInteger();
-        validateChartNode(chart, nodeCount);
+        Deque<ChartNodeFrame> stack = new ArrayDeque<>();
+        stack.push(new ChartNodeFrame(chart, 0));
+        while (!stack.isEmpty()) {
+            ChartNodeFrame frame = stack.pop();
+            validateChartNode(frame.node(), frame.depth(), nodeCount, stack);
+        }
     }
 
-    private void validateChartNode(JsonNode node, AtomicInteger nodeCount) {
+    private void validateChartNode(JsonNode node, int depth, AtomicInteger nodeCount, Deque<ChartNodeFrame> stack) {
+        if (depth > MAX_CHART_DEPTH) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Report chart payload is too deep.");
+        }
+
         if (nodeCount.incrementAndGet() > MAX_CHART_NODE_COUNT) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Report chart payload is too large.");
         }
@@ -85,7 +97,7 @@ public class ReportPdfController {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Report chart payload is too large.");
             }
             for (JsonNode child : node) {
-                validateChartNode(child, nodeCount);
+                stack.push(new ChartNodeFrame(child, depth + 1));
             }
             return;
         }
@@ -97,8 +109,11 @@ public class ReportPdfController {
                 if (field.getKey().length() > 120) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Report chart payload is too large.");
                 }
-                validateChartNode(field.getValue(), nodeCount);
+                stack.push(new ChartNodeFrame(field.getValue(), depth + 1));
             }
         }
+    }
+
+    private record ChartNodeFrame(JsonNode node, int depth) {
     }
 }

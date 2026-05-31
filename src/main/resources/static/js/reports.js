@@ -1925,6 +1925,29 @@ async function renderReportSectionIfVisible(key) {
     }
 }
 
+async function renderReportSectionForExport(key) {
+    const section = reportSections[key];
+    if (!section || section.loading || !section.dirty) {
+        return;
+    }
+
+    section.loading = true;
+    section.dirty = false;
+    try {
+        await renderReportSection(key);
+    } catch (error) {
+        section.dirty = true;
+        throw error;
+    } finally {
+        section.loading = false;
+        updateReportsNavActiveState();
+        scheduleReportsNavPanelStickyStateUpdate();
+        if (section.visible && section.dirty) {
+            void renderReportSectionIfVisible(key);
+        }
+    }
+}
+
 function renderVisibleReportSections(keys = reportSectionKeys) {
     keys.forEach((key) => {
         void renderReportSectionIfVisible(key);
@@ -2069,12 +2092,10 @@ async function exportReportSectionToPdf(key, button) {
     }
 
     button.disabled = true;
-    const wasVisible = sectionState.visible;
-    sectionState.visible = true;
     try {
         await waitForSectionIdle(key);
         if (sectionState.dirty) {
-            await renderReportSectionIfVisible(key);
+            await renderReportSectionForExport(key);
         }
         await waitForSectionIdle(key);
         const fallbackTable = extractPdfTables(sectionState.element).map((rows) => ({columns: rows[0] ?? [], rows: rows.slice(1)}))[0]
@@ -2088,7 +2109,6 @@ async function exportReportSectionToPdf(key, button) {
     } catch (error) {
         renderReportSectionError(key, error);
     } finally {
-        sectionState.visible = wasVisible;
         button.disabled = false;
     }
 }
