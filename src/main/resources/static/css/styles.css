@@ -7,6 +7,7 @@
     --muted: #617084;
     --line: #dfe5dc;
     --accent: #0f8b8d;
+    --accent-text: #ffffff;
     --accent-strong: #0a6f70;
     --gold: #f4b942;
     --danger: #a33b2f;
@@ -58,6 +59,7 @@
     --muted: #9fb0ad;
     --line: #2b3a3f;
     --accent: #35b6ac;
+    --accent-text: #0f1518;
     --accent-strong: #6ad8cf;
     --gold: #f4c95d;
     --danger: #ff8a7a;
@@ -347,7 +349,7 @@ h1 {
 
 .button.primary {
     background: var(--accent);
-    color: #ffffff;
+    color: var(--accent-text);
 }
 
 .button.secondary {

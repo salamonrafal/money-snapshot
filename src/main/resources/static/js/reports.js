@@ -328,15 +328,22 @@ function createFilterIcon() {
     return icon;
 }
 
-function closeReportFilterMenus(exceptButton = null) {
+function closeReportFilterMenus(exceptButton = null, restoreFocus = false) {
     reportFilterButtons.forEach((button) => {
         if (button === exceptButton) {
             return;
         }
         const popover = button.closest(".report-filter-menu")?.querySelector(".report-filter-popover");
+        const shouldRestoreFocus = restoreFocus
+                && popover
+                && document.activeElement instanceof Element
+                && popover.contains(document.activeElement);
         button.setAttribute("aria-expanded", "false");
         if (popover) {
             popover.hidden = true;
+        }
+        if (shouldRestoreFocus) {
+            button.focus();
         }
     });
 }
@@ -2343,7 +2350,7 @@ document.addEventListener("click", (event) => {
 });
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-        closeReportFilterMenus();
+        closeReportFilterMenus(null, true);
     }
 });
 

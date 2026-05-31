@@ -8,7 +8,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -16,11 +18,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class ReportPdfRequestSizeFilter extends OncePerRequestFilter {
 
     private static final long MAX_REQUEST_BYTES = 4L * 1024L * 1024L;
+    private static final String PAYLOAD_TOO_LARGE_MESSAGE = "Report PDF payload is too large.";
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return !"POST".equalsIgnoreCase(request.getMethod())
-                || !request.getRequestURI().startsWith("/api/reports/pdf/");
+                || !request.getServletPath().startsWith("/api/reports/pdf/");
     }
 
     @Override
@@ -31,15 +34,27 @@ public class ReportPdfRequestSizeFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         long contentLength = request.getContentLengthLong();
         if (contentLength > MAX_REQUEST_BYTES) {
-            response.sendError(HttpStatus.PAYLOAD_TOO_LARGE.value(), "Report PDF payload is too large.");
+            writePayloadTooLargeResponse(response);
             return;
         }
 
         try {
             filterChain.doFilter(new LimitedRequestWrapper(request, MAX_REQUEST_BYTES), response);
         } catch (PayloadTooLargeException exception) {
-            response.sendError(HttpStatus.PAYLOAD_TOO_LARGE.value(), "Report PDF payload is too large.");
+            writePayloadTooLargeResponse(response);
         }
+    }
+
+    private void writePayloadTooLargeResponse(HttpServletResponse response) throws IOException {
+        if (response.isCommitted()) {
+            return;
+        }
+        response.resetBuffer();
+        response.setStatus(HttpStatus.PAYLOAD_TOO_LARGE.value());
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write("{\"message\":\"" + PAYLOAD_TOO_LARGE_MESSAGE + "\"}");
+        response.flushBuffer();
     }
 
     private static final class LimitedRequestWrapper extends HttpServletRequestWrapper {
