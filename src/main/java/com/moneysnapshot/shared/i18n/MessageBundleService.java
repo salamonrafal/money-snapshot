@@ -424,6 +424,7 @@ public class MessageBundleService {
             "reports.history.title",
             "reports.overview.balance",
             "reports.overview.empty",
+            "reports.overview.other",
             "reports.overview.share",
             "reports.overview.title",
             "reports.table.change",

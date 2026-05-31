@@ -12,7 +12,9 @@ import com.moneysnapshot.report.web.ReportPdfTableRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -38,11 +40,13 @@ class ReportPdfServiceTest {
         byte[] first = service.generatePdf("summary", request);
         byte[] second = service.generatePdf("summary", request);
 
-        assertThat(first).isEqualTo(second);
+        assertThat(first).isNotEmpty();
+        assertThat(second).isNotEmpty();
+        assertThat(readPdfCache()).hasSize(1);
     }
 
     @Test
-    void regeneratesPdfWhenReportDataVersionChanges() {
+    void storesSeparateCacheEntriesWhenReportDataVersionChanges() {
         when(reportDataVersionService.currentVersion()).thenReturn(version("v1"), version("v2"));
 
         ReportPdfRequest request = requestWithTable(
@@ -55,8 +59,9 @@ class ReportPdfServiceTest {
         byte[] first = service.generatePdf("summary", request);
         byte[] second = service.generatePdf("summary", request);
 
-        assertThat(first).isNotSameAs(second);
+        assertThat(first).isNotEmpty();
         assertThat(second).isNotEmpty();
+        assertThat(readPdfCache()).hasSize(2);
     }
 
     @Test
@@ -136,6 +141,17 @@ class ReportPdfServiceTest {
             return new PDFTextStripper().getText(document);
         } catch (Exception exception) {
             throw new AssertionError("Failed to extract text from generated PDF", exception);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, byte[]> readPdfCache() {
+        try {
+            var field = ReportPdfService.class.getDeclaredField("pdfCache");
+            field.setAccessible(true);
+            return (LinkedHashMap<String, byte[]>) field.get(service);
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Failed to inspect PDF cache", exception);
         }
     }
 }

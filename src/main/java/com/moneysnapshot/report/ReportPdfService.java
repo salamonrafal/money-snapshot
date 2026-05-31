@@ -13,6 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -185,6 +186,17 @@ public class ReportPdfService {
             return;
         }
 
+        List<Long> checkpointDates = new ArrayList<>();
+        for (JsonNode checkpoint : checkpoints) {
+            Long checkpointDate = isoDate(checkpoint.asText(null));
+            if (checkpointDate != null) {
+                checkpointDates.add(checkpointDate);
+            }
+        }
+        if (checkpointDates.size() < 2) {
+            return;
+        }
+
         canvas.ensureSpace(190f);
         float chartX = MARGIN;
         float chartY = canvas.currentY() - 170f;
@@ -197,8 +209,8 @@ public class ReportPdfService {
         float plotW = chartW - 62f;
         float plotH = chartH - 52f;
 
-        long startTime = isoDate(checkpoints.get(0).asText());
-        long endTime = isoDate(checkpoints.get(checkpoints.size() - 1).asText());
+        long startTime = checkpointDates.get(0);
+        long endTime = checkpointDates.get(checkpointDates.size() - 1);
         long timeRange = Math.max(1L, endTime - startTime);
 
         double minChange = 0d;
@@ -221,15 +233,23 @@ public class ReportPdfService {
             PdfColor color = CHART_COLORS.get(legendIndex % CHART_COLORS.size());
             List<PdfPoint> linePoints = new ArrayList<>();
             for (JsonNode point : row.path("series")) {
-                long pointTime = isoDate(point.path("date").asText());
+                Long pointTime = isoDate(point.path("date").asText(null));
+                if (pointTime == null) {
+                    continue;
+                }
                 float x = (float) (plotX + ((double) (pointTime - startTime) * plotW) / timeRange);
                 float y = (float) (plotY + ((point.path("change").asDouble(0d) - minChange) * plotH) / changeRange);
                 linePoints.add(new PdfPoint(x, y));
             }
-            canvas.polyline(linePoints, color, 1.5f);
+            if (!linePoints.isEmpty()) {
+                canvas.polyline(linePoints, color, 1.5f);
+            }
 
             for (JsonNode point : row.path("points")) {
-                long pointTime = isoDate(point.path("date").asText());
+                Long pointTime = isoDate(point.path("date").asText(null));
+                if (pointTime == null) {
+                    continue;
+                }
                 float x = (float) (plotX + ((double) (pointTime - startTime) * plotW) / timeRange);
                 float y = (float) (plotY + ((point.path("change").asDouble(0d) - minChange) * plotH) / changeRange);
                 canvas.circle(x, y, 2.2f, color);
@@ -251,6 +271,10 @@ public class ReportPdfService {
         JsonNode rows = chart == null ? null : chart.path("rows");
         if (rows == null || !rows.isArray() || rows.isEmpty()) {
             return;
+        }
+        String otherLabel = chart == null ? null : chart.path("otherLabel").asText(null);
+        if (otherLabel == null || otherLabel.isBlank()) {
+            otherLabel = "Other";
         }
 
         List<PieSlice> visibleRows = new ArrayList<>();
@@ -274,7 +298,7 @@ public class ReportPdfService {
             double otherSharePercent = visibleRows.subList(MAX_PIE_SLICES - 1, visibleRows.size()).stream()
                     .mapToDouble(PieSlice::sharePercent)
                     .sum();
-            topSlices.add(new PieSlice("Other", "", otherSharePercent));
+            topSlices.add(new PieSlice(otherLabel, "", otherSharePercent));
             visibleRows = topSlices;
         }
 
@@ -383,8 +407,15 @@ public class ReportPdfService {
         canvas.setCurrentY(rowBottom);
     }
 
-    private long isoDate(String value) {
-        return java.time.LocalDate.parse(value).toEpochDay();
+    private Long isoDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return java.time.LocalDate.parse(value).toEpochDay();
+        } catch (DateTimeParseException exception) {
+            return null;
+        }
     }
 
     private static final class PdfCanvas implements AutoCloseable {

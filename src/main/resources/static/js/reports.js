@@ -1439,6 +1439,7 @@ function renderOverviewChart(rows) {
 function renderOverview(toDate) {
     const rawRows = buildOverviewRows(cachedSnapshots, toDate, currentOverviewScope);
     if (rawRows.length === 0) {
+        clearReportPdfData("overview");
         renderOverviewEmpty(messages["reports.overview.empty"]);
         return;
     }
@@ -1456,7 +1457,10 @@ function renderOverview(toDate) {
         title: messages["reports.overview.title"],
         subtitle: currentOverviewScope === "banks" ? messages["reports.scope.banks"] : messages["reports.scope.accounts"],
         chartType: "pie",
-        chart: {rows},
+        chart: {
+            rows,
+            otherLabel: messages["reports.overview.other"]
+        },
         table: {
             columns: [
                 messages["reports.table.name"],
@@ -1616,6 +1620,7 @@ function renderHistory() {
     const range = resolveHistoryRange();
     const matrix = historyMatrixForRange(range);
     if (matrix.accounts.length === 0) {
+        clearReportPdfData("history");
         renderHistoryEmpty(messages["reports.history.empty"]);
         setHistoryMessage("");
         return;
@@ -1653,6 +1658,10 @@ function markReportSectionsDirty(keys = reportSectionKeys) {
 
 function reportSectionKeyForElement(element) {
     return reportSectionKeys.find((key) => reportSections[key].element === element);
+}
+
+function clearReportPdfData(key) {
+    delete reportPdfData[key];
 }
 
 async function ensureSnapshotsLoaded(force = false) {
@@ -1734,6 +1743,7 @@ async function renderSummaryReportSection() {
     setMessage(displayRangeLabel(range, periodSelect.value));
 
     if (rows.length === 0) {
+        clearReportPdfData("summary");
         renderEmpty(messages["reports.empty"]);
         return;
     }
@@ -1775,6 +1785,7 @@ async function renderAverageContributionsReportSection() {
     await ensureSnapshotsLoaded();
     const averageContributionReport = getAverageContributionReport(cachedSnapshots);
     if (averageContributionReport.rows.length === 0) {
+        clearReportPdfData("averageContributions");
         renderAverageContributionsEmpty(messages["reports.average.empty"]);
         setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
         return;
@@ -1810,6 +1821,7 @@ async function renderPlanningReportSection() {
     await ensureLatestSavingsForecastLoaded();
     const planningReport = buildPlanningRows(cachedSnapshots);
     if (planningReport.rows.length === 0) {
+        clearReportPdfData("planning");
         renderPlanningEmpty(messages["reports.planning.empty"]);
         setPlanningMessage(messages["reports.planning.hint"] ?? "");
         return;
@@ -1860,18 +1872,39 @@ async function renderPlanningReportSection() {
 async function renderHistoryReportSection() {
     await ensureSnapshotsLoaded();
     setHistoryMessage("");
-    renderHistory();
-    const rows = [...historyTableBody.querySelectorAll("tr")].map((row) => [...row.children].map((cell) => cell.textContent.trim()));
+    const range = resolveHistoryRange();
+    const matrix = historyMatrixForRange(range);
+    if (matrix.accounts.length === 0) {
+        clearReportPdfData("history");
+        renderHistoryEmpty(messages["reports.history.empty"]);
+        setHistoryMessage("");
+        return;
+    }
+
+    const pagedMatrix = paginateHistoryMatrix(matrix);
+    renderHistoryTable(pagedMatrix);
+    renderHistoryPagination(pagedMatrix);
+    setHistoryMessage("");
+
     reportPdfData.history = {
         title: messages["reports.history.title"],
         table: {
-            columns: [...historyTableHeadRow.children].map((cell) => cell.textContent.trim()),
-            rows
+            columns: [
+                messages["reports.history.date"],
+                ...matrix.accounts.map((account) => `${account.accountName} (${account.bankName}, ${account.currencyCode})`)
+            ],
+            rows: matrix.rows.map((row) => [
+                formatDate(row.date),
+                ...row.values.map((value) => value
+                    ? `${formatAmount(value.balance)} | ${formatChange(value.diff)}`
+                    : "- | -")
+            ])
         }
     };
 }
 
 function renderReportSectionError(key, error) {
+    clearReportPdfData(key);
     if (key === "summary") {
         renderEmpty(error.message);
         setMessage(error.message, "error");
