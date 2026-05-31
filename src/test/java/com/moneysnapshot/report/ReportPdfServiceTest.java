@@ -110,6 +110,24 @@ class ReportPdfServiceTest {
         }
     }
 
+    @Test
+    void replacesCharactersUnsupportedByPdfFontInsteadOfFailingExport() {
+        when(reportDataVersionService.currentVersion()).thenReturn(version("v1"));
+        String unsupportedSymbol = "\uE000";
+
+        ReportPdfRequest request = requestWithTable(
+                "Raport " + unsupportedSymbol,
+                "Zakres testowy",
+                List.of("Nazwa"),
+                List.of(List.of("Konto " + unsupportedSymbol))
+        );
+
+        String pdfText = extractText(service.generatePdf("summary", request));
+
+        assertThat(pdfText).contains("Raport ?");
+        assertThat(pdfText).contains("Konto ?");
+    }
+
     private ReportPdfRequest requestWithTable(
             String title,
             String subtitle,

@@ -500,17 +500,18 @@ public class ReportPdfService {
         }
 
         private void text(String text, float x, float baselineY, float fontSize, boolean bold, PdfColor color) throws IOException {
+            String sanitizedText = sanitizeText(text, bold);
             stream.beginText();
             stream.setNonStrokingColor(color.awt());
             stream.setFont(bold ? boldFont : regularFont, fontSize);
             stream.newLineAtOffset(x, baselineY);
-            stream.showText(Objects.requireNonNullElse(text, ""));
+            stream.showText(sanitizedText);
             stream.endText();
         }
 
         private float textWidth(String text, float fontSize, boolean bold) throws IOException {
             PDFont font = bold ? boldFont : regularFont;
-            return font.getStringWidth(Objects.requireNonNullElse(text, "")) / 1000f * fontSize;
+            return font.getStringWidth(sanitizeText(text, bold)) / 1000f * fontSize;
         }
 
         private List<String> wrapText(String text, float maxWidth, float fontSize, boolean bold) throws IOException {
@@ -564,6 +565,34 @@ public class ReportPdfService {
                 lines.add(segment.toString());
             }
             return lines.isEmpty() ? List.of("") : lines;
+        }
+
+        private String sanitizeText(String text, boolean bold) throws IOException {
+            String value = Objects.requireNonNullElse(text, "");
+            PDFont font = bold ? boldFont : regularFont;
+            StringBuilder sanitized = new StringBuilder(value.length());
+            for (int offset = 0; offset < value.length(); ) {
+                int codePoint = value.codePointAt(offset);
+                String symbol = new String(Character.toChars(codePoint));
+                if (canEncode(font, symbol)) {
+                    sanitized.append(symbol);
+                } else if (Character.isWhitespace(codePoint)) {
+                    sanitized.append(' ');
+                } else if (canEncode(font, "?")) {
+                    sanitized.append('?');
+                }
+                offset += Character.charCount(codePoint);
+            }
+            return sanitized.toString();
+        }
+
+        private boolean canEncode(PDFont font, String symbol) throws IOException {
+            try {
+                font.encode(symbol);
+                return true;
+            } catch (IllegalArgumentException exception) {
+                return false;
+            }
         }
 
         private void line(float x1, float y1, float x2, float y2, PdfColor color, float width) throws IOException {

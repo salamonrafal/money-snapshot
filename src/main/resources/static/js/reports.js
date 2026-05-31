@@ -8,6 +8,7 @@ const refreshButton = document.querySelector("#refresh-reports");
 const messageElement = document.querySelector("#reports-message");
 const chartElement = document.querySelector("#reports-chart");
 const tableBody = document.querySelector("#reports-table-body");
+const overviewMessageElement = document.querySelector("#overview-message");
 const overviewChartElement = document.querySelector("#overview-chart");
 const overviewTableBody = document.querySelector("#overview-table-body");
 const averageContributionsMessageElement = document.querySelector("#average-contributions-message");
@@ -48,6 +49,7 @@ const periodOffsets = {
     "2y": {years: 2}
 };
 const MAX_HISTORY_RANGE_DAYS = 732;
+const MAX_REPORT_PDF_TABLE_ROWS = 2000;
 
 let currentLanguage = "pl";
 let messages = {};
@@ -359,6 +361,11 @@ function setMessage(text, type = "") {
 function setHistoryMessage(text, type = "") {
     historyMessageElement.textContent = text;
     historyMessageElement.dataset.type = type;
+}
+
+function setOverviewMessage(text, type = "") {
+    overviewMessageElement.textContent = text;
+    overviewMessageElement.dataset.type = type;
 }
 
 function setAverageContributionsMessage(text, type = "") {
@@ -1437,6 +1444,7 @@ function renderOverviewChart(rows) {
 }
 
 function renderOverview(toDate) {
+    setOverviewMessage("");
     const rawRows = buildOverviewRows(cachedSnapshots, toDate, currentOverviewScope);
     if (rawRows.length === 0) {
         clearReportPdfData("overview");
@@ -1927,6 +1935,7 @@ function renderReportSectionError(key, error) {
         setMessage(error.message, "error");
     } else if (key === "overview") {
         renderOverviewEmpty(error.message);
+        setOverviewMessage(error.message, "error");
     } else if (key === "averageContributions") {
         renderAverageContributionsEmpty(error.message);
         setAverageContributionsMessage(error.message, "error");
@@ -1940,8 +1949,10 @@ function renderReportSectionError(key, error) {
 }
 
 function showReportPdfError(key, error) {
-    if (key === "summary" || key === "overview") {
+    if (key === "summary") {
         setMessage(error.message, "error");
+    } else if (key === "overview") {
+        setOverviewMessage(error.message, "error");
     } else if (key === "averageContributions") {
         setAverageContributionsMessage(error.message, "error");
     } else if (key === "planning") {
@@ -2166,6 +2177,10 @@ async function exportReportSectionToPdf(key, button) {
             title: reportExportTitle(sectionState.element),
             table: fallbackTable
         };
+        if ((data.table?.rows?.length ?? 0) > MAX_REPORT_PDF_TABLE_ROWS) {
+            throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                    .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+        }
         const pdf = await requestReportPdf(key, data);
         downloadBlob(pdf.blob, pdf.filename);
     } catch (error) {

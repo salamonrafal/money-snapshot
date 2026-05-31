@@ -6,6 +6,6 @@ import java.util.List;
 
 public record ReportPdfTableRequest(
         @NotNull @Size(min = 1, max = 12) List<@Size(max = 120) String> columns,
-        @NotNull @Size(max = 20_000) List<@NotNull @Size(max = 12) List<@Size(max = 240) String>> rows
+        @NotNull @Size(max = 2_000) List<@NotNull @Size(max = 12) List<@Size(max = 240) String>> rows
 ) {
 }

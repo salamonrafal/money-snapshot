@@ -377,6 +377,7 @@ public class MessageBundleService {
             "reports.error.customRange",
             "reports.error.historyRangeTooLarge",
             "reports.error.load",
+            "reports.error.pdfRowLimit",
             "reports.heading.eyebrow",
             "reports.heading.subtitle",
             "reports.heading.title",
