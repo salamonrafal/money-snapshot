@@ -103,8 +103,11 @@ class ReportPdfServiceTest {
                 rows
         );
 
-        try (PDDocument document = Loader.loadPDF(service.generatePdf("history", request))) {
+        byte[] pdf = service.generatePdf("history", request);
+        try (PDDocument document = Loader.loadPDF(pdf)) {
             assertThat(document.getNumberOfPages()).isGreaterThan(1);
+            assertThat(extractText(pdf, 2, 2)).contains("Konto");
+            assertThat(extractText(pdf, 2, 2)).contains("Waluta");
         } catch (Exception exception) {
             throw new AssertionError("Failed to inspect generated PDF", exception);
         }
@@ -157,6 +160,17 @@ class ReportPdfServiceTest {
     private String extractText(byte[] pdfBytes) {
         try (PDDocument document = Loader.loadPDF(pdfBytes)) {
             return new PDFTextStripper().getText(document);
+        } catch (Exception exception) {
+            throw new AssertionError("Failed to extract text from generated PDF", exception);
+        }
+    }
+
+    private String extractText(byte[] pdfBytes, int startPage, int endPage) {
+        try (PDDocument document = Loader.loadPDF(pdfBytes)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            stripper.setStartPage(startPage);
+            stripper.setEndPage(endPage);
+            return stripper.getText(document);
         } catch (Exception exception) {
             throw new AssertionError("Failed to extract text from generated PDF", exception);
         }

@@ -1893,15 +1893,41 @@ async function renderHistoryReportSection() {
     renderHistoryTable(pagedMatrix);
     renderHistoryPagination(pagedMatrix);
     setHistoryMessage("");
+    clearReportPdfData("history");
+}
 
-    const pdfRows = [];
-    matrix.rows.forEach((row) => {
-        row.values.forEach((value, index) => {
-            if (!value) {
-                return;
+function buildHistoryPdfExportData() {
+    const range = resolveHistoryRange();
+    const matrix = historyMatrixForRange(range);
+    const columns = [
+        messages["reports.history.date"],
+        messages["reports.history.account"],
+        messages["reports.history.bank"],
+        messages["reports.table.currency"],
+        messages["reports.history.balance"],
+        messages["reports.history.diff"]
+    ];
+
+    if (matrix.accounts.length === 0) {
+        return {
+            title: messages["reports.history.title"],
+            table: {
+                columns,
+                rows: []
             }
+        };
+    }
+
+    const rows = [];
+    for (const row of matrix.rows) {
+        for (let index = 0; index < row.values.length; index += 1) {
+            const value = row.values[index];
+            if (!value) {
+                continue;
+            }
+
             const account = matrix.accounts[index];
-            pdfRows.push([
+            rows.push([
                 formatDate(row.date),
                 account.accountName,
                 account.bankName,
@@ -1909,21 +1935,19 @@ async function renderHistoryReportSection() {
                 formatAmount(value.balance),
                 formatChange(value.diff)
             ]);
-        });
-    });
 
-    reportPdfData.history = {
+            if (rows.length > MAX_REPORT_PDF_TABLE_ROWS) {
+                throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                        .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+            }
+        }
+    }
+
+    return {
         title: messages["reports.history.title"],
         table: {
-            columns: [
-                messages["reports.history.date"],
-                messages["reports.history.account"],
-                messages["reports.history.bank"],
-                messages["reports.table.currency"],
-                messages["reports.history.balance"],
-                messages["reports.history.diff"]
-            ],
-            rows: pdfRows
+            columns,
+            rows
         }
     };
 }
@@ -2171,12 +2195,12 @@ async function exportReportSectionToPdf(key, button) {
             await renderReportSectionForExport(key);
         }
         await waitForSectionIdle(key);
-        const fallbackTable = extractPdfTables(sectionState.element).map((rows) => ({columns: rows[0] ?? [], rows: rows.slice(1)}))[0]
-                ?? {columns: [], rows: []};
-        const data = reportPdfData[key] ?? {
-            title: reportExportTitle(sectionState.element),
-            table: fallbackTable
-        };
+        const data = key === "history"
+                ? buildHistoryPdfExportData()
+                : reportPdfData[key];
+        if (!data) {
+            throw new Error(messages["reports.error.load"]);
+        }
         if ((data.table?.rows?.length ?? 0) > MAX_REPORT_PDF_TABLE_ROWS) {
             throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
                     .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));

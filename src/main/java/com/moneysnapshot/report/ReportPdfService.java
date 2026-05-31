@@ -359,11 +359,15 @@ public class ReportPdfService {
 
         drawTableRow(canvas, columns, -1, columnCount, columnWidth, fontSize, lineHeight);
         for (int rowIndex = 0; rowIndex < rows.size(); rowIndex += 1) {
-            drawTableRow(canvas, rows.get(rowIndex), rowIndex, columnCount, columnWidth, fontSize, lineHeight);
+            boolean pageBreakOccurred = drawTableRow(canvas, rows.get(rowIndex), rowIndex, columnCount, columnWidth, fontSize, lineHeight);
+            if (pageBreakOccurred) {
+                drawTableRow(canvas, columns, -1, columnCount, columnWidth, fontSize, lineHeight);
+                drawTableRow(canvas, rows.get(rowIndex), rowIndex, columnCount, columnWidth, fontSize, lineHeight);
+            }
         }
     }
 
-    private void drawTableRow(
+    private boolean drawTableRow(
             PdfCanvas canvas,
             List<String> row,
             int rowIndex,
@@ -385,7 +389,12 @@ public class ReportPdfService {
         }
 
         float rowHeight = maxLines * lineHeight + 9f;
+        int pageCountBefore = canvas.pageCount();
         canvas.ensureSpace(rowHeight + 2f);
+        boolean pageBreakOccurred = canvas.pageCount() != pageCountBefore;
+        if (pageBreakOccurred && !isHeader) {
+            return true;
+        }
         float rowTop = canvas.currentY();
         float rowBottom = rowTop - rowHeight;
         PdfColor fillColor = isHeader ? HEADER : (rowIndex % 2 == 1 ? ROW_ALT : WHITE);
@@ -405,6 +414,7 @@ public class ReportPdfService {
         }
 
         canvas.setCurrentY(rowBottom);
+        return false;
     }
 
     private Long isoDate(String value) {
@@ -461,6 +471,10 @@ public class ReportPdfService {
                 addPage();
                 drawPageHeader();
             }
+        }
+
+        private int pageCount() {
+            return document.getNumberOfPages();
         }
 
         private void drawPageHeader() throws IOException {
