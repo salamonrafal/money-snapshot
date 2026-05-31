@@ -2107,10 +2107,6 @@ function waitForSectionIdle(key) {
     });
 }
 
-function reportExportTitle(section) {
-    return section.querySelector("h2")?.textContent?.trim() || messages["reports.heading.title"] || "Report";
-}
-
 function reportPdfFilename(title) {
     const slug = title.toLowerCase()
             .normalize("NFKD")
@@ -2120,12 +2116,6 @@ function reportPdfFilename(title) {
     return `${slug}.pdf`;
 }
 
-function extractPdfTables(section) {
-    return [...section.querySelectorAll("table")].map((table) => {
-        const rows = [...table.querySelectorAll("tr")].map((row) => [...row.children].map((cell) => cell.textContent.trim()));
-        return rows.filter((row) => row.some((cell) => cell));
-    }).filter((tableRows) => tableRows.length > 0);
-}
 function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

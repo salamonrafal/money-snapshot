@@ -48,11 +48,7 @@ public class ReportDataVersionService {
                         select entity.id, entity.generatedAt
                         from SavingsForecastRun entity
                         where entity.owner.id = :ownerId
-                            and entity.generatedAt = (
-                                select max(candidate.generatedAt)
-                                from SavingsForecastRun candidate
-                                where candidate.owner.id = :ownerId
-                            )
+                        order by entity.generatedAt desc, entity.id desc
                         """,
                         Object[].class
                 )

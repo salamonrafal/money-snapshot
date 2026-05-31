@@ -114,6 +114,6 @@ public class ReportPdfRequestSizeFilter extends OncePerRequestFilter {
         }
     }
 
-    private static final class PayloadTooLargeException extends IOException {
+    static final class PayloadTooLargeException extends IOException {
     }
 }

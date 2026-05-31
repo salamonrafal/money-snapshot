@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,7 +21,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -115,5 +119,31 @@ public class ReportPdfController {
     }
 
     private record ChartNodeFrame(JsonNode node, int depth) {
+    }
+
+    @ExceptionHandler(ReportPdfRequestSizeFilter.PayloadTooLargeException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public Map<String, String> handlePayloadTooLarge() {
+        return Map.of("message", "Report PDF payload is too large.");
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadableRequest(HttpMessageNotReadableException exception) {
+        if (containsPayloadTooLargeCause(exception)) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(Map.of("message", "Report PDF payload is too large."));
+        }
+        throw exception;
+    }
+
+    private boolean containsPayloadTooLargeCause(Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof ReportPdfRequestSizeFilter.PayloadTooLargeException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }
