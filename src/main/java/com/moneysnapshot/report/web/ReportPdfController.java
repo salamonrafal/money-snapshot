@@ -32,7 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ReportPdfController {
 
     private static final int MAX_CHART_NODE_COUNT = 25_000;
-    private static final int MAX_CHART_ARRAY_ITEMS = 1_500;
+    private static final int MAX_CHART_ARRAY_ITEMS = 2_000;
     private static final int MAX_CHART_TEXT_LENGTH = 20_000;
     private static final int MAX_CHART_DEPTH = 64;
     private static final Set<String> SUPPORTED_SECTION_KEYS = Set.of(

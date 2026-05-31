@@ -1631,22 +1631,6 @@ function renderHistoryPagination(pageData) {
     historyNextPageButton.disabled = pageData.last || pageData.totalElements === 0;
 }
 
-function renderHistory() {
-    const range = resolveHistoryRange();
-    const matrix = historyMatrixForRange(range);
-    if (matrix.accounts.length === 0) {
-        clearReportPdfData("history");
-        renderHistoryEmpty(messages["reports.history.empty"]);
-        setHistoryMessage("");
-        return;
-    }
-
-    const pagedMatrix = paginateHistoryMatrix(matrix);
-    renderHistoryTable(pagedMatrix);
-    renderHistoryPagination(pagedMatrix);
-    setHistoryMessage("");
-}
-
 function updateCustomPeriodVisibility() {
     syncRangeInputs(periodSelect.value, resolveDateRange, dateFromInput, dateToInput);
     const isCustom = periodSelect.value === "custom";
