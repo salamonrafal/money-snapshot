@@ -1886,19 +1886,36 @@ async function renderHistoryReportSection() {
     renderHistoryPagination(pagedMatrix);
     setHistoryMessage("");
 
+    const pdfRows = [];
+    matrix.rows.forEach((row) => {
+        row.values.forEach((value, index) => {
+            if (!value) {
+                return;
+            }
+            const account = matrix.accounts[index];
+            pdfRows.push([
+                formatDate(row.date),
+                account.accountName,
+                account.bankName,
+                account.currencyCode,
+                formatAmount(value.balance),
+                formatChange(value.diff)
+            ]);
+        });
+    });
+
     reportPdfData.history = {
         title: messages["reports.history.title"],
         table: {
             columns: [
                 messages["reports.history.date"],
-                ...matrix.accounts.map((account) => `${account.accountName} (${account.bankName}, ${account.currencyCode})`)
+                messages["reports.history.account"],
+                messages["reports.history.bank"],
+                messages["reports.table.currency"],
+                messages["reports.history.balance"],
+                messages["reports.history.diff"]
             ],
-            rows: matrix.rows.map((row) => [
-                formatDate(row.date),
-                ...row.values.map((value) => value
-                    ? `${formatAmount(value.balance)} | ${formatChange(value.diff)}`
-                    : "- | -")
-            ])
+            rows: pdfRows
         }
     };
 }
@@ -1918,6 +1935,18 @@ function renderReportSectionError(key, error) {
         setPlanningMessage(error.message, "error");
     } else if (key === "history") {
         renderHistoryEmpty(error.message);
+        setHistoryMessage(error.message, "error");
+    }
+}
+
+function showReportPdfError(key, error) {
+    if (key === "summary" || key === "overview") {
+        setMessage(error.message, "error");
+    } else if (key === "averageContributions") {
+        setAverageContributionsMessage(error.message, "error");
+    } else if (key === "planning") {
+        setPlanningMessage(error.message, "error");
+    } else if (key === "history") {
         setHistoryMessage(error.message, "error");
     }
 }
@@ -2140,7 +2169,7 @@ async function exportReportSectionToPdf(key, button) {
         const pdf = await requestReportPdf(key, data);
         downloadBlob(pdf.blob, pdf.filename);
     } catch (error) {
-        renderReportSectionError(key, error);
+        showReportPdfError(key, error);
     } finally {
         button.disabled = false;
     }

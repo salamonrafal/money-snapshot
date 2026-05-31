@@ -523,18 +523,45 @@ public class ReportPdfService {
             List<String> lines = new ArrayList<>();
             StringBuilder currentLine = new StringBuilder();
             for (String word : words) {
+                if (currentLine.length() == 0 && textWidth(word, fontSize, bold) > maxWidth) {
+                    lines.addAll(breakLongToken(word, maxWidth, fontSize, bold));
+                    continue;
+                }
+
                 String candidate = currentLine.length() == 0 ? word : currentLine + " " + word;
-                if (textWidth(candidate, fontSize, bold) <= maxWidth || currentLine.length() == 0) {
+                if (textWidth(candidate, fontSize, bold) <= maxWidth) {
                     currentLine.setLength(0);
                     currentLine.append(candidate);
                 } else {
                     lines.add(currentLine.toString());
                     currentLine.setLength(0);
-                    currentLine.append(word);
+                    if (textWidth(word, fontSize, bold) > maxWidth) {
+                        lines.addAll(breakLongToken(word, maxWidth, fontSize, bold));
+                    } else {
+                        currentLine.append(word);
+                    }
                 }
             }
             if (currentLine.length() > 0) {
                 lines.add(currentLine.toString());
+            }
+            return lines.isEmpty() ? List.of("") : lines;
+        }
+
+        private List<String> breakLongToken(String token, float maxWidth, float fontSize, boolean bold) throws IOException {
+            List<String> lines = new ArrayList<>();
+            StringBuilder segment = new StringBuilder();
+            for (int index = 0; index < token.length(); index += 1) {
+                char nextChar = token.charAt(index);
+                String candidate = segment + String.valueOf(nextChar);
+                if (segment.length() > 0 && textWidth(candidate, fontSize, bold) > maxWidth) {
+                    lines.add(segment.toString());
+                    segment.setLength(0);
+                }
+                segment.append(nextChar);
+            }
+            if (segment.length() > 0) {
+                lines.add(segment.toString());
             }
             return lines.isEmpty() ? List.of("") : lines;
         }
