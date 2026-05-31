@@ -10,6 +10,7 @@
     --accent-strong: #0a6f70;
     --gold: #f4b942;
     --danger: #a33b2f;
+    --danger-text: #ffffff;
     --danger-strong: #b42318;
     --danger-soft: rgba(163, 59, 47, 0.12);
     --danger-soft-strong: rgba(163, 59, 47, 0.2);
@@ -60,6 +61,7 @@
     --accent-strong: #6ad8cf;
     --gold: #f4c95d;
     --danger: #ff8a7a;
+    --danger-text: #18212f;
     --danger-strong: #ff6f61;
     --danger-soft: rgba(255, 138, 122, 0.14);
     --danger-soft-strong: rgba(255, 138, 122, 0.22);
@@ -356,7 +358,7 @@ h1 {
 
 .button.danger {
     background: var(--danger);
-    color: #ffffff;
+    color: var(--danger-text);
 }
 
 .button.compact {

@@ -17,6 +17,26 @@ window.MoneySnapshotUi = (() => {
     };
     let settingsPromise = null;
 
+    function storedTheme() {
+        try {
+            return normalizeTheme(localStorage.getItem(themeStorageKey));
+        } catch {
+            return "light";
+        }
+    }
+
+    function fallbackSettings() {
+        const theme = storedTheme();
+        return {
+            ...defaultSettings,
+            theme,
+            values: {
+                ...defaultSettings.values,
+                theme
+            }
+        };
+    }
+
     function createTrashIcon() {
         const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         icon.setAttribute("viewBox", "0 0 24 24");
@@ -210,8 +230,8 @@ window.MoneySnapshotUi = (() => {
     async function loadUserSettings() {
         if (!settingsPromise) {
             settingsPromise = fetch("/api/users/me/settings")
-                    .then((response) => response.ok ? response.json() : defaultSettings)
-                    .catch(() => defaultSettings);
+                    .then((response) => response.ok ? response.json() : fallbackSettings())
+                    .catch(() => fallbackSettings());
         }
 
         return settingsPromise;
