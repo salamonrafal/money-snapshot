@@ -2173,6 +2173,11 @@ async function requestReportPdf(key, data) {
         throw new Error(message);
     }
 
+    const contentType = response.headers.get("Content-Type") || "";
+    if (!contentType.toLowerCase().startsWith("application/pdf")) {
+        throw new Error(messages["reports.error.load"]);
+    }
+
     return {
         blob: await response.blob(),
         filename: parseFilenameFromDisposition(response.headers.get("Content-Disposition")) || reportPdfFilename(data.title || "raport")

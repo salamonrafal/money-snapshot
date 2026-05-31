@@ -117,17 +117,23 @@ public class UserSettingsService {
 
     private UserSettingsResponse response(Map<String, String> values) {
         int billingMonthStartDay = parseBillingMonthStartDay(values.get(BILLING_MONTH_START_DAY));
+        String theme = normalizeTheme(values.get(THEME));
         Map<String, String> sanitizedValues = new LinkedHashMap<>(values);
+        sanitizedValues.put(THEME, theme);
         sanitizedValues.put(BILLING_MONTH_START_DAY, Integer.toString(billingMonthStartDay));
         Map<String, String> immutableValues = Map.copyOf(sanitizedValues);
         return new UserSettingsResponse(
                 sanitizedValues.get(DEFAULT_CURRENCY),
-                sanitizedValues.get(THEME),
+                theme,
                 sanitizedValues.get(DATE_TIME_FORMAT),
                 sanitizedValues.get(MONEY_FORMAT),
                 billingMonthStartDay,
                 immutableValues
         );
+    }
+
+    private String normalizeTheme(String value) {
+        return "dark".equals(value) ? "dark" : "light";
     }
 
     private int parseBillingMonthStartDay(String value) {
