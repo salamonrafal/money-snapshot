@@ -14,12 +14,14 @@ import org.springframework.stereotype.Service;
 public class UserSettingsService {
 
     public static final String DEFAULT_CURRENCY = "defaultCurrency";
+    public static final String THEME = "theme";
     public static final String DATE_TIME_FORMAT = "dateTimeFormat";
     public static final String MONEY_FORMAT = "moneyFormat";
     public static final String BILLING_MONTH_START_DAY = "billingMonthStartDay";
 
     private static final Map<String, String> DEFAULT_VALUES = Map.of(
             DEFAULT_CURRENCY, "PLN",
+            THEME, "light",
             DATE_TIME_FORMAT, "Y-m-d H:m",
             MONEY_FORMAT, "### ###,00 zł",
             BILLING_MONTH_START_DAY, "1"
@@ -106,21 +108,32 @@ public class UserSettingsService {
             }
         }
 
+        if (THEME.equals(key)) {
+            return "dark".equals(normalizedValue) || "light".equals(normalizedValue) ? normalizedValue : null;
+        }
+
         return normalizedValue;
     }
 
     private UserSettingsResponse response(Map<String, String> values) {
         int billingMonthStartDay = parseBillingMonthStartDay(values.get(BILLING_MONTH_START_DAY));
+        String theme = normalizeTheme(values.get(THEME));
         Map<String, String> sanitizedValues = new LinkedHashMap<>(values);
+        sanitizedValues.put(THEME, theme);
         sanitizedValues.put(BILLING_MONTH_START_DAY, Integer.toString(billingMonthStartDay));
         Map<String, String> immutableValues = Map.copyOf(sanitizedValues);
         return new UserSettingsResponse(
                 sanitizedValues.get(DEFAULT_CURRENCY),
+                theme,
                 sanitizedValues.get(DATE_TIME_FORMAT),
                 sanitizedValues.get(MONEY_FORMAT),
                 billingMonthStartDay,
                 immutableValues
         );
+    }
+
+    private String normalizeTheme(String value) {
+        return "dark".equals(value) ? "dark" : "light";
     }
 
     private int parseBillingMonthStartDay(String value) {

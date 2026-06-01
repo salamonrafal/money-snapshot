@@ -1,18 +1,41 @@
 window.MoneySnapshotUi = (() => {
     const bulkSnapshotSuccessKey = "money-snapshot-bulk-snapshot-success-count";
+    const themeStorageKey = "money-snapshot-theme";
     const defaultSettings = {
         defaultCurrency: "PLN",
+        theme: "light",
         dateTimeFormat: "Y-m-d H:m",
         moneyFormat: "### ###,00 zł",
         billingMonthStartDay: 1,
         values: {
             defaultCurrency: "PLN",
+            theme: "light",
             dateTimeFormat: "Y-m-d H:m",
             moneyFormat: "### ###,00 zł",
             billingMonthStartDay: "1"
         }
     };
     let settingsPromise = null;
+
+    function storedTheme() {
+        try {
+            return normalizeTheme(localStorage.getItem(themeStorageKey));
+        } catch {
+            return "light";
+        }
+    }
+
+    function fallbackSettings() {
+        const theme = storedTheme();
+        return {
+            ...defaultSettings,
+            theme,
+            values: {
+                ...defaultSettings.values,
+                theme
+            }
+        };
+    }
 
     function createTrashIcon() {
         const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -207,11 +230,24 @@ window.MoneySnapshotUi = (() => {
     async function loadUserSettings() {
         if (!settingsPromise) {
             settingsPromise = fetch("/api/users/me/settings")
-                    .then((response) => response.ok ? response.json() : defaultSettings)
-                    .catch(() => defaultSettings);
+                    .then((response) => response.ok ? response.json() : fallbackSettings())
+                    .catch(() => fallbackSettings());
         }
 
         return settingsPromise;
+    }
+
+    function normalizeTheme(theme) {
+        return theme === "dark" ? "dark" : "light";
+    }
+
+    function applyTheme(theme) {
+        const normalizedTheme = normalizeTheme(theme);
+        document.documentElement.dataset.theme = normalizedTheme;
+        try {
+            localStorage.setItem(themeStorageKey, normalizedTheme);
+        } catch {
+        }
     }
 
     function clearUserSettingsCache() {
@@ -360,9 +396,11 @@ window.MoneySnapshotUi = (() => {
 
     document.addEventListener("DOMContentLoaded", () => {
         initializeMobileNavigation();
+        loadUserSettings().then((settings) => applyTheme(settings.theme));
     });
 
     return {
+        applyTheme,
         bulkSnapshotSuccessKey,
         clearUserSettingsCache,
         createAddIcon,

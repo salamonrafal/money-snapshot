@@ -8,6 +8,7 @@ const refreshButton = document.querySelector("#refresh-reports");
 const messageElement = document.querySelector("#reports-message");
 const chartElement = document.querySelector("#reports-chart");
 const tableBody = document.querySelector("#reports-table-body");
+const overviewMessageElement = document.querySelector("#overview-message");
 const overviewChartElement = document.querySelector("#overview-chart");
 const overviewTableBody = document.querySelector("#overview-table-body");
 const averageContributionsMessageElement = document.querySelector("#average-contributions-message");
@@ -35,6 +36,8 @@ const historyTableBody = document.querySelector("#history-table-body");
 const reportsNavElement = document.querySelector(".reports-nav");
 const reportsNavLinks = document.querySelectorAll(".reports-nav a[data-target]");
 const reportsNavPanel = document.querySelector(".reports-nav-panel");
+const reportFilterButtons = document.querySelectorAll(".report-filter-button");
+const reportPdfButtons = document.querySelectorAll(".report-pdf-button[data-report-section]");
 const reportsNavStickyMedia = window.matchMedia("(min-width: 861px)");
 
 const periodOffsets = {
@@ -46,6 +49,7 @@ const periodOffsets = {
     "2y": {years: 2}
 };
 const MAX_HISTORY_RANGE_DAYS = 732;
+const MAX_REPORT_PDF_TABLE_ROWS = 2000;
 
 let currentLanguage = "pl";
 let messages = {};
@@ -63,6 +67,43 @@ let reportsNavStickyEnabled = reportsNavStickyMedia.matches;
 let reportsNavStickyFramePending = false;
 let userSettings = null;
 let cachedSavingsForecast = null;
+let snapshotsPromise = null;
+let savingsForecastPromise = null;
+const reportPdfData = {};
+
+const reportSections = {
+    summary: {
+        element: document.querySelector("#reports-summary-section"),
+        dirty: true,
+        loading: false,
+        visible: false
+    },
+    overview: {
+        element: document.querySelector("#reports-overview-section"),
+        dirty: true,
+        loading: false,
+        visible: false
+    },
+    averageContributions: {
+        element: document.querySelector("#reports-average-contributions-section"),
+        dirty: true,
+        loading: false,
+        visible: false
+    },
+    planning: {
+        element: document.querySelector("#reports-planning-section"),
+        dirty: true,
+        loading: false,
+        visible: false
+    },
+    history: {
+        element: document.querySelector("#reports-history-section"),
+        dirty: true,
+        loading: false,
+        visible: false
+    }
+};
+const reportSectionKeys = Object.keys(reportSections);
 
 function locale() {
     return currentLanguage === "en" ? "en-US" : "pl-PL";
@@ -239,6 +280,86 @@ function escapeHtml(value) {
             .replaceAll("'", "&#39;");
 }
 
+function createPdfIcon() {
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("fill", "none");
+    icon.setAttribute("stroke", "currentColor");
+    icon.setAttribute("stroke-width", "2");
+    icon.setAttribute("stroke-linecap", "round");
+    icon.setAttribute("stroke-linejoin", "round");
+    icon.setAttribute("aria-hidden", "true");
+
+    [
+        "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z",
+        "M14 2v6h6",
+        "M8 13h2a2 2 0 0 1 0 4H8v-4Z",
+        "M14 13v4",
+        "M17 13h-3"
+    ].forEach((value) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", value);
+        icon.append(path);
+    });
+
+    return icon;
+}
+
+function createFilterIcon() {
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("fill", "none");
+    icon.setAttribute("stroke", "currentColor");
+    icon.setAttribute("stroke-width", "2");
+    icon.setAttribute("stroke-linecap", "round");
+    icon.setAttribute("stroke-linejoin", "round");
+    icon.setAttribute("aria-hidden", "true");
+
+    [
+        "M3 6h18",
+        "M7 12h10",
+        "M10 18h4"
+    ].forEach((value) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", value);
+        icon.append(path);
+    });
+
+    return icon;
+}
+
+function closeReportFilterMenus(exceptButton = null, restoreFocus = false) {
+    reportFilterButtons.forEach((button) => {
+        if (button === exceptButton) {
+            return;
+        }
+        const popover = button.closest(".report-filter-menu")?.querySelector(".report-filter-popover");
+        const shouldRestoreFocus = restoreFocus
+                && popover
+                && document.activeElement instanceof Element
+                && popover.contains(document.activeElement);
+        button.setAttribute("aria-expanded", "false");
+        if (popover) {
+            popover.hidden = true;
+        }
+        if (shouldRestoreFocus) {
+            button.focus();
+        }
+    });
+}
+
+function toggleReportFilterMenu(button) {
+    const popover = button.closest(".report-filter-menu")?.querySelector(".report-filter-popover");
+    if (!popover) {
+        return;
+    }
+
+    const shouldOpen = popover.hidden;
+    closeReportFilterMenus(button);
+    popover.hidden = !shouldOpen;
+    button.setAttribute("aria-expanded", String(shouldOpen));
+}
+
 function setMessage(text, type = "") {
     messageElement.textContent = text;
     messageElement.dataset.type = type;
@@ -247,6 +368,11 @@ function setMessage(text, type = "") {
 function setHistoryMessage(text, type = "") {
     historyMessageElement.textContent = text;
     historyMessageElement.dataset.type = type;
+}
+
+function setOverviewMessage(text, type = "") {
+    overviewMessageElement.textContent = text;
+    overviewMessageElement.dataset.type = type;
 }
 
 function setAverageContributionsMessage(text, type = "") {
@@ -1325,8 +1451,10 @@ function renderOverviewChart(rows) {
 }
 
 function renderOverview(toDate) {
+    setOverviewMessage("");
     const rawRows = buildOverviewRows(cachedSnapshots, toDate, currentOverviewScope);
     if (rawRows.length === 0) {
+        clearReportPdfData("overview");
         renderOverviewEmpty(messages["reports.overview.empty"]);
         return;
     }
@@ -1340,6 +1468,29 @@ function renderOverview(toDate) {
         };
     });
 
+    reportPdfData.overview = {
+        title: messages["reports.overview.title"],
+        subtitle: currentOverviewScope === "banks" ? messages["reports.scope.banks"] : messages["reports.scope.accounts"],
+        chartType: "pie",
+        chart: {
+            rows,
+            otherLabel: messages["reports.overview.other"]
+        },
+        table: {
+            columns: [
+                messages["reports.table.name"],
+                messages["reports.table.currency"],
+                messages["reports.overview.balance"],
+                messages["reports.overview.share"]
+            ],
+            rows: rows.map((row) => [
+                row.name,
+                row.currencyCode,
+                formatAmount(row.balance),
+                formatPercent(row.sharePercent)
+            ])
+        }
+    };
     renderOverviewTable(rows);
     renderOverviewChart(rows);
 }
@@ -1480,21 +1631,6 @@ function renderHistoryPagination(pageData) {
     historyNextPageButton.disabled = pageData.last || pageData.totalElements === 0;
 }
 
-function renderHistory() {
-    const range = resolveHistoryRange();
-    const matrix = historyMatrixForRange(range);
-    if (matrix.accounts.length === 0) {
-        renderHistoryEmpty(messages["reports.history.empty"]);
-        setHistoryMessage("");
-        return;
-    }
-
-    const pagedMatrix = paginateHistoryMatrix(matrix);
-    renderHistoryTable(pagedMatrix);
-    renderHistoryPagination(pagedMatrix);
-    setHistoryMessage("");
-}
-
 function updateCustomPeriodVisibility() {
     syncRangeInputs(periodSelect.value, resolveDateRange, dateFromInput, dateToInput);
     const isCustom = periodSelect.value === "custom";
@@ -1511,120 +1647,556 @@ function updateHistoryCustomPeriodVisibility() {
     });
 }
 
-function renderHistorySection() {
-    if (!snapshotsLoaded) {
+function markReportSectionsDirty(keys = reportSectionKeys) {
+    keys.forEach((key) => {
+        if (reportSections[key]) {
+            reportSections[key].dirty = true;
+        }
+    });
+}
+
+function reportSectionKeyForElement(element) {
+    return reportSectionKeys.find((key) => reportSections[key].element === element);
+}
+
+function clearReportPdfData(key) {
+    delete reportPdfData[key];
+}
+
+async function ensureSnapshotsLoaded(force = false) {
+    if (force) {
+        snapshotsLoaded = false;
+        snapshotsPromise = null;
+    }
+
+    if (snapshotsLoaded && snapshotsPromise) {
+        return snapshotsPromise;
+    }
+
+    if (!snapshotsPromise) {
+        snapshotsPromise = fetch("/api/snapshots")
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(messages["reports.error.load"]);
+                    }
+                    return response.json();
+                })
+                .then((snapshots) => {
+                    cachedSnapshots = snapshots;
+                    snapshotsLoaded = true;
+                    snapshotsVersion += 1;
+                    invalidateAverageContributionReportCache();
+                    invalidateHistoryCache();
+                    return cachedSnapshots;
+                })
+                .catch((error) => {
+                    snapshotsLoaded = false;
+                    snapshotsPromise = null;
+                    throw error;
+                });
+    }
+
+    return snapshotsPromise;
+}
+
+async function ensureLatestSavingsForecastLoaded(force = false) {
+    if (force) {
+        cachedSavingsForecast = null;
+        savingsForecastPromise = null;
+    }
+
+    if (!savingsForecastPromise) {
+        savingsForecastPromise = fetch("/api/savings-planning/forecasts/latest", {
+            cache: "no-store"
+        })
+                .then((response) => {
+                    if (response.status === 204) {
+                        return null;
+                    }
+
+                    if (!response.ok) {
+                        console.warn("Failed to load latest savings forecast for reports.", {status: response.status});
+                        return null;
+                    }
+
+                    return response.json();
+                })
+                .catch((error) => {
+                    console.warn("Failed to fetch latest savings forecast for reports.", error);
+                    return null;
+                })
+                .then((forecast) => {
+                    cachedSavingsForecast = forecast;
+                    return cachedSavingsForecast;
+                });
+    }
+
+    return savingsForecastPromise;
+}
+
+async function renderSummaryReportSection() {
+    await ensureSnapshotsLoaded();
+    setMessage("");
+    const range = resolveDateRange();
+    const {rows, step, checkpoints} = buildRows(cachedSnapshots, range, currentScope);
+    setMessage(displayRangeLabel(range, periodSelect.value));
+
+    if (rows.length === 0) {
+        clearReportPdfData("summary");
+        renderEmpty(messages["reports.empty"]);
         return;
     }
 
-    try {
+    reportPdfData.summary = {
+        title: messages["reports.table.title"],
+        subtitle: displayRangeLabel(range, periodSelect.value),
+        chartType: "line",
+        chart: {rows, checkpoints},
+        table: {
+            columns: [
+                messages["reports.table.name"],
+                messages["reports.table.currency"],
+                messages["reports.table.start"],
+                messages["reports.table.end"],
+                messages["reports.table.change"],
+                messages["reports.table.percent"]
+            ],
+            rows: rows.map((row) => [
+                row.name,
+                row.currencyCode,
+                formatAmount(row.startBalance),
+                formatAmount(row.endBalance),
+                formatChange(row.change),
+                formatPercent(row.changePercent)
+            ])
+        }
+    };
+    renderChart(rows, step, checkpoints);
+    renderTable(rows);
+}
+
+async function renderOverviewReportSection() {
+    await ensureSnapshotsLoaded();
+    renderOverview(todayIsoDate());
+}
+
+async function renderAverageContributionsReportSection() {
+    await ensureSnapshotsLoaded();
+    const averageContributionReport = getAverageContributionReport(cachedSnapshots);
+    if (averageContributionReport.rows.length === 0) {
+        clearReportPdfData("averageContributions");
+        renderAverageContributionsEmpty(messages["reports.average.empty"]);
+        setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
+        return;
+    }
+
+    reportPdfData.averageContributions = {
+        title: messages["reports.average.title"],
+        subtitle: messages["reports.average.hint"] ?? "",
+        table: {
+            columns: [
+                messages["reports.table.name"],
+                messages["reports.history.bank"],
+                messages["reports.table.currency"],
+                messages["reports.average.account"]
+            ],
+            rows: [
+                ...averageContributionReport.rows.map((row) => [row.name, row.bankName, row.currencyCode, formatChange(row.averageContribution)]),
+                ...averageContributionReport.totals.map((total) => [
+                    messages["reports.average.total"],
+                    "",
+                    total.currencyCode,
+                    formatChange(total.averageContribution)
+                ])
+            ]
+        }
+    };
+    renderAverageContributions(averageContributionReport.rows, averageContributionReport.totals);
+    setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
+}
+
+async function renderPlanningReportSection() {
+    await ensureSnapshotsLoaded();
+    await ensureLatestSavingsForecastLoaded();
+    const planningReport = buildPlanningRows(cachedSnapshots);
+    if (planningReport.rows.length === 0) {
+        clearReportPdfData("planning");
+        renderPlanningEmpty(messages["reports.planning.empty"]);
+        setPlanningMessage(messages["reports.planning.hint"] ?? "");
+        return;
+    }
+
+    reportPdfData.planning = {
+        title: messages["reports.planning.title"],
+        subtitle: messages["reports.planning.hint"] ?? "",
+        table: {
+            columns: [
+                messages["reports.planning.account"],
+                messages["reports.planning.current"],
+                messages["reports.planning.currentPlan"],
+                messages["reports.planning.currentDiff"],
+                messages["reports.planning.monthly"],
+                messages["reports.planning.yearTarget"],
+                messages["reports.planning.planTarget"],
+                messages["reports.planning.planDiff"]
+            ],
+            rows: [
+                ...planningReport.rows.map((row) => [
+                    `${row.name} (${row.bankName}, ${row.currencyCode})`,
+                    row.currentBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.currentBalance),
+                    row.currentPlannedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.currentPlannedBalance),
+                    row.currentDifferenceToPlan === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.currentDifferenceToPlan),
+                    row.averageContribution === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.averageContribution),
+                    row.projectedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.projectedBalance),
+                    row.plannedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(row.plannedBalance),
+                    row.differenceToPlan === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(row.differenceToPlan)
+                ]),
+                ...planningReport.totals.map((total) => [
+                    `${messages["reports.planning.total"]} [${total.currencyCode}]`,
+                    total.currentBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(total.currentBalance),
+                    total.currentPlannedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(total.currentPlannedBalance),
+                    total.currentDifferenceToPlan === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(total.currentDifferenceToPlan),
+                    total.averageContribution === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(total.averageContribution),
+                    total.projectedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(total.projectedBalance),
+                    total.plannedBalance === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatAmount(total.plannedBalance),
+                    total.differenceToPlan === null ? (messages["reports.planning.noData"] ?? "brak danych") : formatChange(total.differenceToPlan)
+                ])
+            ]
+        }
+    };
+    renderPlanning(planningReport.rows, planningReport.totals);
+    setPlanningMessage(messages["reports.planning.hint"] ?? "");
+}
+
+async function renderHistoryReportSection() {
+    await ensureSnapshotsLoaded();
+    setHistoryMessage("");
+    const range = resolveHistoryRange();
+    const matrix = historyMatrixForRange(range);
+    if (matrix.accounts.length === 0) {
+        clearReportPdfData("history");
+        renderHistoryEmpty(messages["reports.history.empty"]);
         setHistoryMessage("");
-        renderHistory();
-    } catch (error) {
-        renderHistoryEmpty(error.message);
-        setHistoryMessage(error.message, "error");
-    } finally {
-        updateReportsNavActiveState();
-        scheduleReportsNavPanelStickyStateUpdate();
-    }
-}
-
-function renderReports() {
-    if (!snapshotsLoaded) {
         return;
     }
 
-    try {
-        setMessage("");
-        const range = resolveDateRange();
-        const averageContributionReport = getAverageContributionReport(cachedSnapshots);
-        const planningReport = buildPlanningRows(cachedSnapshots);
-        const {rows, step, checkpoints} = buildRows(cachedSnapshots, range, currentScope);
-        if (averageContributionReport.rows.length === 0) {
-            renderAverageContributionsEmpty(messages["reports.average.empty"]);
-            setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
-        } else {
-            renderAverageContributions(averageContributionReport.rows, averageContributionReport.totals);
-            setAverageContributionsMessage(messages["reports.average.hint"] ?? "");
-        }
+    const pagedMatrix = paginateHistoryMatrix(matrix);
+    renderHistoryTable(pagedMatrix);
+    renderHistoryPagination(pagedMatrix);
+    setHistoryMessage("");
+    clearReportPdfData("history");
+}
 
-        if (planningReport.rows.length === 0) {
-            renderPlanningEmpty(messages["reports.planning.empty"]);
-            setPlanningMessage(messages["reports.planning.hint"] ?? "");
-        } else {
-            renderPlanning(planningReport.rows, planningReport.totals);
-            setPlanningMessage(messages["reports.planning.hint"] ?? "");
-        }
+function buildHistoryPdfExportData() {
+    const range = resolveHistoryRange();
+    const matrix = historyMatrixForRange(range);
+    const columns = [
+        messages["reports.history.date"],
+        messages["reports.history.account"],
+        messages["reports.history.bank"],
+        messages["reports.table.currency"],
+        messages["reports.history.balance"],
+        messages["reports.history.diff"]
+    ];
 
-        if (rows.length === 0) {
-            renderEmpty(messages["reports.empty"]);
-            renderOverviewEmpty(messages["reports.overview.empty"]);
-            renderHistoryEmpty(messages["reports.history.empty"]);
-            setHistoryMessage("");
-            return;
-        }
+    if (matrix.accounts.length === 0) {
+        return {
+            title: messages["reports.history.title"],
+            table: {
+                columns,
+                rows: []
+            }
+        };
+    }
 
-        setMessage(displayRangeLabel(range, periodSelect.value));
-        renderChart(rows, step, checkpoints);
-        renderTable(rows);
-        renderOverview(todayIsoDate());
-        renderHistorySection();
-    } catch (error) {
+    const rows = [];
+    for (const row of matrix.rows) {
+        for (let index = 0; index < row.values.length; index += 1) {
+            const value = row.values[index];
+            if (!value) {
+                continue;
+            }
+
+            const account = matrix.accounts[index];
+            rows.push([
+                formatDate(row.date),
+                account.accountName,
+                account.bankName,
+                account.currencyCode,
+                formatAmount(value.balance),
+                formatChange(value.diff)
+            ]);
+
+            if (rows.length > MAX_REPORT_PDF_TABLE_ROWS) {
+                throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                        .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+            }
+        }
+    }
+
+    return {
+        title: messages["reports.history.title"],
+        table: {
+            columns,
+            rows
+        }
+    };
+}
+
+function renderReportSectionError(key, error) {
+    clearReportPdfData(key);
+    if (key === "summary") {
         renderEmpty(error.message);
-        renderOverviewEmpty(error.message);
-        renderAverageContributionsEmpty(error.message);
-        renderPlanningEmpty(error.message);
-        renderHistoryEmpty(error.message);
         setMessage(error.message, "error");
+    } else if (key === "overview") {
+        renderOverviewEmpty(error.message);
+        setOverviewMessage(error.message, "error");
+    } else if (key === "averageContributions") {
+        renderAverageContributionsEmpty(error.message);
         setAverageContributionsMessage(error.message, "error");
+    } else if (key === "planning") {
+        renderPlanningEmpty(error.message);
         setPlanningMessage(error.message, "error");
+    } else if (key === "history") {
+        renderHistoryEmpty(error.message);
         setHistoryMessage(error.message, "error");
-    } finally {
-        updateReportsNavActiveState();
-        scheduleReportsNavPanelStickyStateUpdate();
     }
 }
 
-async function loadReports() {
-    const snapshotsResponse = await fetch("/api/snapshots");
+function showReportPdfError(key, error) {
+    if (key === "summary") {
+        setMessage(error.message, "error");
+    } else if (key === "overview") {
+        setOverviewMessage(error.message, "error");
+    } else if (key === "averageContributions") {
+        setAverageContributionsMessage(error.message, "error");
+    } else if (key === "planning") {
+        setPlanningMessage(error.message, "error");
+    } else if (key === "history") {
+        setHistoryMessage(error.message, "error");
+    }
+}
 
-    if (!snapshotsResponse.ok) {
+async function renderReportSection(key) {
+    if (key === "summary") {
+        await renderSummaryReportSection();
+    } else if (key === "overview") {
+        await renderOverviewReportSection();
+    } else if (key === "averageContributions") {
+        await renderAverageContributionsReportSection();
+    } else if (key === "planning") {
+        await renderPlanningReportSection();
+    } else if (key === "history") {
+        await renderHistoryReportSection();
+    }
+}
+
+async function renderReportSectionIfVisible(key) {
+    const section = reportSections[key];
+    if (!section || !section.visible || !section.dirty || section.loading) {
+        return;
+    }
+
+    section.loading = true;
+    section.dirty = false;
+    try {
+        await renderReportSection(key);
+    } catch (error) {
+        renderReportSectionError(key, error);
+    } finally {
+        section.loading = false;
+        updateReportsNavActiveState();
+        scheduleReportsNavPanelStickyStateUpdate();
+        if (section.visible && section.dirty) {
+            void renderReportSectionIfVisible(key);
+        }
+    }
+}
+
+async function renderReportSectionForExport(key) {
+    const section = reportSections[key];
+    if (!section || section.loading || !section.dirty) {
+        return;
+    }
+
+    section.loading = true;
+    section.dirty = false;
+    try {
+        await renderReportSection(key);
+    } catch (error) {
+        section.dirty = true;
+        throw error;
+    } finally {
+        section.loading = false;
+        updateReportsNavActiveState();
+        scheduleReportsNavPanelStickyStateUpdate();
+        if (section.visible && section.dirty) {
+            void renderReportSectionIfVisible(key);
+        }
+    }
+}
+
+function renderVisibleReportSections(keys = reportSectionKeys) {
+    keys.forEach((key) => {
+        void renderReportSectionIfVisible(key);
+    });
+}
+
+function initializeReportLazyLoading() {
+    if (!("IntersectionObserver" in window)) {
+        reportSectionKeys.forEach((key) => {
+            reportSections[key].visible = true;
+        });
+        renderVisibleReportSections();
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            const key = reportSectionKeyForElement(entry.target);
+            if (!key) {
+                return;
+            }
+
+            reportSections[key].visible = entry.isIntersecting;
+            if (entry.isIntersecting) {
+                void renderReportSectionIfVisible(key);
+            }
+        });
+    }, {threshold: 0.01});
+
+    reportSectionKeys.forEach((key) => {
+        const section = reportSections[key];
+        if (section.element) {
+            observer.observe(section.element);
+        }
+    });
+}
+
+async function refreshVisibleReports() {
+    await ensureSnapshotsLoaded(true);
+    if (reportSections.planning.visible) {
+        await ensureLatestSavingsForecastLoaded(true);
+    } else {
+        cachedSavingsForecast = null;
+        savingsForecastPromise = null;
+    }
+    markReportSectionsDirty();
+    renderVisibleReportSections();
+}
+
+function waitForSectionIdle(key) {
+    return new Promise((resolve) => {
+        function check() {
+            if (!reportSections[key]?.loading) {
+                resolve();
+                return;
+            }
+            window.setTimeout(check, 40);
+        }
+        check();
+    });
+}
+
+function reportPdfFilename(title) {
+    const slug = title.toLowerCase()
+            .normalize("NFKD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "") || "raport";
+    return `${slug}.pdf`;
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function parseFilenameFromDisposition(headerValue) {
+    if (!headerValue) {
+        return "";
+    }
+
+    const utfMatch = headerValue.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utfMatch) {
+        try {
+            return decodeURIComponent(utfMatch[1]);
+        } catch {
+            return utfMatch[1];
+        }
+    }
+
+    const plainMatch = headerValue.match(/filename=\"?([^\";]+)\"?/i);
+    return plainMatch ? plainMatch[1] : "";
+}
+
+async function requestReportPdf(key, data) {
+    const response = await fetch(`/api/reports/pdf/${encodeURIComponent(key)}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        let message = messages["reports.error.load"];
+        try {
+            const error = await response.json();
+            if (error?.message) {
+                message = error.message;
+            }
+        } catch {
+        }
+        throw new Error(message);
+    }
+
+    const contentType = response.headers.get("Content-Type") || "";
+    if (!contentType.toLowerCase().startsWith("application/pdf")) {
         throw new Error(messages["reports.error.load"]);
     }
 
-    cachedSnapshots = await snapshotsResponse.json();
-    snapshotsLoaded = true;
-    snapshotsVersion += 1;
-    invalidateAverageContributionReportCache();
-    invalidateHistoryCache();
-    renderReports();
-
-    void loadLatestSavingsForecastForReports();
+    return {
+        blob: await response.blob(),
+        filename: parseFilenameFromDisposition(response.headers.get("Content-Disposition")) || reportPdfFilename(data.title || "raport")
+    };
 }
 
-async function loadLatestSavingsForecastForReports() {
-    const savingsForecastResponse = await fetch("/api/savings-planning/forecasts/latest", {
-        cache: "no-store"
-    }).catch((error) => {
-        console.warn("Failed to fetch latest savings forecast for reports.", error);
-        return null;
-    });
-
-    if (!savingsForecastResponse) {
-        cachedSavingsForecast = null;
-    } else if (savingsForecastResponse.status === 204) {
-        cachedSavingsForecast = null;
-    } else if (savingsForecastResponse.ok) {
-        cachedSavingsForecast = await savingsForecastResponse.json();
-    } else {
-        console.warn(
-                "Failed to load latest savings forecast for reports.",
-                {status: savingsForecastResponse.status}
-        );
-        cachedSavingsForecast = null;
+async function exportReportSectionToPdf(key, button) {
+    const sectionState = reportSections[key];
+    if (!sectionState?.element) {
+        return;
     }
 
-    if (snapshotsLoaded) {
-        renderReports();
+    button.disabled = true;
+    try {
+        await waitForSectionIdle(key);
+        if (sectionState.dirty) {
+            await renderReportSectionForExport(key);
+        }
+        await waitForSectionIdle(key);
+        const data = key === "history"
+                ? buildHistoryPdfExportData()
+                : reportPdfData[key];
+        if (!data) {
+            throw new Error(messages["reports.error.load"]);
+        }
+        if ((data.table?.rows?.length ?? 0) > MAX_REPORT_PDF_TABLE_ROWS) {
+            throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                    .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+        }
+        const pdf = await requestReportPdf(key, data);
+        downloadBlob(pdf.blob, pdf.filename);
+    } catch (error) {
+        showReportPdfError(key, error);
+    } finally {
+        button.disabled = false;
     }
 }
 
@@ -1640,6 +2212,8 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     overviewScopeTabs.setAttribute("aria-label", messages["reports.controls.scope.overview"]);
     historyPaginationElement.setAttribute("aria-label", messages["reports.history.pagination.aria"]);
     reportsNavElement.setAttribute("aria-label", messages["reports.nav.aria"]);
+    reportFilterButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.filters"]));
+    reportPdfButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.pdf"]));
     if (!dateToInput.value) {
         dateToInput.value = todayIsoDate();
     }
@@ -1652,13 +2226,15 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     if (!historyDateFromInput.value) {
         historyDateFromInput.value = shiftDate(todayIsoDate(), periodOffsets["1m"]);
     }
-    renderReports();
+    markReportSectionsDirty();
+    renderVisibleReportSections();
 }
 
 [periodSelect, dateFromInput, dateToInput].forEach((input) => {
     input.addEventListener("change", () => {
         updateCustomPeriodVisibility();
-        renderReports();
+        markReportSectionsDirty(["summary"]);
+        renderVisibleReportSections(["summary"]);
     });
 });
 
@@ -1668,7 +2244,8 @@ scopeTabs.forEach((tab) => {
         scopeTabs.forEach((scopeTab) => {
             scopeTab.setAttribute("aria-selected", String(scopeTab === tab));
         });
-        renderReports();
+        markReportSectionsDirty(["summary"]);
+        renderVisibleReportSections(["summary"]);
     });
 });
 
@@ -1678,25 +2255,25 @@ overviewTabs.forEach((tab) => {
         overviewTabs.forEach((overviewTab) => {
             overviewTab.setAttribute("aria-selected", String(overviewTab === tab));
         });
-        renderReports();
+        markReportSectionsDirty(["overview"]);
+        renderVisibleReportSections(["overview"]);
     });
 });
 
 refreshButton.addEventListener("click", () => {
-    loadReports().catch((error) => {
-        renderEmpty(error.message);
-        renderOverviewEmpty(error.message);
-        renderAverageContributionsEmpty(error.message);
-        renderPlanningEmpty(error.message);
-        setMessage(error.message, "error");
-        setAverageContributionsMessage(error.message, "error");
-        setPlanningMessage(error.message, "error");
+    refreshVisibleReports().catch((error) => {
+        reportSectionKeys.forEach((key) => {
+            if (reportSections[key].visible) {
+                renderReportSectionError(key, error);
+            }
+        });
     });
 });
 
 refreshHistoryButton.addEventListener("click", () => {
     currentHistoryPage = 0;
-    renderHistorySection();
+    markReportSectionsDirty(["history"]);
+    renderVisibleReportSections(["history"]);
 });
 
 historyPreviousPageButton.addEventListener("click", () => {
@@ -1705,17 +2282,36 @@ historyPreviousPageButton.addEventListener("click", () => {
     }
 
     currentHistoryPage -= 1;
-    renderHistorySection();
+    markReportSectionsDirty(["history"]);
+    renderVisibleReportSections(["history"]);
 });
 
 historyNextPageButton.addEventListener("click", () => {
     currentHistoryPage += 1;
-    renderHistorySection();
+    markReportSectionsDirty(["history"]);
+    renderVisibleReportSections(["history"]);
 });
 
 historyPageSizeSelect.addEventListener("change", () => {
     currentHistoryPage = 0;
-    renderHistorySection();
+    markReportSectionsDirty(["history"]);
+    renderVisibleReportSections(["history"]);
+});
+
+reportPdfButtons.forEach((button) => {
+    button.append(createPdfIcon());
+    MoneySnapshotUi.setTooltip(button, button.textContent.trim());
+    button.addEventListener("click", () => {
+        void exportReportSectionToPdf(button.dataset.reportSection, button);
+    });
+});
+
+reportFilterButtons.forEach((button) => {
+    button.append(createFilterIcon());
+    MoneySnapshotUi.setTooltip(button, button.textContent.trim());
+    button.addEventListener("click", () => {
+        toggleReportFilterMenu(button);
+    });
 });
 
 updateCustomPeriodVisibility();
@@ -1727,7 +2323,8 @@ updateReportsNavPanelStickyState();
     input.addEventListener("change", () => {
         currentHistoryPage = 0;
         updateHistoryCustomPeriodVisibility();
-        renderHistorySection();
+        markReportSectionsDirty(["history"]);
+        renderVisibleReportSections(["history"]);
     });
 });
 
@@ -1735,6 +2332,16 @@ window.addEventListener("scroll", updateReportsNavActiveState, {passive: true});
 window.addEventListener("scroll", scheduleReportsNavPanelStickyStateUpdate, {passive: true});
 window.addEventListener("resize", handleReportsNavResize);
 reportsNavStickyMedia.addEventListener("change", handleReportsNavResize);
+document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest(".report-filter-menu")) {
+        closeReportFilterMenus();
+    }
+});
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeReportFilterMenus(null, true);
+    }
+});
 
 MoneySnapshotI18n.init({
     endpoint: "/api/reports/messages",
@@ -1745,16 +2352,10 @@ MoneySnapshotI18n.init({
         .then(() => MoneySnapshotUi.loadUserSettings())
         .then((settings) => {
             userSettings = settings;
+            updateCustomPeriodVisibility();
+            updateHistoryCustomPeriodVisibility();
+            initializeReportLazyLoading();
         })
-        .then(loadReports)
         .catch((error) => {
-        renderEmpty(error.message);
-        renderOverviewEmpty(error.message);
-        renderAverageContributionsEmpty(error.message);
-        renderPlanningEmpty(error.message);
-        renderHistoryEmpty(error.message);
-        setMessage(error.message, "error");
-        setAverageContributionsMessage(error.message, "error");
-        setPlanningMessage(error.message, "error");
-        setHistoryMessage(error.message, "error");
-    });
+            reportSectionKeys.forEach((key) => renderReportSectionError(key, error));
+        });

@@ -356,6 +356,8 @@ public class MessageBundleService {
     );
 
     private static final Set<String> REPORT_PAGE_KEYS = Set.of(
+            "reports.actions.pdf",
+            "reports.actions.filters",
             "reports.actions.refresh",
             "reports.average.account",
             "reports.average.empty",
@@ -375,6 +377,7 @@ public class MessageBundleService {
             "reports.error.customRange",
             "reports.error.historyRangeTooLarge",
             "reports.error.load",
+            "reports.error.pdfRowLimit",
             "reports.heading.eyebrow",
             "reports.heading.subtitle",
             "reports.heading.title",
@@ -422,6 +425,7 @@ public class MessageBundleService {
             "reports.history.title",
             "reports.overview.balance",
             "reports.overview.empty",
+            "reports.overview.other",
             "reports.overview.share",
             "reports.overview.title",
             "reports.table.change",
@@ -505,6 +509,9 @@ public class MessageBundleService {
             "settings.form.dateTimeFormat",
             "settings.form.defaultCurrency",
             "settings.form.moneyFormat",
+            "settings.form.theme",
+            "settings.form.theme.dark",
+            "settings.form.theme.light",
             "settings.form.required",
             "settings.form.submit",
             "settings.form.success",
@@ -576,7 +583,7 @@ public class MessageBundleService {
                 .sorted()
                 .collect(java.util.stream.Collectors.toMap(
                         key -> key,
-                        key -> messageSource.getMessage(key, null, locale),
+                        key -> messageSource.getMessage(key, null, key, locale),
                         (left, right) -> left,
                         java.util.LinkedHashMap::new
                 ));

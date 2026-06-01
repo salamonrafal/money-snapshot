@@ -17,31 +17,41 @@
         <div class="section-header">
             <h2 id="reports-title" data-i18n="reports.table.title">Zestawienie zmian</h2>
             <div class="section-actions report-controls">
-                <div class="report-tabs" id="report-scope-tabs" role="tablist" aria-label="Widok raportu">
-                    <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
-                    <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="total" data-i18n="reports.scope.total">Wszystkie konta</button>
-                    <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
+                <div class="report-filter-menu">
+                    <button type="button" class="icon-button secondary report-filter-button" aria-expanded="false" data-i18n-title="reports.actions.filters" data-i18n-aria-label="reports.actions.filters">
+                        <span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span>
+                    </button>
+                    <div class="report-filter-popover" hidden>
+                        <div class="report-tabs" id="report-scope-tabs" role="tablist" aria-label="Widok raportu">
+                            <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
+                            <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="total" data-i18n="reports.scope.total">Wszystkie konta</button>
+                            <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
+                        </div>
+                        <label class="compact-field">
+                            <span data-i18n="reports.controls.period">Okres</span>
+                            <select id="report-period">
+                                <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
+                                <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
+                                <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
+                                <option value="1y" data-i18n="reports.period.1y">1 rok</option>
+                                <option value="2y" data-i18n="reports.period.2y">2 lata</option>
+                                <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
+                            </select>
+                        </label>
+                        <label class="compact-field custom-period-field" hidden>
+                            <span data-i18n="reports.controls.from">Od</span>
+                            <input type="date" id="report-date-from">
+                        </label>
+                        <label class="compact-field custom-period-field" hidden>
+                            <span data-i18n="reports.controls.to">Do</span>
+                            <input type="date" id="report-date-to">
+                        </label>
+                        <button type="button" class="button secondary compact" id="refresh-reports" data-i18n="reports.actions.refresh">Odśwież</button>
+                    </div>
                 </div>
-                <label class="compact-field">
-                    <span data-i18n="reports.controls.period">Okres</span>
-                    <select id="report-period">
-                        <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
-                        <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
-                        <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
-                        <option value="1y" data-i18n="reports.period.1y">1 rok</option>
-                        <option value="2y" data-i18n="reports.period.2y">2 lata</option>
-                        <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
-                    </select>
-                </label>
-                <label class="compact-field custom-period-field" hidden>
-                    <span data-i18n="reports.controls.from">Od</span>
-                    <input type="date" id="report-date-from">
-                </label>
-                <label class="compact-field custom-period-field" hidden>
-                    <span data-i18n="reports.controls.to">Do</span>
-                    <input type="date" id="report-date-to">
-                </label>
-                <button type="button" class="button secondary compact" id="refresh-reports" data-i18n="reports.actions.refresh">Odśwież</button>
+                <button type="button" class="icon-button secondary report-pdf-button" data-report-section="summary" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
+                    <span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span>
+                </button>
             </div>
         </div>
         <p class="form-message" id="reports-message" role="status"></p>
@@ -73,12 +83,23 @@
         <div class="section-header">
             <h2 id="overview-title" data-i18n="reports.overview.title">Przegląd sald</h2>
             <div class="section-actions report-controls">
-                <div class="report-tabs" id="overview-scope-tabs" role="tablist" aria-label="Widok przeglądu sald">
-                    <button type="button" class="report-tab overview-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
-                    <button type="button" class="report-tab overview-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
+                <div class="report-filter-menu">
+                    <button type="button" class="icon-button secondary report-filter-button" aria-expanded="false" data-i18n-title="reports.actions.filters" data-i18n-aria-label="reports.actions.filters">
+                        <span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span>
+                    </button>
+                    <div class="report-filter-popover" hidden>
+                        <div class="report-tabs" id="overview-scope-tabs" role="tablist" aria-label="Widok przeglądu sald">
+                            <button type="button" class="report-tab overview-tab" role="tab" aria-selected="true" data-scope="accounts" data-i18n="reports.scope.accounts">Konta</button>
+                            <button type="button" class="report-tab overview-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
+                        </div>
+                    </div>
                 </div>
+                <button type="button" class="icon-button secondary report-pdf-button" data-report-section="overview" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
+                    <span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span>
+                </button>
             </div>
         </div>
+        <p class="form-message" id="overview-message" role="status"></p>
         <div class="report-content overview-content">
             <div class="report-chart" id="overview-chart" aria-label="Wykres kołowy sald"></div>
             <div class="table-wrap">
@@ -104,6 +125,11 @@
     <section class="table-panel table-panel-wide report-panel" id="reports-average-contributions-section" aria-labelledby="average-contributions-title">
         <div class="section-header">
             <h2 id="average-contributions-title" data-i18n="reports.average.title">Średnie wpłaty</h2>
+            <div class="section-actions report-controls">
+                <button type="button" class="icon-button secondary report-pdf-button" data-report-section="averageContributions" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
+                    <span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span>
+                </button>
+            </div>
         </div>
         <p class="form-message" id="average-contributions-message" role="status"></p>
         <div class="report-content average-contributions-content">
@@ -131,6 +157,11 @@
     <section class="table-panel table-panel-wide report-panel" id="reports-planning-section" aria-labelledby="planning-title">
         <div class="section-header">
             <h2 id="planning-title" data-i18n="reports.planning.title">Planowanie</h2>
+            <div class="section-actions report-controls">
+                <button type="button" class="icon-button secondary report-pdf-button" data-report-section="planning" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
+                    <span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span>
+                </button>
+            </div>
         </div>
         <p class="form-message" id="planning-message" role="status"></p>
         <div class="planning-summary" id="planning-summary"></div>
@@ -168,28 +199,38 @@
         <div class="section-header">
             <h2 id="history-title" data-i18n="reports.history.title">Historia środków</h2>
             <div class="section-actions report-controls">
-                <label class="compact-field">
-                    <span data-i18n="reports.controls.period">Okres</span>
-                    <select id="history-period">
-                        <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
-                        <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
-                        <option value="2m" data-i18n="reports.period.2m">2 miesiące</option>
-                        <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
-                        <option value="6m" data-i18n="reports.period.6m">6 miesięcy</option>
-                        <option value="1y" data-i18n="reports.period.1y">1 rok</option>
-                        <option value="2y" data-i18n="reports.period.2y">2 lata</option>
-                        <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
-                    </select>
-                </label>
-                <label class="compact-field history-custom-period-field" hidden>
-                    <span data-i18n="reports.controls.from">Od</span>
-                    <input type="date" id="history-date-from">
-                </label>
-                <label class="compact-field history-custom-period-field" hidden>
-                    <span data-i18n="reports.controls.to">Do</span>
-                    <input type="date" id="history-date-to">
-                </label>
-                <button type="button" class="button secondary compact" id="refresh-history" data-i18n="reports.actions.refresh">Odśwież</button>
+                <div class="report-filter-menu">
+                    <button type="button" class="icon-button secondary report-filter-button" aria-expanded="false" data-i18n-title="reports.actions.filters" data-i18n-aria-label="reports.actions.filters">
+                        <span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span>
+                    </button>
+                    <div class="report-filter-popover" hidden>
+                        <label class="compact-field">
+                            <span data-i18n="reports.controls.period">Okres</span>
+                            <select id="history-period">
+                                <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
+                                <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
+                                <option value="2m" data-i18n="reports.period.2m">2 miesiące</option>
+                                <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
+                                <option value="6m" data-i18n="reports.period.6m">6 miesięcy</option>
+                                <option value="1y" data-i18n="reports.period.1y">1 rok</option>
+                                <option value="2y" data-i18n="reports.period.2y">2 lata</option>
+                                <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
+                            </select>
+                        </label>
+                        <label class="compact-field history-custom-period-field" hidden>
+                            <span data-i18n="reports.controls.from">Od</span>
+                            <input type="date" id="history-date-from">
+                        </label>
+                        <label class="compact-field history-custom-period-field" hidden>
+                            <span data-i18n="reports.controls.to">Do</span>
+                            <input type="date" id="history-date-to">
+                        </label>
+                        <button type="button" class="button secondary compact" id="refresh-history" data-i18n="reports.actions.refresh">Odśwież</button>
+                    </div>
+                </div>
+                <button type="button" class="icon-button secondary report-pdf-button" data-report-section="history" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
+                    <span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span>
+                </button>
             </div>
         </div>
         <p class="form-message" id="history-message" role="status"></p>
