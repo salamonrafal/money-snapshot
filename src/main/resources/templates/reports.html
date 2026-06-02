@@ -4,7 +4,7 @@
 <body>
 <header th:replace="~{fragments/page :: header('reports')}"></header>
 
-<main class="workspace">
+<main class="workspace reports-workspace">
     <section class="page-heading">
         <p class="eyebrow" data-i18n="reports.heading.eyebrow">Analiza zmian</p>
         <h1 data-i18n="reports.heading.title">Raporty zmian</h1>
@@ -265,6 +265,15 @@
         </div>
 
         <aside class="table-panel reports-nav-panel" aria-labelledby="reports-nav-title">
+            <div class="reports-toolbar" aria-label="Akcje cache raportów">
+                <span class="visually-hidden" data-i18n="reports.cache.title">Narzędzia cache</span>
+                <div class="reports-toolbar-actions">
+                    <button type="button" class="icon-button secondary" id="clear-reports-cache" data-i18n-title="reports.actions.clearCache" data-i18n-aria-label="reports.actions.clearCache">
+                        <span class="visually-hidden" data-i18n="reports.actions.clearCache">Wyczyść cache</span>
+                    </button>
+                </div>
+            </div>
+            <p class="form-message" id="reports-toolbar-message" role="status"></p>
             <h2 id="reports-nav-title" data-i18n="reports.nav.title">Odnośniki</h2>
             <nav class="reports-nav" aria-label="Raporty">
                 <a href="#reports-summary-section" data-target="reports-summary-section" data-i18n="reports.table.title">Zestawienie zmian</a>

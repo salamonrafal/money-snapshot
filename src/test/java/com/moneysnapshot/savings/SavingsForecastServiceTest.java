@@ -29,6 +29,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +42,7 @@ class SavingsForecastServiceTest {
     private final AccountRepository accountRepository = mock(AccountRepository.class);
     private final AccountSnapshotRepository snapshotRepository = mock(AccountSnapshotRepository.class);
     private final CurrentUserService currentUserService = mock(CurrentUserService.class);
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
 
     private final SavingsForecastService service = new SavingsForecastService(
             runRepository,
@@ -49,7 +51,8 @@ class SavingsForecastServiceTest {
             monthSummaryRepository,
             accountRepository,
             snapshotRepository,
-            currentUserService
+            currentUserService,
+            eventPublisher
     );
 
     @Test

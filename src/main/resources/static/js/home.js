@@ -83,103 +83,16 @@ function chartEndDate(periodDate) {
     return shiftIsoDate(periodEndDate(periodDate).toISOString().slice(0, 10), -1);
 }
 
-function groupSnapshotsForChart(snapshots, periodDate) {
-    if (!snapshots || snapshots.length === 0) {
+function groupChartPoints(points) {
+    if (!points || points.length === 0) {
         return [];
     }
-
-    const periodStartDate = periodDate ?? new Date().toISOString().slice(0, 7) + "-01";
-    const startDate = chartStartDate(periodStartDate);
-    const endDate = chartEndDate(periodStartDate);
-    const todayDate = new Date().toISOString().slice(0, 10);
-    const shouldMarkToday = todayDate >= startDate && todayDate <= endDate;
-    const sortedSnapshots = [...snapshots].sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
-    const preferredCurrency = sortedSnapshots.some((snapshot) => snapshot.currencyCode === (userSettings?.defaultCurrency ?? "PLN"))
-            ? userSettings?.defaultCurrency ?? "PLN"
-            : sortedSnapshots[0].currencyCode;
-    const latestAmountByAccount = new Map();
-    const points = [];
-    let todayAdded = false;
-
-    sortedSnapshots
-            .filter((snapshot) => snapshot.currencyCode === preferredCurrency && snapshot.snapshotDate < startDate)
-            .forEach((snapshot) => {
-                latestAmountByAccount.set(snapshot.accountId, Number(snapshot.balance));
-            });
-
-    const monthSnapshotsByDate = new Map();
-    sortedSnapshots
-            .filter((snapshot) =>
-                    snapshot.currencyCode === preferredCurrency
-                    && snapshot.snapshotDate >= startDate
-                    && snapshot.snapshotDate <= endDate
-            )
-            .forEach((snapshot) => {
-                const snapshotsForDate = monthSnapshotsByDate.get(snapshot.snapshotDate) ?? [];
-                snapshotsForDate.push(snapshot);
-                monthSnapshotsByDate.set(snapshot.snapshotDate, snapshotsForDate);
-            });
-
-    if (!monthSnapshotsByDate.has(startDate) && latestAmountByAccount.size > 0) {
-        points.push({
-            date: startDate,
-            amount: sumLatestAmounts(latestAmountByAccount),
-            currencyCode: preferredCurrency,
-            type: shouldMarkToday && todayDate === startDate ? "today" : "baseline"
-        });
-        todayAdded = shouldMarkToday && todayDate === startDate;
-    }
-
-    [...monthSnapshotsByDate.entries()].forEach(([date, snapshotsForDate]) => {
-        if (shouldMarkToday && !todayAdded && todayDate < date && latestAmountByAccount.size > 0) {
-            points.push({
-                date: todayDate,
-                amount: sumLatestAmounts(latestAmountByAccount),
-                currencyCode: preferredCurrency,
-                type: "today"
-            });
-            todayAdded = true;
-        }
-
-        snapshotsForDate.forEach((snapshot) => {
-            latestAmountByAccount.set(snapshot.accountId, Number(snapshot.balance));
-        });
-        points.push({
-            date,
-            amount: sumLatestAmounts(latestAmountByAccount),
-            currencyCode: preferredCurrency,
-            type: shouldMarkToday && date === todayDate ? "snapshot-today" : "snapshot"
-        });
-
-        if (shouldMarkToday && date === todayDate) {
-            todayAdded = true;
-        }
-    });
-
-    if (shouldMarkToday && !todayAdded && latestAmountByAccount.size > 0) {
-        points.push({
-            date: todayDate,
-            amount: sumLatestAmounts(latestAmountByAccount),
-            currencyCode: preferredCurrency,
-            type: "today"
-        });
-        todayAdded = true;
-    }
-
-    if (latestAmountByAccount.size > 0 && points.at(-1)?.date !== endDate) {
-        points.push({
-            date: endDate,
-            amount: sumLatestAmounts(latestAmountByAccount),
-            currencyCode: preferredCurrency,
-            type: "end"
-        });
-    }
-
-    return points;
-}
-
-function sumLatestAmounts(latestAmountByAccount) {
-    return [...latestAmountByAccount.values()].reduce((sum, amount) => sum + amount, 0);
+    return points
+            .map((point) => ({
+                ...point,
+                amount: Number(point.amount)
+            }))
+            .sort((left, right) => left.date.localeCompare(right.date));
 }
 
 function linePath(points) {
@@ -233,9 +146,9 @@ function chartValueLabel(point, index, points, height, bottomPadding) {
     return `<text class="chart-value-label" x="${point.x}" y="${y}" text-anchor="${anchor}">${chartAmountLabel(point)}</text>`;
 }
 
-function renderSnapshotChart(snapshots, periodDate) {
+function renderSnapshotChart(chartPoints, periodDate) {
     const chartPeriodDate = periodDate ?? new Date().toISOString().slice(0, 7) + "-01";
-    const data = groupSnapshotsForChart(snapshots, chartPeriodDate);
+    const data = groupChartPoints(chartPoints);
     if (data.length === 0) {
         chartElement.innerHTML = `<div class="chart-empty">-</div>`;
         return;
@@ -256,15 +169,15 @@ function renderSnapshotChart(snapshots, periodDate) {
     const maxAmount = Math.max(...data.map((point) => point.amount));
     const amountRange = maxAmount - minAmount || 1;
 
-    const points = data.map((point) => ({
+    const renderedPoints = data.map((point) => ({
         ...point,
         x: leftPadding + ((new Date(`${point.date}T00:00:00Z`).getTime() - startTime) * (width - leftPadding - rightPadding)) / timeRange,
         y: height - bottomPadding - ((point.amount - minAmount) * (height - topPadding - bottomPadding)) / amountRange
     }));
-    const visiblePoints = points.filter((point) => point.type !== "end");
+    const visiblePoints = renderedPoints.filter((point) => point.type !== "end");
 
-    const line = linePath(points);
-    const area = areaPath(points, height, bottomPadding);
+    const line = linePath(renderedPoints);
+    const area = areaPath(renderedPoints, height, bottomPadding);
 
     chartElement.innerHTML = `
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Snapshot balance line chart">
@@ -289,21 +202,9 @@ async function loadSnapshotPanel() {
     return panel;
 }
 
-async function loadSnapshotChart() {
-    const response = await fetch("/api/snapshots");
-    if (!response.ok) {
-        throw new Error("Cannot load snapshot chart.");
-    }
-
-    return response.json();
-}
-
 async function loadHomeData() {
-    const [panel, snapshots] = await Promise.all([
-        loadSnapshotPanel(),
-        loadSnapshotChart()
-    ]);
-    renderSnapshotChart(snapshots, panel.periodDate);
+    const panel = await loadSnapshotPanel();
+    renderSnapshotChart(panel.chartPoints ?? [], panel.periodDate);
 }
 
 MoneySnapshotI18n.init({

@@ -37,7 +37,7 @@ services:
     container_name: money-snapshot-postgres
     image: postgres:18.4
     ports:
-      - "5455:5432"
+      - "5456:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.moneysnapshot.account.Account;
 import com.moneysnapshot.account.AccountRepository;
+import com.moneysnapshot.report.ReportCacheRefreshService;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.snapshot.web.CreateAccountSnapshotRequest;
 import com.moneysnapshot.snapshot.web.UpdateSnapshotTypeRequest;
@@ -30,11 +31,13 @@ class AccountSnapshotServiceTest {
     private final AccountRepository accountRepository = mock(AccountRepository.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
     private final CurrentUserService currentUserService = mock(CurrentUserService.class);
+    private final ReportCacheRefreshService reportCacheRefreshService = mock(ReportCacheRefreshService.class);
     private final AccountSnapshotService snapshotService = new AccountSnapshotService(
             snapshotRepository,
             accountRepository,
             eventPublisher,
-            currentUserService
+            currentUserService,
+            reportCacheRefreshService
     );
 
     @Test
@@ -95,7 +98,7 @@ class AccountSnapshotServiceTest {
         );
 
         verify(snapshotRepository).save(snapshot);
-        verify(eventPublisher, never()).publishEvent(any(AccountSnapshotCreatedEvent.class));
+        verify(eventPublisher).publishEvent(any(AccountSnapshotCreatedEvent.class));
         org.junit.jupiter.api.Assertions.assertEquals(SnapshotType.FINAL, updatedSnapshot.getSnapshotType());
         org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("123.45"), updatedSnapshot.getBalance());
         org.junit.jupiter.api.Assertions.assertEquals("note", updatedSnapshot.getNote());

@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,6 +41,7 @@ public class SavingsForecastService {
     private final AccountRepository accountRepository;
     private final AccountSnapshotRepository snapshotRepository;
     private final CurrentUserService currentUserService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public SavingsForecastService(
             SavingsForecastRunRepository runRepository,
@@ -48,7 +50,8 @@ public class SavingsForecastService {
             SavingsForecastMonthSummaryRepository monthSummaryRepository,
             AccountRepository accountRepository,
             AccountSnapshotRepository snapshotRepository,
-            CurrentUserService currentUserService
+            CurrentUserService currentUserService,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.runRepository = runRepository;
         this.entryRepository = entryRepository;
@@ -57,6 +60,7 @@ public class SavingsForecastService {
         this.accountRepository = accountRepository;
         this.snapshotRepository = snapshotRepository;
         this.currentUserService = currentUserService;
+        this.eventPublisher = eventPublisher;
     }
 
     public Optional<SavingsForecastRunResponse> latestForecast() {
@@ -67,7 +71,9 @@ public class SavingsForecastService {
 
     @Transactional
     public void deleteAllForecasts() {
-        runRepository.deleteByOwnerId(currentUserService.currentUserId());
+        UUID ownerId = currentUserService.currentUserId();
+        runRepository.deleteByOwnerId(ownerId);
+        eventPublisher.publishEvent(new SavingsForecastChangedEvent(ownerId));
     }
 
     @Transactional
@@ -104,6 +110,7 @@ public class SavingsForecastService {
         List<SavingsForecastMonthSummary> savedMonthSummaries = monthSummaryRepository.saveAll(
                 buildMonthSummaries(run, savedEntries, monthlyBalancesByEntryId)
         );
+        eventPublisher.publishEvent(new SavingsForecastChangedEvent(ownerId));
         return toResponse(run, savedEntries, savedMonthValues, savedMonthSummaries);
     }
 

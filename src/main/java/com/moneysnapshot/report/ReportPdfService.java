@@ -116,6 +116,11 @@ public class ReportPdfService {
         return pdfCache.get(cacheKey);
     }
 
+    public synchronized void clearCache() {
+        pdfCache.clear();
+        pdfCacheBytes = 0L;
+    }
+
     private synchronized void cachePdf(String cacheKey, byte[] pdf) {
         if (pdf.length > MAX_CACHEABLE_PDF_BYTES) {
             return;
@@ -197,17 +202,22 @@ public class ReportPdfService {
             return;
         }
 
-        canvas.ensureSpace(190f);
+        int legendCount = Math.min(rows.size(), 8);
+        int legendColumns = legendCount <= 1 ? 1 : 2;
+        int legendRows = legendCount == 0 ? 0 : (int) Math.ceil(legendCount / (double) legendColumns);
+        float legendAreaHeight = legendCount == 0 ? 0f : 14f + (legendRows * 14f);
+        float chartH = 138f + legendAreaHeight;
+
+        canvas.ensureSpace(chartH + 24f);
         float chartX = MARGIN;
-        float chartY = canvas.currentY() - 170f;
+        float chartY = canvas.currentY() - chartH;
         float chartW = USABLE_WIDTH;
-        float chartH = 150f;
         canvas.rect(chartX, chartY, chartW, chartH, WASH, LINE, true, true);
 
         float plotX = chartX + 46f;
-        float plotY = chartY + 28f;
+        float plotY = chartY + legendAreaHeight + 34f;
         float plotW = chartW - 62f;
-        float plotH = chartH - 52f;
+        float plotH = chartH - legendAreaHeight - 62f;
 
         long startTime = checkpointDates.get(0);
         long endTime = checkpointDates.get(checkpointDates.size() - 1);
@@ -256,15 +266,24 @@ public class ReportPdfService {
             }
 
             if (legendIndex < 8) {
-                float legendX = chartX + 52f + (legendIndex % 4) * 170f;
-                float legendY = (float) (chartY + chartH - 18f - Math.floor(legendIndex / 4d) * 11f);
+                float legendColumnWidth = (chartW - 72f) / legendColumns;
+                float legendX = chartX + 36f + (legendIndex % legendColumns) * legendColumnWidth;
+                float legendY = (float) (chartY + legendAreaHeight - 12f - Math.floor(legendIndex / (double) legendColumns) * 14f);
                 canvas.rect(legendX, legendY - 2f, 7f, 7f, color, null, true, false);
-                canvas.text(row.path("name").asText(""), legendX + 11f, legendY - 1f, 6.5f, false, TEXT);
+                canvas.text(trimLabel(row.path("name").asText(""), 34), legendX + 11f, legendY - 1f, 6.5f, false, TEXT);
             }
             legendIndex += 1;
         }
 
         canvas.setCurrentY(chartY - 16f);
+    }
+
+    private String trimLabel(String value, int maxLength) {
+        String normalized = Objects.requireNonNullElse(value, "");
+        if (normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, Math.max(0, maxLength - 1)) + "…";
     }
 
     private void drawPieChart(PdfCanvas canvas, JsonNode chart) throws IOException {

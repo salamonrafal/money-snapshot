@@ -356,9 +356,14 @@ public class MessageBundleService {
     );
 
     private static final Set<String> REPORT_PAGE_KEYS = Set.of(
+            "reports.actions.clearCache",
             "reports.actions.pdf",
             "reports.actions.filters",
             "reports.actions.refresh",
+            "reports.cache.clearing",
+            "reports.cache.description",
+            "reports.cache.success",
+            "reports.cache.title",
             "reports.average.account",
             "reports.average.empty",
             "reports.average.hint",
@@ -375,6 +380,7 @@ public class MessageBundleService {
             "reports.controls.to",
             "reports.empty",
             "reports.error.customRange",
+            "reports.error.clearCache",
             "reports.error.historyRangeTooLarge",
             "reports.error.load",
             "reports.error.pdfRowLimit",

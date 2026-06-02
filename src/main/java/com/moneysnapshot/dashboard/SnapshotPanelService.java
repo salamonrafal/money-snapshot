@@ -55,6 +55,10 @@ public class SnapshotPanelService {
         cachedPanels.clear();
     }
 
+    public synchronized void clearOwner(UUID ownerId) {
+        cachedPanels.remove(ownerId);
+    }
+
     private SnapshotPanelResponse buildPanel(UUID ownerId) {
         LocalDate periodDate = resolvePeriodStart(LocalDate.now(clock), userSettingsService.currentUserSettings().billingMonthStartDay());
         List<CurrencyAmount> currentBalances = snapshotRepository.sumLatestBalancesByOwnerIdAndCurrency(ownerId);
@@ -66,7 +70,8 @@ public class SnapshotPanelService {
                 calculateMonthlyChangePercent(currentBalances, previousBalances),
                 snapshotRepository.countAccountsWithSnapshotsByOwnerId(ownerId),
                 toResponse(currentBalances),
-                toResponse(monthlyChanges)
+                toResponse(monthlyChanges),
+                List.of()
         );
     }
 

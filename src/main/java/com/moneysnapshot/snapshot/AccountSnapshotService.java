@@ -3,11 +3,11 @@ package com.moneysnapshot.snapshot;
 import com.moneysnapshot.account.Account;
 import com.moneysnapshot.account.AccountRepository;
 import com.moneysnapshot.account.AccountNotFoundException;
+import com.moneysnapshot.report.ReportCacheRefreshService;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.snapshot.web.CreateAccountSnapshotRequest;
 import com.moneysnapshot.snapshot.web.UpdateSnapshotTypeRequest;
-import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -19,6 +19,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class AccountSnapshotService {
@@ -27,17 +30,20 @@ public class AccountSnapshotService {
     private final AccountRepository accountRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final CurrentUserService currentUserService;
+    private final ReportCacheRefreshService reportCacheRefreshService;
 
     public AccountSnapshotService(
             AccountSnapshotRepository snapshotRepository,
             AccountRepository accountRepository,
             ApplicationEventPublisher eventPublisher,
-            CurrentUserService currentUserService
+            CurrentUserService currentUserService,
+            ReportCacheRefreshService reportCacheRefreshService
     ) {
         this.snapshotRepository = snapshotRepository;
         this.accountRepository = accountRepository;
         this.eventPublisher = eventPublisher;
         this.currentUserService = currentUserService;
+        this.reportCacheRefreshService = reportCacheRefreshService;
     }
 
     public List<AccountSnapshot> listSnapshots() {
@@ -122,10 +128,12 @@ public class AccountSnapshotService {
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
         eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+                snapshotOwnerId(savedSnapshot),
                 savedSnapshot.getId(),
                 account.getId(),
                 savedSnapshot.getSnapshotDate()
         ));
+        refreshReportCache(savedSnapshot);
 
         return savedSnapshot;
     }
@@ -157,10 +165,12 @@ public class AccountSnapshotService {
 
         List<AccountSnapshot> savedSnapshots = snapshotRepository.saveAll(snapshots);
         savedSnapshots.forEach(savedSnapshot -> eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+                snapshotOwnerId(savedSnapshot),
                 savedSnapshot.getId(),
                 savedSnapshot.getAccount().getId(),
                 savedSnapshot.getSnapshotDate()
         )));
+        refreshReportCache(savedSnapshots.isEmpty() ? currentUserService.currentUserId() : snapshotOwnerId(savedSnapshots.get(0)));
 
         return savedSnapshots;
     }
@@ -187,10 +197,12 @@ public class AccountSnapshotService {
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
         eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+                snapshotOwnerId(savedSnapshot),
                 savedSnapshot.getId(),
                 account.getId(),
                 savedSnapshot.getSnapshotDate()
         ));
+        refreshReportCache(savedSnapshot);
 
         return savedSnapshot;
     }
@@ -199,14 +211,51 @@ public class AccountSnapshotService {
     public AccountSnapshot updateSnapshotType(UUID id, UpdateSnapshotTypeRequest request) {
         AccountSnapshot snapshot = getSnapshot(id);
         snapshot.updateSnapshotType(request.snapshotType());
-        return snapshotRepository.save(snapshot);
+        AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
+        eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+                snapshotOwnerId(savedSnapshot),
+                savedSnapshot.getId(),
+                savedSnapshot.getAccount().getId(),
+                savedSnapshot.getSnapshotDate()
+        ));
+        refreshReportCache(savedSnapshot);
+        return savedSnapshot;
     }
 
     @Transactional
     public void deleteSnapshot(UUID id) {
-        getSnapshot(id);
-
+        AccountSnapshot snapshot = getSnapshot(id);
         snapshotRepository.deleteById(id);
+        eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+                snapshotOwnerId(snapshot),
+                snapshot.getId(),
+                snapshot.getAccount().getId(),
+                snapshot.getSnapshotDate()
+        ));
+        refreshReportCache(snapshot);
+    }
+
+    private UUID snapshotOwnerId(AccountSnapshot snapshot) {
+        return snapshot.getOwner() == null ? currentUserService.currentUserId() : snapshot.getOwner().getId();
+    }
+
+    private void refreshReportCache(AccountSnapshot snapshot) {
+        refreshReportCache(snapshotOwnerId(snapshot));
+    }
+
+    private void refreshReportCache(UUID ownerId) {
+        reportCacheRefreshService.markDirty(ownerId);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    reportCacheRefreshService.refreshOwner(ownerId);
+                }
+            });
+            return;
+        }
+
+        reportCacheRefreshService.refreshOwner(ownerId);
     }
 
     private Optional<Account> findAccountForCurrentUser(UUID accountId) {

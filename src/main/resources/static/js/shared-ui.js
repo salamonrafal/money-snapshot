@@ -16,6 +16,74 @@ window.MoneySnapshotUi = (() => {
         }
     };
     let settingsPromise = null;
+    let tooltipElement = null;
+    let activeTooltipTarget = null;
+
+    function ensureTooltipElement() {
+        if (tooltipElement) {
+            return tooltipElement;
+        }
+
+        tooltipElement = document.createElement("div");
+        tooltipElement.className = "app-tooltip";
+        tooltipElement.hidden = true;
+        document.body.append(tooltipElement);
+        return tooltipElement;
+    }
+
+    function positionTooltip(element) {
+        if (!element?.dataset.tooltip) {
+            return;
+        }
+
+        const tooltip = ensureTooltipElement();
+        tooltip.textContent = element.dataset.tooltip;
+        tooltip.hidden = false;
+        tooltip.dataset.placement = "top";
+        tooltip.style.left = "0px";
+        tooltip.style.top = "0px";
+        tooltip.style.maxWidth = "none";
+
+        const elementRect = element.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const horizontalPadding = 18;
+        const verticalOffset = 8;
+
+        let left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
+        left = Math.max(horizontalPadding, Math.min(left, window.innerWidth - tooltipRect.width - horizontalPadding));
+
+        let top = elementRect.top - tooltipRect.height - verticalOffset;
+        let placement = "top";
+        if (top < 12) {
+            top = elementRect.bottom + verticalOffset;
+            placement = "bottom";
+        }
+
+        tooltip.dataset.placement = placement;
+        tooltip.style.left = `${Math.round(left)}px`;
+        tooltip.style.top = `${Math.round(top)}px`;
+    }
+
+    function showTooltip(element) {
+        if (!element?.dataset.tooltip) {
+            return;
+        }
+
+        activeTooltipTarget = element;
+        positionTooltip(element);
+    }
+
+    function hideTooltip(element) {
+        if (element && activeTooltipTarget && element !== activeTooltipTarget) {
+            return;
+        }
+
+        activeTooltipTarget = null;
+        if (tooltipElement) {
+            tooltipElement.hidden = true;
+            tooltipElement.textContent = "";
+        }
+    }
 
     function storedTheme() {
         try {
@@ -178,13 +246,33 @@ window.MoneySnapshotUi = (() => {
         if (label) {
             element.dataset.tooltip = label;
             element.classList.add("has-app-tooltip");
+            if (!element.dataset.tooltipBound) {
+                element.addEventListener("mouseenter", () => showTooltip(element));
+                element.addEventListener("mouseleave", () => hideTooltip(element));
+                element.addEventListener("focus", () => showTooltip(element));
+                element.addEventListener("blur", () => hideTooltip(element));
+                element.dataset.tooltipBound = "true";
+            }
         } else {
             delete element.dataset.tooltip;
             element.classList.remove("has-app-tooltip");
+            hideTooltip(element);
         }
 
         element.removeAttribute("title");
     }
+
+    window.addEventListener("scroll", () => {
+        if (activeTooltipTarget) {
+            positionTooltip(activeTooltipTarget);
+        }
+    }, {passive: true});
+
+    window.addEventListener("resize", () => {
+        if (activeTooltipTarget) {
+            positionTooltip(activeTooltipTarget);
+        }
+    });
 
     function createConfirmModal({modalSelector, subjectSelector, confirmSelector, cancelSelector}) {
         const modal = document.querySelector(modalSelector);

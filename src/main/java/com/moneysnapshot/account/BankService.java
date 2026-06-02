@@ -47,7 +47,9 @@ public class BankService {
             throw new DuplicateBankNameException(normalizedName);
         }
 
-        return bankRepository.save(new Bank(owner, request.name().trim(), normalizedName));
+        Bank savedBank = bankRepository.save(new Bank(owner, request.name().trim(), normalizedName));
+        eventPublisher.publishEvent(new BankChangedEvent(owner.getId()));
+        return savedBank;
     }
 
     @Transactional
@@ -61,14 +63,17 @@ public class BankService {
                 });
 
         bank.updateDetails(request.name().trim(), normalizedName);
-        return bankRepository.save(bank);
+        Bank savedBank = bankRepository.save(bank);
+        eventPublisher.publishEvent(new BankChangedEvent(currentUserService.currentUserId()));
+        return savedBank;
     }
 
     @Transactional
     public void deleteBank(UUID id) {
-        getBank(id);
+        Bank bank = getBank(id);
 
         eventPublisher.publishEvent(new BankDeletionRequestedEvent(id));
+        eventPublisher.publishEvent(new BankChangedEvent(bank.getOwner().getId()));
         bankRepository.deleteById(id);
         bankRepository.flush();
     }
