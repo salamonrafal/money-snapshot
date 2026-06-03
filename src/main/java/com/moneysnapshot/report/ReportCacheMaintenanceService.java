@@ -27,7 +27,7 @@ public class ReportCacheMaintenanceService {
 
     public void clearCurrentUserCache() {
         UUID ownerId = currentUserService.currentUserId();
-        reportPdfService.clearCache();
+        reportPdfService.clearCache(ownerId);
         snapshotPanelService.clearOwner(ownerId);
         reportCacheRefreshService.clearOwner(ownerId);
         reportCacheRefreshService.refreshOwner(ownerId);

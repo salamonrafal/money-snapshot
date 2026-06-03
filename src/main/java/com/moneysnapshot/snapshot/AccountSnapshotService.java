@@ -127,7 +127,7 @@ public class AccountSnapshotService {
         );
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
-        eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+        eventPublisher.publishEvent(new AccountSnapshotChangedEvent(
                 snapshotOwnerId(savedSnapshot),
                 savedSnapshot.getId(),
                 account.getId(),
@@ -164,7 +164,7 @@ public class AccountSnapshotService {
         }
 
         List<AccountSnapshot> savedSnapshots = snapshotRepository.saveAll(snapshots);
-        savedSnapshots.forEach(savedSnapshot -> eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+        savedSnapshots.forEach(savedSnapshot -> eventPublisher.publishEvent(new AccountSnapshotChangedEvent(
                 snapshotOwnerId(savedSnapshot),
                 savedSnapshot.getId(),
                 savedSnapshot.getAccount().getId(),
@@ -196,7 +196,7 @@ public class AccountSnapshotService {
         );
 
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
-        eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+        eventPublisher.publishEvent(new AccountSnapshotChangedEvent(
                 snapshotOwnerId(savedSnapshot),
                 savedSnapshot.getId(),
                 account.getId(),
@@ -212,7 +212,7 @@ public class AccountSnapshotService {
         AccountSnapshot snapshot = getSnapshot(id);
         snapshot.updateSnapshotType(request.snapshotType());
         AccountSnapshot savedSnapshot = snapshotRepository.save(snapshot);
-        eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+        eventPublisher.publishEvent(new AccountSnapshotChangedEvent(
                 snapshotOwnerId(savedSnapshot),
                 savedSnapshot.getId(),
                 savedSnapshot.getAccount().getId(),
@@ -226,7 +226,7 @@ public class AccountSnapshotService {
     public void deleteSnapshot(UUID id) {
         AccountSnapshot snapshot = getSnapshot(id);
         snapshotRepository.deleteById(id);
-        eventPublisher.publishEvent(new AccountSnapshotCreatedEvent(
+        eventPublisher.publishEvent(new AccountSnapshotChangedEvent(
                 snapshotOwnerId(snapshot),
                 snapshot.getId(),
                 snapshot.getAccount().getId(),

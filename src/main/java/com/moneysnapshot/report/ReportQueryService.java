@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 @Service
 public class ReportQueryService {
@@ -39,6 +41,7 @@ public class ReportQueryService {
     private final CurrentUserService currentUserService;
     private final UserSettingsService userSettingsService;
     private final SavingsForecastService savingsForecastService;
+    private final MessageSource messageSource;
     private final Clock clock;
 
     @Autowired
@@ -49,7 +52,8 @@ public class ReportQueryService {
             ReportCacheRefreshService reportCacheRefreshService,
             CurrentUserService currentUserService,
             UserSettingsService userSettingsService,
-            SavingsForecastService savingsForecastService
+            SavingsForecastService savingsForecastService,
+            MessageSource messageSource
     ) {
         this(
                 dailyBalanceCacheRepository,
@@ -59,6 +63,7 @@ public class ReportQueryService {
                 currentUserService,
                 userSettingsService,
                 savingsForecastService,
+                messageSource,
                 Clock.systemUTC()
         );
     }
@@ -71,6 +76,7 @@ public class ReportQueryService {
             CurrentUserService currentUserService,
             UserSettingsService userSettingsService,
             SavingsForecastService savingsForecastService,
+            MessageSource messageSource,
             Clock clock
     ) {
         this.dailyBalanceCacheRepository = dailyBalanceCacheRepository;
@@ -80,6 +86,7 @@ public class ReportQueryService {
         this.currentUserService = currentUserService;
         this.userSettingsService = userSettingsService;
         this.savingsForecastService = savingsForecastService;
+        this.messageSource = messageSource;
         this.clock = clock;
     }
 
@@ -421,6 +428,7 @@ public class ReportQueryService {
 
     private List<EntrySeries> buildEntrySeries(String scope, LocalDate fromDate, LocalDate toDate) {
         UUID ownerId = currentUserService.currentUserId();
+        String totalAccountsLabel = totalAccountsLabel();
         List<ReportDailyBalanceCache> rows = dailyBalanceCacheRepository
                 .findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
         Map<String, Map<LocalDate, BigDecimal>> balancesByEntry = new LinkedHashMap<>();
@@ -434,7 +442,7 @@ public class ReportQueryService {
             };
             String name = switch (scope == null ? "accounts" : scope) {
                 case "banks" -> row.getBankName();
-                case "total" -> "Wszystkie konta";
+                case "total" -> totalAccountsLabel;
                 default -> row.getAccountName();
             };
             balancesByEntry.computeIfAbsent(entryKey, ignored -> new LinkedHashMap<>())
@@ -519,12 +527,17 @@ public class ReportQueryService {
             LocalDate fromDate,
             LocalDate toDate
     ) {
+        String totalAccountsLabel = totalAccountsLabel();
         Map<String, List<AccountSummarySeries>> byCurrency = new LinkedHashMap<>();
         accounts.forEach(account -> byCurrency.computeIfAbsent(account.currencyCode(), ignored -> new ArrayList<>()).add(account));
         return byCurrency.entrySet().stream()
-                .map(entry -> toEntrySeries("Wszystkie konta", entry.getKey(), entry.getValue(), fromDate, toDate))
+                .map(entry -> toEntrySeries(totalAccountsLabel, entry.getKey(), entry.getValue(), fromDate, toDate))
                 .filter(entry -> entry != null)
                 .toList();
+    }
+
+    private String totalAccountsLabel() {
+        return messageSource.getMessage("reports.total.name", null, "All accounts", LocaleContextHolder.getLocale());
     }
 
     private EntrySeries toEntrySeries(

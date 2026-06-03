@@ -23,6 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionOperations;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.TransactionDefinition;
 
 @Service
 public class ReportCacheRefreshService {
@@ -35,6 +39,7 @@ public class ReportCacheRefreshService {
     private final ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository;
     private final AppUserRepository appUserRepository;
     private final AccountSnapshotRepository snapshotRepository;
+    private final TransactionOperations failureStateTransaction;
     private final Clock clock;
     private final ConcurrentMap<UUID, ReentrantLock> ownerLocks = new ConcurrentHashMap<>();
 
@@ -45,7 +50,8 @@ public class ReportCacheRefreshService {
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
             AppUserRepository appUserRepository,
-            AccountSnapshotRepository snapshotRepository
+            AccountSnapshotRepository snapshotRepository,
+            PlatformTransactionManager transactionManager
     ) {
         this(
                 refreshStateRepository,
@@ -54,6 +60,7 @@ public class ReportCacheRefreshService {
                 finalSnapshotCacheRepository,
                 appUserRepository,
                 snapshotRepository,
+                newRequiresNewTransaction(transactionManager),
                 Clock.systemUTC()
         );
     }
@@ -65,6 +72,7 @@ public class ReportCacheRefreshService {
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
             AppUserRepository appUserRepository,
             AccountSnapshotRepository snapshotRepository,
+            TransactionOperations failureStateTransaction,
             Clock clock
     ) {
         this.refreshStateRepository = refreshStateRepository;
@@ -73,6 +81,7 @@ public class ReportCacheRefreshService {
         this.finalSnapshotCacheRepository = finalSnapshotCacheRepository;
         this.appUserRepository = appUserRepository;
         this.snapshotRepository = snapshotRepository;
+        this.failureStateTransaction = failureStateTransaction;
         this.clock = clock;
     }
 
@@ -162,10 +171,19 @@ public class ReportCacheRefreshService {
             rebuildAverageContributions(owner, snapshots);
             state.markRefreshed();
         } catch (RuntimeException exception) {
-            state.markFailed(exception.getMessage());
+            persistFailedState(ownerId, exception.getMessage());
             log.warn("Failed to refresh report cache for owner {}", ownerId, exception);
             throw exception;
         }
+    }
+
+    private void persistFailedState(UUID ownerId, String errorMessage) {
+        failureStateTransaction.executeWithoutResult(status -> {
+            ReportCacheRefreshState failureState = refreshStateRepository.findByOwnerId(ownerId)
+                    .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
+            failureState.markFailed(errorMessage);
+            refreshStateRepository.save(failureState);
+        });
     }
 
     private void withOwnerLock(UUID ownerId, Runnable action) {
@@ -183,6 +201,12 @@ public class ReportCacheRefreshService {
 
     private AppUser lockOwner(UUID ownerId) {
         return appUserRepository.findByIdForUpdate(ownerId).orElse(null);
+    }
+
+    private static TransactionOperations newRequiresNewTransaction(PlatformTransactionManager transactionManager) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return template;
     }
 
     private void rebuildDailyBalances(AppUser owner, List<AccountSnapshot> snapshots) {

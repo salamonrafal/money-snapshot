@@ -37,17 +37,19 @@ window.MoneySnapshotUi = (() => {
         }
 
         const tooltip = ensureTooltipElement();
+        const horizontalPadding = 18;
+        const verticalOffset = 8;
+        const tooltipMaxWidth = Math.max(Math.min(384, window.innerWidth - (horizontalPadding * 2)), 160);
+
         tooltip.textContent = element.dataset.tooltip;
         tooltip.hidden = false;
         tooltip.dataset.placement = "top";
         tooltip.style.left = "0px";
         tooltip.style.top = "0px";
-        tooltip.style.maxWidth = "none";
+        tooltip.style.maxWidth = `${tooltipMaxWidth}px`;
 
         const elementRect = element.getBoundingClientRect();
         const tooltipRect = tooltip.getBoundingClientRect();
-        const horizontalPadding = 18;
-        const verticalOffset = 8;
 
         let left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
         left = Math.max(horizontalPadding, Math.min(left, window.innerWidth - tooltipRect.width - horizontalPadding));

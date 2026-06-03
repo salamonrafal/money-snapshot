@@ -71,7 +71,7 @@ class AccountSnapshotServiceTest {
         );
 
         verify(snapshotRepository, never()).saveAll(anyList());
-        verify(eventPublisher, never()).publishEvent(any(AccountSnapshotCreatedEvent.class));
+        verify(eventPublisher, never()).publishEvent(any(AccountSnapshotChangedEvent.class));
     }
 
     @Test
@@ -98,7 +98,7 @@ class AccountSnapshotServiceTest {
         );
 
         verify(snapshotRepository).save(snapshot);
-        verify(eventPublisher).publishEvent(any(AccountSnapshotCreatedEvent.class));
+        verify(eventPublisher).publishEvent(any(AccountSnapshotChangedEvent.class));
         org.junit.jupiter.api.Assertions.assertEquals(SnapshotType.FINAL, updatedSnapshot.getSnapshotType());
         org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("123.45"), updatedSnapshot.getBalance());
         org.junit.jupiter.api.Assertions.assertEquals("note", updatedSnapshot.getNote());

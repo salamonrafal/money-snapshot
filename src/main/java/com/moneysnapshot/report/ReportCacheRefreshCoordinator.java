@@ -35,7 +35,6 @@ public class ReportCacheRefreshCoordinator {
 
     @Scheduled(fixedDelay = 30000L, initialDelay = 10000L)
     public void refreshDirtyOwners() {
-        reportCacheRefreshService.ensureRefreshStatesExist();
         for (UUID ownerId : reportCacheRefreshService.findDirtyOwners(20)) {
             reportCacheRefreshService.refreshOwner(ownerId);
         }

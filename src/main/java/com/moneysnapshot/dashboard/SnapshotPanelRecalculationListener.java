@@ -3,7 +3,7 @@ package com.moneysnapshot.dashboard;
 import com.moneysnapshot.account.AccountDeletionRequestedEvent;
 import com.moneysnapshot.account.BankDeletionRequestedEvent;
 import com.moneysnapshot.security.UserSettingsUpdatedEvent;
-import com.moneysnapshot.snapshot.AccountSnapshotCreatedEvent;
+import com.moneysnapshot.snapshot.AccountSnapshotChangedEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -18,7 +18,7 @@ public class SnapshotPanelRecalculationListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onAccountSnapshotCreated(AccountSnapshotCreatedEvent event) {
+    public void onAccountSnapshotChanged(AccountSnapshotChangedEvent event) {
         snapshotPanelService.recalculate();
     }
 

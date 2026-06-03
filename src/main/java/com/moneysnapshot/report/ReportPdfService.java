@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moneysnapshot.report.web.ReportPdfRequest;
 import com.moneysnapshot.report.web.ReportPdfTableRequest;
+import com.moneysnapshot.security.CurrentUserService;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.UUID;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -68,16 +70,23 @@ public class ReportPdfService {
 
     private final ObjectMapper objectMapper;
     private final ReportDataVersionService reportDataVersionService;
+    private final CurrentUserService currentUserService;
     private final LinkedHashMap<String, byte[]> pdfCache = new LinkedHashMap<>(16, 0.75f, true);
     private long pdfCacheBytes = 0L;
 
-    public ReportPdfService(ObjectMapper objectMapper, ReportDataVersionService reportDataVersionService) {
+    public ReportPdfService(
+            ObjectMapper objectMapper,
+            ReportDataVersionService reportDataVersionService,
+            CurrentUserService currentUserService
+    ) {
         this.objectMapper = objectMapper;
         this.reportDataVersionService = reportDataVersionService;
+        this.currentUserService = currentUserService;
     }
 
     public byte[] generatePdf(String sectionKey, ReportPdfRequest request) {
-        String cacheKey = cacheKey(sectionKey, request);
+        UUID ownerId = currentUserService.currentUserId();
+        String cacheKey = cacheKey(ownerId, sectionKey, request);
         byte[] cached = getCachedPdf(cacheKey);
         if (cached != null) {
             return cached.clone();
@@ -100,8 +109,8 @@ public class ReportPdfService {
         return slug + "-" + LocalDateTime.now().format(DOWNLOAD_FILENAME_TIMESTAMP) + ".pdf";
     }
 
-    private String cacheKey(String sectionKey, ReportPdfRequest request) {
-        return sectionKey + "|" + reportDataVersionService.currentVersion().cacheToken() + "|" + requestHash(request);
+    private String cacheKey(UUID ownerId, String sectionKey, ReportPdfRequest request) {
+        return ownerId + "|" + sectionKey + "|" + reportDataVersionService.currentVersion().cacheToken() + "|" + requestHash(request);
     }
 
     private String requestHash(ReportPdfRequest request) {
@@ -119,6 +128,18 @@ public class ReportPdfService {
     public synchronized void clearCache() {
         pdfCache.clear();
         pdfCacheBytes = 0L;
+    }
+
+    public synchronized void clearCache(UUID ownerId) {
+        String ownerPrefix = ownerId + "|";
+        var iterator = pdfCache.entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            if (entry.getKey().startsWith(ownerPrefix)) {
+                pdfCacheBytes -= entry.getValue().length;
+                iterator.remove();
+            }
+        }
     }
 
     private synchronized void cachePdf(String cacheKey, byte[] pdf) {
