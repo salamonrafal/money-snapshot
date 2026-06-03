@@ -1454,14 +1454,30 @@ function initializeReportLazyLoading() {
 }
 
 async function refreshVisibleReports() {
-    markReportSectionsDirty();
-    renderVisibleReportSections();
+    const visibleKeys = reportSectionKeys.filter((key) => reportSections[key]?.visible);
+    markReportSectionsDirty(visibleKeys);
+    renderVisibleReportSections(visibleKeys);
+    await Promise.all(visibleKeys.map((key) => waitForSectionSettled(key)));
 }
 
 function waitForSectionIdle(key) {
     return new Promise((resolve) => {
         function check() {
             if (!reportSections[key]?.loading) {
+                resolve();
+                return;
+            }
+            window.setTimeout(check, 40);
+        }
+        check();
+    });
+}
+
+function waitForSectionSettled(key) {
+    return new Promise((resolve) => {
+        function check() {
+            const section = reportSections[key];
+            if (!section || (!section.loading && !section.dirty)) {
                 resolve();
                 return;
             }

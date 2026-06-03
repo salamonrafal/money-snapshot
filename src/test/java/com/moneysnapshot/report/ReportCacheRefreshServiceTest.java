@@ -74,6 +74,22 @@ class ReportCacheRefreshServiceTest {
     }
 
     @Test
+    void markDirtyLocksOwnerRowBeforeUpdatingState() {
+        UUID ownerId = UUID.randomUUID();
+        AppUser owner = mock(AppUser.class);
+        ReportCacheRefreshState state = mock(ReportCacheRefreshState.class);
+
+        when(appUserRepository.findByIdForUpdate(ownerId)).thenReturn(Optional.of(owner));
+        when(refreshStateRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(state));
+
+        service.markDirty(ownerId);
+
+        verify(appUserRepository).findByIdForUpdate(ownerId);
+        verify(state).markDirty();
+        verify(refreshStateRepository).save(state);
+    }
+
+    @Test
     void ensureOwnerCacheReadyLocksOwnerRowBeforeRefreshing() {
         UUID ownerId = UUID.randomUUID();
         AppUser owner = mock(AppUser.class);

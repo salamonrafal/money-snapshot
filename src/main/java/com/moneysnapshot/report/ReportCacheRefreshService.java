@@ -94,15 +94,17 @@ public class ReportCacheRefreshService {
 
     @Transactional
     public void markDirty(UUID ownerId) {
-        AppUser owner = appUserRepository.findById(ownerId).orElse(null);
-        if (owner == null) {
-            return;
-        }
+        withOwnerLock(ownerId, () -> {
+            AppUser owner = lockOwner(ownerId);
+            if (owner == null) {
+                return;
+            }
 
-        ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
-                .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
-        state.markDirty();
-        refreshStateRepository.save(state);
+            ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
+                    .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
+            state.markDirty();
+            refreshStateRepository.save(state);
+        });
     }
 
     public List<UUID> findDirtyOwners(int limit) {
