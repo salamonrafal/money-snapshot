@@ -10,6 +10,9 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +36,7 @@ public class ReportCacheRefreshService {
     private final AppUserRepository appUserRepository;
     private final AccountSnapshotRepository snapshotRepository;
     private final Clock clock;
+    private final ConcurrentMap<UUID, ReentrantLock> ownerLocks = new ConcurrentHashMap<>();
 
     @Autowired
     public ReportCacheRefreshService(
@@ -101,49 +105,56 @@ public class ReportCacheRefreshService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void clearOwner(UUID ownerId) {
-        AppUser owner = appUserRepository.findById(ownerId).orElse(null);
-        if (owner == null) {
-            return;
-        }
+        withOwnerLock(ownerId, () -> {
+            AppUser owner = lockOwner(ownerId);
+            if (owner == null) {
+                return;
+            }
 
-        dailyBalanceCacheRepository.deleteByOwnerId(ownerId);
-        dailyBalanceCacheRepository.flush();
-        averageContributionCacheRepository.deleteByOwnerId(ownerId);
-        averageContributionCacheRepository.flush();
-        finalSnapshotCacheRepository.deleteByOwnerId(ownerId);
-        finalSnapshotCacheRepository.flush();
+            dailyBalanceCacheRepository.deleteByOwnerId(ownerId);
+            averageContributionCacheRepository.deleteByOwnerId(ownerId);
+            finalSnapshotCacheRepository.deleteByOwnerId(ownerId);
 
-        ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
-                .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
-        state.markDirty();
-        refreshStateRepository.save(state);
+            ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
+                    .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
+            state.markDirty();
+            refreshStateRepository.save(state);
+        });
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void ensureOwnerCacheReady(UUID ownerId, LocalDate requiredDate) {
-        AppUser owner = appUserRepository.findById(ownerId).orElse(null);
-        if (owner == null) {
-            return;
-        }
+        withOwnerLock(ownerId, () -> {
+            AppUser owner = lockOwner(ownerId);
+            if (owner == null) {
+                return;
+            }
 
-        ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
-                .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
-        boolean cacheMissing = !dailyBalanceCacheRepository.existsByOwnerIdAndBalanceDate(ownerId, requiredDate);
-        boolean hasFinalSnapshots = snapshotRepository.existsByOwnerIdAndSnapshotType(ownerId, SnapshotType.FINAL);
-        boolean finalCacheMissing = hasFinalSnapshots && !finalSnapshotCacheRepository.existsByOwnerId(ownerId);
-        if (state.isDirty() || cacheMissing || finalCacheMissing) {
-            refreshOwner(ownerId);
-        }
+            ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
+                    .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
+            boolean cacheMissing = !dailyBalanceCacheRepository.existsByOwnerIdAndBalanceDate(ownerId, requiredDate);
+            boolean hasFinalSnapshots = snapshotRepository.existsByOwnerIdAndSnapshotType(ownerId, SnapshotType.FINAL);
+            boolean finalCacheMissing = hasFinalSnapshots && !finalSnapshotCacheRepository.existsByOwnerId(ownerId);
+            if (state.isDirty() || cacheMissing || finalCacheMissing) {
+                refreshOwnerInternal(ownerId, state, owner);
+            }
+        });
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void refreshOwner(UUID ownerId) {
-        ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId).orElse(null);
-        AppUser owner = appUserRepository.findById(ownerId).orElse(null);
-        if (state == null || owner == null) {
-            return;
-        }
+        withOwnerLock(ownerId, () -> {
+            ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId).orElse(null);
+            AppUser owner = lockOwner(ownerId);
+            if (state == null || owner == null) {
+                return;
+            }
 
+            refreshOwnerInternal(ownerId, state, owner);
+        });
+    }
+
+    private void refreshOwnerInternal(UUID ownerId, ReportCacheRefreshState state, AppUser owner) {
         try {
             List<AccountSnapshot> snapshots = snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId);
             rebuildDailyBalances(owner, snapshots);
@@ -155,6 +166,23 @@ public class ReportCacheRefreshService {
             log.warn("Failed to refresh report cache for owner {}", ownerId, exception);
             throw exception;
         }
+    }
+
+    private void withOwnerLock(UUID ownerId, Runnable action) {
+        ReentrantLock lock = ownerLocks.computeIfAbsent(ownerId, ignored -> new ReentrantLock());
+        lock.lock();
+        try {
+            action.run();
+        } finally {
+            lock.unlock();
+            if (!lock.hasQueuedThreads()) {
+                ownerLocks.remove(ownerId, lock);
+            }
+        }
+    }
+
+    private AppUser lockOwner(UUID ownerId) {
+        return appUserRepository.findByIdForUpdate(ownerId).orElse(null);
     }
 
     private void rebuildDailyBalances(AppUser owner, List<AccountSnapshot> snapshots) {

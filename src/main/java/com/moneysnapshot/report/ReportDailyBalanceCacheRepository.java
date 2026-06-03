@@ -12,7 +12,12 @@ public interface ReportDailyBalanceCacheRepository extends JpaRepository<ReportD
 
     boolean existsByOwnerIdAndBalanceDate(UUID ownerId, LocalDate balanceDate);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            delete
+            from ReportDailyBalanceCache entry
+            where entry.owner.id = :ownerId
+            """)
     int deleteByOwnerId(UUID ownerId);
 
     List<ReportDailyBalanceCache> findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(

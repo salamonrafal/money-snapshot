@@ -8,7 +8,12 @@ import org.springframework.data.jpa.repository.Modifying;
 
 public interface ReportFinalSnapshotCacheRepository extends JpaRepository<ReportFinalSnapshotCache, UUID> {
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @org.springframework.data.jpa.repository.Query("""
+            delete
+            from ReportFinalSnapshotCache entry
+            where entry.owner.id = :ownerId
+            """)
     int deleteByOwnerId(UUID ownerId);
 
     boolean existsByOwnerId(UUID ownerId);
