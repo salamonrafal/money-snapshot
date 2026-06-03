@@ -52,6 +52,7 @@ const periodOffsets = {
 };
 const MAX_HISTORY_RANGE_DAYS = 732;
 const MAX_REPORT_PDF_TABLE_ROWS = 2000;
+const HISTORY_PDF_EXPORT_PAGE_SIZE = 100;
 
 let currentLanguage = "pl";
 let messages = {};
@@ -1241,7 +1242,7 @@ async function renderHistoryReportSection() {
 }
 
 async function fetchHistoryPdfMatrix(range) {
-    const pageSize = Math.max(1, Math.min(Number(historyPageSizeSelect.value) || 100, MAX_REPORT_PDF_TABLE_ROWS));
+    const pageSize = Math.min(HISTORY_PDF_EXPORT_PAGE_SIZE, MAX_REPORT_PDF_TABLE_ROWS);
     const firstPage = await fetchReportJson(
             `/api/reports/history?fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}&page=0&size=${pageSize}`
     );
@@ -1646,7 +1647,7 @@ refreshButton.addEventListener("click", () => {
 if (clearReportsCacheButton) {
     clearReportsCacheButton.addEventListener("click", async () => {
         clearReportsCacheButton.disabled = true;
-        setReportsToolbarMessage("", "");
+        setReportsToolbarMessage(messages["reports.cache.clearing"] ?? "", "info");
 
         try {
             await clearReportsCache();
@@ -1654,7 +1655,7 @@ if (clearReportsCacheButton) {
             clearReportPdfData();
             markReportSectionsDirty();
             await refreshVisibleReports();
-            setReportsToolbarMessage("", "");
+            setReportsToolbarMessage(messages["reports.cache.success"] ?? "", "success");
         } catch (error) {
             setReportsToolbarMessage(error.message, "error");
         } finally {
