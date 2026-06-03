@@ -141,7 +141,8 @@ public class ReportCacheRefreshService {
 
             ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
                     .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
-            boolean cacheMissing = !dailyBalanceCacheRepository.existsByOwnerIdAndBalanceDate(ownerId, requiredDate);
+            boolean hasSnapshots = snapshotRepository.existsByOwnerId(ownerId);
+            boolean cacheMissing = hasSnapshots && !dailyBalanceCacheRepository.existsByOwnerIdAndBalanceDate(ownerId, requiredDate);
             boolean hasFinalSnapshots = snapshotRepository.existsByOwnerIdAndSnapshotType(ownerId, SnapshotType.FINAL);
             boolean finalCacheMissing = hasFinalSnapshots && !finalSnapshotCacheRepository.existsByOwnerId(ownerId);
             if (state.isDirty() || cacheMissing || finalCacheMissing) {
@@ -193,9 +194,6 @@ public class ReportCacheRefreshService {
             action.run();
         } finally {
             lock.unlock();
-            if (!lock.hasQueuedThreads()) {
-                ownerLocks.remove(ownerId, lock);
-            }
         }
     }
 

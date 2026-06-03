@@ -3,6 +3,7 @@ package com.moneysnapshot.report;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.AppUserRepository;
 import com.moneysnapshot.snapshot.AccountSnapshotRepository;
+import com.moneysnapshot.snapshot.SnapshotType;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -16,6 +17,7 @@ import org.springframework.transaction.support.TransactionOperations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -80,6 +82,7 @@ class ReportCacheRefreshServiceTest {
         when(appUserRepository.findByIdForUpdate(ownerId)).thenReturn(Optional.of(owner));
         when(refreshStateRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(state));
         when(state.isDirty()).thenReturn(true);
+        when(snapshotRepository.existsByOwnerId(ownerId)).thenReturn(false);
         when(snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId)).thenReturn(List.of());
         when(owner.getId()).thenReturn(ownerId);
 
@@ -87,6 +90,25 @@ class ReportCacheRefreshServiceTest {
 
         verify(appUserRepository).findByIdForUpdate(ownerId);
         verify(snapshotRepository).findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId);
+    }
+
+    @Test
+    void ensureOwnerCacheReadySkipsRefreshForCleanOwnerWithoutSnapshots() {
+        UUID ownerId = UUID.randomUUID();
+        AppUser owner = mock(AppUser.class);
+        ReportCacheRefreshState state = mock(ReportCacheRefreshState.class);
+
+        when(appUserRepository.findByIdForUpdate(ownerId)).thenReturn(Optional.of(owner));
+        when(refreshStateRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(state));
+        when(state.isDirty()).thenReturn(false);
+        when(snapshotRepository.existsByOwnerId(ownerId)).thenReturn(false);
+        when(snapshotRepository.existsByOwnerIdAndSnapshotType(ownerId, SnapshotType.FINAL)).thenReturn(false);
+
+        service.ensureOwnerCacheReady(ownerId, java.time.LocalDate.of(2026, 6, 3));
+
+        verify(snapshotRepository, never()).findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId);
+        verify(dailyBalanceCacheRepository, never()).existsByOwnerIdAndBalanceDate(ownerId, java.time.LocalDate.of(2026, 6, 3));
+        verify(finalSnapshotCacheRepository, never()).existsByOwnerId(ownerId);
     }
 
     @Test
