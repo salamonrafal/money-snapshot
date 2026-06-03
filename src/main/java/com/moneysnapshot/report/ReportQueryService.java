@@ -127,6 +127,11 @@ public class ReportQueryService {
                         LinkedHashMap::new,
                         java.util.stream.Collectors.mapping(ReportDailyBalanceCache::getBalance, java.util.stream.Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
                 ));
+        if (!balanceByDate.containsKey(endDate)) {
+            balanceByDate.entrySet().stream()
+                    .reduce((left, right) -> right)
+                    .ifPresent(lastEntry -> balanceByDate.put(endDate, lastEntry.getValue()));
+        }
 
         List<SnapshotPanelChartPointResponse> points = new ArrayList<>();
         LocalDate today = LocalDate.now(clock);
@@ -160,7 +165,7 @@ public class ReportQueryService {
                     List<LocalDate> seriesDates = new ArrayList<>();
                     seriesDates.add(fromDate);
                     seriesDates.addAll(checkpoints);
-                    seriesDates.addAll(entry.balanceByDate().keySet().stream()
+                    seriesDates.addAll(entry.pointDates().stream()
                             .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
                             .toList());
                     seriesDates.add(toDate);
@@ -582,7 +587,7 @@ public class ReportQueryService {
 
     private BigDecimal startPeriodBalance(List<SummarySnapshot> snapshots, LocalDate fromDate) {
         return snapshots.stream()
-                .filter(snapshot -> snapshot.date().isBefore(fromDate))
+                .filter(snapshot -> !snapshot.date().isAfter(fromDate))
                 .reduce((left, right) -> right)
                 .map(SummarySnapshot::balance)
                 .orElse(BigDecimal.ZERO);
