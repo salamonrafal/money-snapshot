@@ -165,21 +165,20 @@ public class ReportQueryService {
                             .toList());
                     seriesDates.add(toDate);
                     List<LocalDate> distinctDates = seriesDates.stream().distinct().sorted().toList();
+                    Map<LocalDate, BigDecimal> balanceByDate = entry.balanceByDate();
                     List<SummaryReportResponse.Point> series = distinctDates.stream()
-                            .map(date -> new SummaryReportResponse.Point(
-                                    date,
-                                    balanceAt(entry.balanceByDate(), date),
-                                    balanceAt(entry.balanceByDate(), date).subtract(startBalance)
-                            ))
+                            .map(date -> {
+                                BigDecimal balance = balanceByDate.getOrDefault(date, BigDecimal.ZERO);
+                                return new SummaryReportResponse.Point(date, balance, balance.subtract(startBalance));
+                            })
                             .toList();
                     List<SummaryReportResponse.Point> points = entry.pointDates().stream()
                             .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
                             .sorted()
-                            .map(date -> new SummaryReportResponse.Point(
-                                    date,
-                                    balanceAt(entry.balanceByDate(), date),
-                                    balanceAt(entry.balanceByDate(), date).subtract(startBalance)
-                            ))
+                            .map(date -> {
+                                BigDecimal balance = balanceByDate.getOrDefault(date, BigDecimal.ZERO);
+                                return new SummaryReportResponse.Point(date, balance, balance.subtract(startBalance));
+                            })
                             .toList();
                     return new SummaryReportResponse.Row(entry.name(), entry.currencyCode(), startBalance, endBalance, change, changePercent, points, series);
                 })

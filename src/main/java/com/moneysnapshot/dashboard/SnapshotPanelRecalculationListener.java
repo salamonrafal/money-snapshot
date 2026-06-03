@@ -19,7 +19,7 @@ public class SnapshotPanelRecalculationListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAccountSnapshotChanged(AccountSnapshotChangedEvent event) {
-        snapshotPanelService.recalculate();
+        snapshotPanelService.clearOwner(event.ownerId());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
