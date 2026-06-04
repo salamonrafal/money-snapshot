@@ -220,7 +220,7 @@ function renderSnapshotChart(chartPoints, periodDate) {
         x: leftPadding + ((new Date(`${point.date}T00:00:00Z`).getTime() - startTime) * (width - leftPadding - rightPadding)) / timeRange,
         y: height - bottomPadding - ((point.amount - minAmount) * (height - topPadding - bottomPadding)) / amountRange
     }));
-    const visiblePoints = renderedPoints.filter((point) => ["snapshot", "today", "snapshot-today"].includes(point.type));
+    const visiblePoints = renderedPoints.filter((point) => ["baseline", "snapshot", "today", "snapshot-today"].includes(point.type));
     const labelPoints = selectChartLabelPoints(visiblePoints);
 
     const line = linePath(renderedPoints);

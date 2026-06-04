@@ -1240,6 +1240,11 @@ async function fetchHistoryPdfMatrix(range) {
     const firstPage = await fetchReportJson(
             `/api/reports/history?fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}&page=0&size=${pageSize}`
     );
+    let exportRowCount = firstPage.rows.reduce((count, row) => count + row.values.filter((value) => value).length, 0);
+    if (exportRowCount > MAX_REPORT_PDF_TABLE_ROWS) {
+        throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+    }
     if ((firstPage.totalPages ?? 1) <= 1) {
         return firstPage;
     }
@@ -1250,6 +1255,11 @@ async function fetchHistoryPdfMatrix(range) {
                 `/api/reports/history?fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}&page=${page}&size=${pageSize}`
         );
         rows.push(...nextPage.rows);
+        exportRowCount += nextPage.rows.reduce((count, row) => count + row.values.filter((value) => value).length, 0);
+        if (exportRowCount > MAX_REPORT_PDF_TABLE_ROWS) {
+            throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                    .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+        }
     }
 
     return {

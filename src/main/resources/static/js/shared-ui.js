@@ -25,6 +25,8 @@ window.MoneySnapshotUi = (() => {
         }
 
         tooltipElement = document.createElement("div");
+        tooltipElement.id = "app-tooltip";
+        tooltipElement.setAttribute("role", "tooltip");
         tooltipElement.className = "app-tooltip";
         tooltipElement.hidden = true;
         document.body.append(tooltipElement);
@@ -264,6 +266,13 @@ window.MoneySnapshotUi = (() => {
         }
 
         element.removeAttribute("title");
+        if (activeTooltipTarget === element && !tooltipElement?.hidden) {
+            if (label) {
+                positionTooltip(element);
+            } else {
+                hideTooltip(element);
+            }
+        }
     }
 
     document.addEventListener("scroll", () => {
