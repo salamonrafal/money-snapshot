@@ -60,6 +60,8 @@ window.MoneySnapshotUi = (() => {
             top = elementRect.bottom + verticalOffset;
             placement = "bottom";
         }
+        const maxTop = Math.max(12, window.innerHeight - tooltipRect.height - 12);
+        top = Math.max(12, Math.min(top, maxTop));
 
         tooltip.dataset.placement = placement;
         tooltip.style.left = `${Math.round(left)}px`;

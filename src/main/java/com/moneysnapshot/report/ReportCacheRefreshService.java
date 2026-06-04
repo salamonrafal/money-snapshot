@@ -178,6 +178,7 @@ public class ReportCacheRefreshService {
             rebuildFinalSnapshots(owner, snapshots);
             rebuildAverageContributions(owner, snapshots);
             state.markRefreshed();
+            refreshStateRepository.save(state);
         } catch (RuntimeException exception) {
             persistFailedState(ownerId, exception.getMessage());
             log.warn("Failed to refresh report cache for owner {}", ownerId, exception);

@@ -173,6 +173,23 @@ class ReportCacheRefreshServiceTest {
     }
 
     @Test
+    void refreshOwnerPersistsRefreshedStateAfterSuccessfulRebuild() {
+        UUID ownerId = UUID.randomUUID();
+        AppUser owner = mock(AppUser.class);
+        ReportCacheRefreshState state = mock(ReportCacheRefreshState.class);
+
+        when(appUserRepository.findByIdForUpdate(ownerId)).thenReturn(Optional.of(owner));
+        when(refreshStateRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(state));
+        when(snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId)).thenReturn(List.of());
+        when(owner.getId()).thenReturn(ownerId);
+
+        service.refreshOwner(ownerId);
+
+        verify(state).markRefreshed();
+        verify(refreshStateRepository).save(state);
+    }
+
+    @Test
     void refreshOwnerPersistsFailureStateBeforeRethrow() {
         UUID ownerId = UUID.randomUUID();
         AppUser owner = mock(AppUser.class);
