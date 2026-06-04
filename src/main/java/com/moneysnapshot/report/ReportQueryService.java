@@ -173,7 +173,7 @@ public class ReportQueryService {
                     Map<LocalDate, BigDecimal> balanceByDate = entry.balanceByDate();
                     List<SummaryReportResponse.Point> series = distinctDates.stream()
                             .map(date -> {
-                                BigDecimal balance = balanceByDate.getOrDefault(date, BigDecimal.ZERO);
+                                BigDecimal balance = balanceAt(balanceByDate, date);
                                 return new SummaryReportResponse.Point(date, balance, balance.subtract(startBalance));
                             })
                             .toList();
@@ -181,7 +181,7 @@ public class ReportQueryService {
                             .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
                             .sorted()
                             .map(date -> {
-                                BigDecimal balance = balanceByDate.getOrDefault(date, BigDecimal.ZERO);
+                                BigDecimal balance = balanceAt(balanceByDate, date);
                                 return new SummaryReportResponse.Point(date, balance, balance.subtract(startBalance));
                             })
                             .toList();
@@ -569,28 +569,35 @@ public class ReportQueryService {
             LocalDate fromDate,
             LocalDate toDate
     ) {
-        BigDecimal startBalance = accounts.stream()
-                .map(account -> startPeriodBalance(account.snapshots(), fromDate))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal endBalance = accounts.stream()
-                .map(account -> currentPeriodDisplayedBalance(account, fromDate, toDate))
+        List<AccountBalanceTimeline> timelines = accounts.stream()
+                .map(account -> toAccountBalanceTimeline(account, fromDate))
+                .toList();
+        BigDecimal startBalance = timelines.stream()
+                .map(AccountBalanceTimeline::baseline)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<LocalDate, BigDecimal> balanceByDate = new LinkedHashMap<>();
+        java.util.Set<LocalDate> relevantDates = new java.util.TreeSet<>();
+        relevantDates.add(fromDate);
+        relevantDates.add(toDate);
+        timelines.forEach(timeline -> timeline.pointDates().stream()
+                .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
+                .forEach(relevantDates::add));
+
+        Map<LocalDate, BigDecimal> balanceByDate = new java.util.TreeMap<>();
         java.util.Set<LocalDate> pointDates = new java.util.LinkedHashSet<>();
         BigDecimal previousDisplayedBalance = null;
-        for (LocalDate date = fromDate; !date.isAfter(toDate); date = date.plusDays(1)) {
-            LocalDate currentDate = date;
-            BigDecimal displayedBalance = accounts.stream()
-                    .map(account -> currentPeriodDisplayedBalance(account, fromDate, currentDate))
+        for (LocalDate date : relevantDates) {
+            BigDecimal displayedBalance = timelines.stream()
+                    .map(timeline -> timeline.balanceAt(date))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            balanceByDate.put(currentDate, displayedBalance);
+            balanceByDate.put(date, displayedBalance);
             if (previousDisplayedBalance == null || displayedBalance.compareTo(previousDisplayedBalance) != 0) {
-                pointDates.add(currentDate);
+                pointDates.add(date);
             }
             previousDisplayedBalance = displayedBalance;
         }
 
+        BigDecimal endBalance = balanceAt(balanceByDate, toDate);
         balanceByDate.put(toDate, endBalance);
         pointDates.add(toDate);
 
@@ -611,17 +618,12 @@ public class ReportQueryService {
                 .orElse(BigDecimal.ZERO);
     }
 
-    private BigDecimal currentPeriodDisplayedBalance(
-            AccountSummarySeries account,
-            LocalDate fromDate,
-            LocalDate date
-    ) {
-        BigDecimal baseline = startPeriodBalance(account.snapshots(), fromDate);
-        return account.dailyBalances().entrySet().stream()
-                .filter(entry -> !entry.getKey().isAfter(date))
-                .reduce((left, right) -> right)
-                .map(Map.Entry::getValue)
-                .orElse(baseline);
+    private AccountBalanceTimeline toAccountBalanceTimeline(AccountSummarySeries account, LocalDate fromDate) {
+        return new AccountBalanceTimeline(
+                startPeriodBalance(account.snapshots(), fromDate),
+                new java.util.TreeMap<>(account.dailyBalances()),
+                account.pointDates()
+        );
     }
 
     private BigDecimal aggregate(List<PlanningReportResponse.Row> rows, java.util.function.Function<PlanningReportResponse.Row, BigDecimal> extractor) {
@@ -640,6 +642,10 @@ public class ReportQueryService {
     }
 
     private BigDecimal balanceAt(Map<LocalDate, BigDecimal> balanceByDate, LocalDate date) {
+        if (balanceByDate instanceof java.util.NavigableMap<LocalDate, BigDecimal> navigableMap) {
+            Map.Entry<LocalDate, BigDecimal> floorEntry = navigableMap.floorEntry(date);
+            return floorEntry == null ? BigDecimal.ZERO : floorEntry.getValue();
+        }
         return balanceByDate.entrySet().stream()
                 .filter(entry -> !entry.getKey().isAfter(date))
                 .reduce((left, right) -> right)
@@ -776,6 +782,17 @@ public class ReportQueryService {
     ) {
         private AccountSummarySeries(UUID accountId, String name, String bankName, String currencyCode) {
             this(accountId, name, bankName, currencyCode, new ArrayList<>(), new LinkedHashMap<>(), new java.util.LinkedHashSet<>());
+        }
+    }
+
+    private record AccountBalanceTimeline(
+            BigDecimal baseline,
+            java.util.NavigableMap<LocalDate, BigDecimal> dailyBalances,
+            java.util.Set<LocalDate> pointDates
+    ) {
+        private BigDecimal balanceAt(LocalDate date) {
+            Map.Entry<LocalDate, BigDecimal> floorEntry = dailyBalances.floorEntry(date);
+            return floorEntry == null ? baseline : floorEntry.getValue();
         }
     }
 }

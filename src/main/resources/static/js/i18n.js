@@ -38,14 +38,15 @@ const MoneySnapshotI18n = (() => {
                     if (window.MoneySnapshotUi?.setTooltip) {
                         window.MoneySnapshotUi.setTooltip(node, messages[titleKey]);
                     } else {
-                        node.dataset.tooltip = messages[titleKey];
-                        node.classList.add("has-app-tooltip");
-                        node.removeAttribute("title");
+                        node.setAttribute("title", messages[titleKey]);
+                        delete node.dataset.tooltip;
+                        node.classList.remove("has-app-tooltip");
                     }
                 } else {
                     if (window.MoneySnapshotUi?.setTooltip) {
                         window.MoneySnapshotUi.setTooltip(node, "");
                     } else {
+                        node.removeAttribute("title");
                         delete node.dataset.tooltip;
                         node.classList.remove("has-app-tooltip");
                     }
