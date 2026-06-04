@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 public class AccountSnapshotService {
+
+    private static final Logger log = LoggerFactory.getLogger(AccountSnapshotService.class);
 
     private final AccountSnapshotRepository snapshotRepository;
     private final AccountRepository accountRepository;
@@ -249,7 +253,11 @@ public class AccountSnapshotService {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    reportCacheRefreshService.refreshOwner(ownerId);
+                    try {
+                        reportCacheRefreshService.refreshOwner(ownerId);
+                    } catch (RuntimeException exception) {
+                        log.warn("Failed to refresh report cache after snapshot commit for owner {}", ownerId, exception);
+                    }
                 }
             });
             return;
