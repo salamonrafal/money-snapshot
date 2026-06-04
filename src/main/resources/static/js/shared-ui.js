@@ -18,6 +18,7 @@ window.MoneySnapshotUi = (() => {
     let settingsPromise = null;
     let tooltipElement = null;
     let activeTooltipTarget = null;
+    const tooltipDescribedById = "app-tooltip";
 
     function ensureTooltipElement() {
         if (tooltipElement) {
@@ -25,12 +26,37 @@ window.MoneySnapshotUi = (() => {
         }
 
         tooltipElement = document.createElement("div");
-        tooltipElement.id = "app-tooltip";
+        tooltipElement.id = tooltipDescribedById;
         tooltipElement.setAttribute("role", "tooltip");
         tooltipElement.className = "app-tooltip";
         tooltipElement.hidden = true;
         document.body.append(tooltipElement);
         return tooltipElement;
+    }
+
+    function addTooltipDescription(element) {
+        const describedBy = (element.getAttribute("aria-describedby") || "")
+            .split(/\s+/)
+            .filter(Boolean);
+        if (!describedBy.includes(tooltipDescribedById)) {
+            describedBy.push(tooltipDescribedById);
+            element.setAttribute("aria-describedby", describedBy.join(" "));
+        }
+    }
+
+    function removeTooltipDescription(element) {
+        if (!element) {
+            return;
+        }
+
+        const describedBy = (element.getAttribute("aria-describedby") || "")
+            .split(/\s+/)
+            .filter((value) => value && value !== tooltipDescribedById);
+        if (describedBy.length > 0) {
+            element.setAttribute("aria-describedby", describedBy.join(" "));
+        } else {
+            element.removeAttribute("aria-describedby");
+        }
     }
 
     function positionTooltip(element) {
@@ -76,6 +102,7 @@ window.MoneySnapshotUi = (() => {
         }
 
         activeTooltipTarget = element;
+        addTooltipDescription(element);
         positionTooltip(element);
     }
 
@@ -84,6 +111,7 @@ window.MoneySnapshotUi = (() => {
             return;
         }
 
+        removeTooltipDescription(activeTooltipTarget);
         activeTooltipTarget = null;
         if (tooltipElement) {
             tooltipElement.hidden = true;
