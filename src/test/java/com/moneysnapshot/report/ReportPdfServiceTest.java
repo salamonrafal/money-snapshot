@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.moneysnapshot.report.web.ReportPdfRequest;
 import com.moneysnapshot.report.web.ReportPdfTableRequest;
+import com.moneysnapshot.security.CurrentUserService;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -24,10 +25,12 @@ import org.junit.jupiter.api.Test;
 class ReportPdfServiceTest {
 
     private final ReportDataVersionService reportDataVersionService = mock(ReportDataVersionService.class);
-    private final ReportPdfService service = new ReportPdfService(new ObjectMapper(), reportDataVersionService);
+    private final CurrentUserService currentUserService = mock(CurrentUserService.class);
+    private final ReportPdfService service = new ReportPdfService(new ObjectMapper(), reportDataVersionService, currentUserService);
 
     @Test
     void returnsCachedPdfForIdenticalSectionVersionAndPayload() {
+        when(currentUserService.currentUserId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         when(reportDataVersionService.currentVersion()).thenReturn(version("v1"));
 
         ReportPdfRequest request = requestWithTable(
@@ -47,6 +50,7 @@ class ReportPdfServiceTest {
 
     @Test
     void storesSeparateCacheEntriesWhenReportDataVersionChanges() {
+        when(currentUserService.currentUserId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         when(reportDataVersionService.currentVersion()).thenReturn(version("v1"), version("v2"));
 
         ReportPdfRequest request = requestWithTable(
@@ -66,6 +70,7 @@ class ReportPdfServiceTest {
 
     @Test
     void normalizesAndEscapesPdfTextContent() {
+        when(currentUserService.currentUserId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         when(reportDataVersionService.currentVersion()).thenReturn(version("v1"));
 
         ReportPdfRequest request = requestWithTable(
@@ -84,6 +89,7 @@ class ReportPdfServiceTest {
 
     @Test
     void createsMultiplePagesForLargeTables() {
+        when(currentUserService.currentUserId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         when(reportDataVersionService.currentVersion()).thenReturn(version("v1"));
 
         List<List<String>> rows = new ArrayList<>();
@@ -115,6 +121,7 @@ class ReportPdfServiceTest {
 
     @Test
     void replacesCharactersUnsupportedByPdfFontInsteadOfFailingExport() {
+        when(currentUserService.currentUserId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         when(reportDataVersionService.currentVersion()).thenReturn(version("v1"));
         String unsupportedSymbol = "\uE000";
 
@@ -129,6 +136,29 @@ class ReportPdfServiceTest {
 
         assertThat(pdfText).contains("Raport ?");
         assertThat(pdfText).contains("Konto ?");
+    }
+
+    @Test
+    void clearCacheRemovesOnlyCurrentOwnersEntries() {
+        UUID firstOwnerId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID secondOwnerId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        when(reportDataVersionService.currentVersion()).thenReturn(version("v1"), version("v1"));
+        when(currentUserService.currentUserId()).thenReturn(firstOwnerId, secondOwnerId);
+
+        ReportPdfRequest request = requestWithTable(
+                "Zestawienie zmian",
+                "Zakres testowy",
+                List.of("Nazwa", "Kwota"),
+                List.of(List.of("Konto 1", "100.00"))
+        );
+
+        service.generatePdf("summary", request);
+        service.generatePdf("summary", request);
+
+        service.clearCache(firstOwnerId);
+
+        assertThat(readPdfCache()).hasSize(1);
+        assertThat(readPdfCache().keySet()).allMatch(key -> key.startsWith(secondOwnerId + "|"));
     }
 
     private ReportPdfRequest requestWithTable(

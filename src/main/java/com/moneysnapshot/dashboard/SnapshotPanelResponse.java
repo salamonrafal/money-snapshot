@@ -9,6 +9,7 @@ public record SnapshotPanelResponse(
         BigDecimal monthlyChangePercent,
         long trackedAccounts,
         List<SnapshotPanelAmountResponse> currentBalances,
-        List<SnapshotPanelAmountResponse> monthlyChanges
+        List<SnapshotPanelAmountResponse> monthlyChanges,
+        List<SnapshotPanelChartPointResponse> chartPoints
 ) {
 }

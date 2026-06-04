@@ -4,7 +4,7 @@ spring:
   application:
     name: money-snapshot
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/money_snapshot}
+    url: ${DB_URL:jdbc:postgresql://localhost:5456/money_snapshot}
     username: ${DB_USERNAME:money_snapshot}
     password: ${DB_PASSWORD:money_snapshot}
   flyway:

@@ -20,7 +20,7 @@ Start PostgreSQL and create a database named `money_snapshot`.
 The repository includes a Docker Compose setup with:
 
 - `web` - Spring Boot application started with Maven.
-- `postgres` - PostgreSQL from the pinned `postgres:18.4` image, exposed on the host as `localhost:5455`.
+- `postgres` - PostgreSQL from the pinned `postgres:18.4` image, exposed on the host as `localhost:5456`.
 - `money-snapshot-postgres-data` - persistent PostgreSQL data volume.
 - `money-snapshot-maven-cache` - Maven dependency cache volume.
 - `money-snapshot-maven-target` - Maven build output volume, mounted at `/app/target` so Docker does not create root-owned `target/` files in the working tree.
@@ -51,7 +51,7 @@ PostgreSQL is available from the host at:
 
 ```text
 host: localhost
-port: 5455
+port: 5456
 database: value from APP_DB_NAME in .env
 user: value from DB_USERNAME in .env
 password: value from DB_PASSWORD in .env
@@ -186,7 +186,7 @@ The first migration is `V1__create_money_snapshot_schema.sql` and creates the ba
 Provide credentials through environment variables if they differ from defaults:
 
 ```bash
-export DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
+export DB_URL=jdbc:postgresql://localhost:5456/money_snapshot
 export APP_DB_NAME=money_snapshot
 export DB_USERNAME=money_snapshot
 export DB_PASSWORD='<application-database-password>'
@@ -195,7 +195,7 @@ export DB_PASSWORD='<application-database-password>'
 Alternatively, create a local `.env` file in the project root. It is loaded automatically when present:
 
 ```properties
-DB_URL=jdbc:postgresql://localhost:5432/money_snapshot
+DB_URL=jdbc:postgresql://localhost:5456/money_snapshot
 APP_DB_NAME=money_snapshot
 DB_USERNAME=money_snapshot
 DB_PASSWORD=<application-database-password>
@@ -285,7 +285,7 @@ To run migrations without starting the web application, use the Flyway Maven plu
 
 ```bash
 mvn org.flywaydb:flyway-maven-plugin:migrate \
-  -Dflyway.url=jdbc:postgresql://localhost:5432/money_snapshot \
+  -Dflyway.url=jdbc:postgresql://localhost:5456/money_snapshot \
   -Dflyway.user=money_snapshot \
   -Dflyway.password=money_snapshot \
   -Dflyway.locations=filesystem:src/main/resources/db/migration

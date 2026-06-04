@@ -71,7 +71,9 @@ public class AccountService {
                 status
         );
 
-        return accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+        eventPublisher.publishEvent(new AccountChangedEvent(owner.getId()));
+        return savedAccount;
     }
 
     @Transactional
@@ -104,14 +106,17 @@ public class AccountService {
                 status
         );
 
-        return accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+        eventPublisher.publishEvent(new AccountChangedEvent(owner.getId()));
+        return savedAccount;
     }
 
     @Transactional
     public void deleteAccount(UUID id) {
-        getAccount(id);
+        Account account = getAccount(id);
 
         eventPublisher.publishEvent(new AccountDeletionRequestedEvent(id));
+        eventPublisher.publishEvent(new AccountChangedEvent(account.getOwner().getId()));
         accountRepository.deleteById(id);
         accountRepository.flush();
     }
@@ -142,6 +147,7 @@ public class AccountService {
             );
         });
 
+        eventPublisher.publishEvent(new AccountChangedEvent(ownerId));
         return accounts;
     }
 

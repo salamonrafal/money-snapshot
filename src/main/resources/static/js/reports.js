@@ -5,6 +5,7 @@ const dateFromInput = document.querySelector("#report-date-from");
 const dateToInput = document.querySelector("#report-date-to");
 const customPeriodFields = document.querySelectorAll(".custom-period-field");
 const refreshButton = document.querySelector("#refresh-reports");
+const clearReportsCacheButton = document.querySelector("#clear-reports-cache");
 const messageElement = document.querySelector("#reports-message");
 const chartElement = document.querySelector("#reports-chart");
 const tableBody = document.querySelector("#reports-table-body");
@@ -50,25 +51,16 @@ const periodOffsets = {
 };
 const MAX_HISTORY_RANGE_DAYS = 732;
 const MAX_REPORT_PDF_TABLE_ROWS = 2000;
+const HISTORY_PDF_EXPORT_PAGE_SIZE = 100;
 
 let currentLanguage = "pl";
 let messages = {};
-let cachedSnapshots = [];
-let snapshotsLoaded = false;
 let currentScope = "accounts";
 let currentOverviewScope = "accounts";
 let currentHistoryPage = 0;
-let historyMatrixCache = null;
-let historyMatrixCacheKey = "";
-let averageContributionReportCache = null;
-let averageContributionReportCacheKey = "";
-let snapshotsVersion = 0;
 let reportsNavStickyEnabled = reportsNavStickyMedia.matches;
 let reportsNavStickyFramePending = false;
 let userSettings = null;
-let cachedSavingsForecast = null;
-let snapshotsPromise = null;
-let savingsForecastPromise = null;
 const reportPdfData = {};
 
 const reportSections = {
@@ -385,19 +377,6 @@ function setPlanningMessage(text, type = "") {
     planningMessageElement.dataset.type = type;
 }
 
-function invalidateHistoryCache() {
-    historyMatrixCache = null;
-    historyMatrixCacheKey = "";
-}
-
-function isoDateKey(date) {
-    return String(date).slice(0, 10);
-}
-
-function monthBucket(date) {
-    return String(date).slice(0, 7);
-}
-
 function updateReportsNavActiveState() {
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
     let activeTarget = "";
@@ -465,178 +444,6 @@ function handleReportsNavResize() {
     reportsNavStickyEnabled = reportsNavStickyMedia.matches;
     updateReportsNavActiveState();
     scheduleReportsNavPanelStickyStateUpdate();
-}
-
-function latestBalanceAtOrBefore(snapshots, date) {
-    const candidate = snapshots
-            .filter((snapshot) => snapshot.snapshotDate <= date)
-            .sort((left, right) => right.snapshotDate.localeCompare(left.snapshotDate))[0];
-    return candidate ? Number(candidate.balance) : 0;
-}
-
-function groupKey(snapshot, scope) {
-    if (scope === "accounts") {
-        return `${snapshot.accountId}|${snapshot.currencyCode}`;
-    }
-
-    if (scope === "banks") {
-        return `${snapshot.bankName}|${snapshot.currencyCode}`;
-    }
-
-    return `total|${snapshot.currencyCode}`;
-}
-
-function groupName(snapshot, scope) {
-    if (scope === "accounts") {
-        return snapshot.accountName;
-    }
-
-    if (scope === "banks") {
-        return snapshot.bankName;
-    }
-
-    return messages["reports.total.name"];
-}
-
-function buildEntries(snapshots, scope) {
-    const groupedSnapshots = new Map();
-
-    snapshots.forEach((snapshot) => {
-        const key = groupKey(snapshot, scope);
-        const entry = groupedSnapshots.get(key) ?? {
-            name: groupName(snapshot, scope),
-            currencyCode: snapshot.currencyCode,
-            accountSnapshots: scope === "accounts" ? null : new Map(),
-            snapshots: []
-        };
-
-        if (scope === "accounts") {
-            entry.snapshots.push(snapshot);
-        } else {
-            const accountSnapshots = entry.accountSnapshots.get(snapshot.accountId) ?? [];
-            accountSnapshots.push(snapshot);
-            entry.accountSnapshots.set(snapshot.accountId, accountSnapshots);
-        }
-
-        groupedSnapshots.set(key, entry);
-    });
-
-    return [...groupedSnapshots.values()];
-}
-
-function balanceForEntryAt(entry, date) {
-    if (entry.accountSnapshots) {
-        return [...entry.accountSnapshots.values()]
-                .reduce((sum, accountSnapshots) => sum + latestBalanceAtOrBefore(accountSnapshots, date), 0);
-    }
-
-    return latestBalanceAtOrBefore(entry.snapshots, date);
-}
-
-function resolveChartStep(range) {
-    if (periodSelect.value === "1m") {
-        return "day";
-    }
-
-    if (periodSelect.value === "billing") {
-        return "day";
-    }
-
-    if (periodSelect.value === "3m") {
-        return "week";
-    }
-
-    if (periodSelect.value === "custom") {
-        const from = new Date(`${range.fromDate}T00:00:00Z`).getTime();
-        const to = new Date(`${range.toDate}T00:00:00Z`).getTime();
-        const days = Math.floor((to - from) / 86400000) + 1;
-
-        if (days <= 31) {
-            return "day";
-        }
-
-        if (days <= 92) {
-            return "week";
-        }
-    }
-
-    return "month";
-}
-
-function nextCheckpoint(date, step) {
-    if (step === "day") {
-        return addDays(date, 1);
-    }
-
-    if (step === "week") {
-        return addDays(date, 7);
-    }
-
-    return addMonths(date, 1);
-}
-
-function buildCheckpoints({fromDate, toDate}, step) {
-    const checkpoints = [fromDate];
-    let nextDate = nextCheckpoint(fromDate, step);
-
-    while (nextDate < toDate) {
-        checkpoints.push(nextDate);
-        nextDate = nextCheckpoint(nextDate, step);
-    }
-
-    if (checkpoints.at(-1) !== toDate) {
-        checkpoints.push(toDate);
-    }
-
-    return checkpoints;
-}
-
-function buildRows(snapshots, range, scope) {
-    const step = resolveChartStep(range);
-    const checkpoints = buildCheckpoints(range, step);
-
-    const rows = buildEntries(snapshots, scope).map((entry) => {
-        const startBalance = balanceForEntryAt(entry, range.fromDate);
-        const endBalance = balanceForEntryAt(entry, range.toDate);
-        const change = endBalance - startBalance;
-        const snapshotsForPoints = entry.accountSnapshots
-                ? [...entry.accountSnapshots.values()].flat()
-                : entry.snapshots;
-        const pointDates = [...new Set(snapshotsForPoints
-                .filter((snapshot) => snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate)
-                .map((snapshot) => snapshot.snapshotDate))]
-                .sort();
-        const points = pointDates.map((date) => {
-            const balance = balanceForEntryAt(entry, date);
-            return {
-                date,
-                balance,
-                change: balance - startBalance
-            };
-        });
-        const seriesDates = [...new Set([range.fromDate, ...checkpoints, ...pointDates, range.toDate])].sort();
-        const series = seriesDates.map((date) => {
-            const balance = balanceForEntryAt(entry, date);
-            return {
-                date,
-                balance,
-                change: balance - startBalance
-            };
-        });
-
-        return {
-            name: entry.name,
-            currencyCode: entry.currencyCode,
-            startBalance,
-            endBalance,
-            change,
-            changePercent: startBalance === 0 ? null : (change * 100) / startBalance,
-            points,
-            series
-        };
-    }).sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode));
-
-    return {rows, step, checkpoints};
 }
 
 function renderEmpty(message) {
@@ -888,97 +695,6 @@ function renderChart(rows, step, checkpoints) {
     `;
 }
 
-function buildOverviewRows(snapshots, toDate, scope) {
-    return buildEntries(snapshots, scope)
-            .map((entry) => {
-                const balance = balanceForEntryAt(entry, toDate);
-                return {
-                    name: entry.name,
-                    currencyCode: entry.currencyCode,
-                    balance
-                };
-            })
-            .filter((row) => row.balance !== 0)
-            .sort((left, right) => right.balance - left.balance);
-}
-
-function buildAverageContributionRows(snapshots) {
-    const grouped = new Map();
-    snapshots.forEach((snapshot) => {
-        if (snapshot.snapshotType !== "FINAL") {
-            return;
-        }
-
-        const key = `${snapshot.accountId}|${snapshot.currencyCode}`;
-        const entry = grouped.get(key) ?? {
-            accountId: snapshot.accountId,
-            accountName: snapshot.accountName,
-            bankName: snapshot.bankName,
-            currencyCode: snapshot.currencyCode,
-            finalSnapshots: []
-        };
-
-        entry.finalSnapshots.push({
-            snapshotDate: snapshot.snapshotDate,
-            balance: Number(snapshot.balance)
-        });
-
-        grouped.set(key, entry);
-    });
-
-    const rows = [...grouped.values()]
-            .filter((entry) => entry.finalSnapshots.length >= 2)
-            .map((entry) => {
-                const balances = [...entry.finalSnapshots]
-                        .sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate))
-                        .slice(-3);
-
-                const changes = [];
-                for (let index = 1; index < balances.length; index += 1) {
-                    changes.push(balances[index].balance - balances[index - 1].balance);
-                }
-
-                return {
-                    accountId: entry.accountId,
-                    name: entry.accountName,
-                    bankName: entry.bankName,
-                    currencyCode: entry.currencyCode,
-                    averageContribution: changes.reduce((sum, value) => sum + value, 0) / changes.length,
-                    sampleFromDate: balances[0]?.snapshotDate ?? null,
-                    sampleToDate: balances.at(-1)?.snapshotDate ?? null
-                };
-            })
-            .sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode, locale()));
-
-    const totals = [...rows.reduce((accumulator, row) => {
-        accumulator.set(
-                row.currencyCode,
-                (accumulator.get(row.currencyCode) ?? 0) + row.averageContribution
-        );
-        return accumulator;
-    }, new Map()).entries()]
-            .map(([currencyCode, averageContribution]) => ({currencyCode, averageContribution}))
-            .sort((left, right) => left.currencyCode.localeCompare(right.currencyCode, locale()));
-
-    return {rows, totals};
-}
-
-function invalidateAverageContributionReportCache() {
-    averageContributionReportCache = null;
-    averageContributionReportCacheKey = "";
-}
-
-function getAverageContributionReport(snapshots) {
-    const cacheKey = `${snapshotsVersion}|${locale()}`;
-    if (averageContributionReportCache && averageContributionReportCacheKey === cacheKey) {
-        return averageContributionReportCache;
-    }
-
-    averageContributionReportCache = buildAverageContributionRows(snapshots);
-    averageContributionReportCacheKey = cacheKey;
-    return averageContributionReportCache;
-}
-
 function renderAverageContributionsEmpty(message) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
@@ -1028,224 +744,6 @@ function renderAverageContributions(rows, totals) {
         tableRow.append(labelCell, valueCell);
         return tableRow;
     }));
-}
-
-function buildPlanningRows(snapshots) {
-    const averageContributionReport = getAverageContributionReport(snapshots);
-    const averageContributionByAccountKey = new Map();
-    const currentPlanByAccountKey = new Map();
-    const yearlyPlanByAccountKey = new Map();
-    const latestBalanceByAccountKey = new Map();
-    const accountMetaByAccountKey = new Map();
-    const today = todayIsoDate();
-    const yearlyPlanTargetMonth = addMonths(today, 11);
-    const yearlyPlanTargetMonthBucket = monthBucket(yearlyPlanTargetMonth);
-    const noDataValue = null;
-
-    averageContributionReport.rows.forEach((row) => {
-        averageContributionByAccountKey.set(`${row.accountId}|${row.currencyCode}`, row);
-        accountMetaByAccountKey.set(`${row.accountId}|${row.currencyCode}`, {
-            accountId: row.accountId,
-            name: row.name,
-            bankName: row.bankName,
-            currencyCode: row.currencyCode
-        });
-    });
-
-    snapshots.forEach((snapshot) => {
-        if (snapshot.snapshotDate > today) {
-            return;
-        }
-
-        const key = `${snapshot.accountId}|${snapshot.currencyCode}`;
-        const currentMeta = accountMetaByAccountKey.get(key);
-        if (!currentMeta || (currentMeta.snapshotDate ?? "") < snapshot.snapshotDate) {
-            accountMetaByAccountKey.set(key, {
-                accountId: snapshot.accountId,
-                name: snapshot.accountName,
-                bankName: snapshot.bankName,
-                currencyCode: snapshot.currencyCode,
-                snapshotDate: snapshot.snapshotDate
-            });
-        }
-        const currentLatest = latestBalanceByAccountKey.get(key);
-        if (!currentLatest || currentLatest.snapshotDate < snapshot.snapshotDate) {
-            latestBalanceByAccountKey.set(key, {
-                snapshotDate: snapshot.snapshotDate,
-                balance: Number(snapshot.balance)
-            });
-        }
-    });
-
-    if (cachedSavingsForecast?.entries) {
-        cachedSavingsForecast.entries.forEach((entry) => {
-            const key = `${entry.accountId}|${entry.currencyCode}`;
-            if (!accountMetaByAccountKey.has(key)) {
-                accountMetaByAccountKey.set(key, {
-                    accountId: entry.accountId,
-                    name: entry.accountName,
-                    bankName: entry.bankName,
-                    currencyCode: entry.currencyCode,
-                    snapshotDate: entry.latestSnapshotDate ?? ""
-                });
-            }
-            const monthlyBalances = entry.monthlyBalances ?? [];
-            let currentPlanValue = null;
-            if (today >= cachedSavingsForecast.forecastStartDate && today <= cachedSavingsForecast.forecastEndDate) {
-                for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
-                    if (isoDateKey(monthlyBalances[index].forecastMonth) <= today) {
-                        currentPlanValue = monthlyBalances[index];
-                        break;
-                    }
-                }
-            }
-            let yearlyPlanValue = null;
-            if (monthBucket(cachedSavingsForecast.forecastEndDate) >= yearlyPlanTargetMonthBucket) {
-                for (let index = monthlyBalances.length - 1; index >= 0; index -= 1) {
-                    if (monthBucket(monthlyBalances[index].forecastMonth) <= yearlyPlanTargetMonthBucket) {
-                        yearlyPlanValue = monthlyBalances[index];
-                        break;
-                    }
-                }
-            }
-
-            if (currentPlanValue) {
-                currentPlanByAccountKey.set(
-                        key,
-                        Number(currentPlanValue.balance)
-                );
-            }
-
-            if (yearlyPlanValue) {
-                yearlyPlanByAccountKey.set(
-                        key,
-                        Number(yearlyPlanValue.balance)
-                );
-            }
-        });
-    }
-
-    const accountKeys = [...new Set([
-        ...accountMetaByAccountKey.keys(),
-        ...latestBalanceByAccountKey.keys(),
-        ...currentPlanByAccountKey.keys(),
-        ...yearlyPlanByAccountKey.keys()
-    ])];
-
-    const rows = accountKeys
-            .map((accountKey) => {
-                const averageContributionRow = averageContributionByAccountKey.get(accountKey);
-                const metadata = accountMetaByAccountKey.get(accountKey);
-                const currentBalance = latestBalanceByAccountKey.get(accountKey)?.balance ?? null;
-                const averageContribution = averageContributionRow?.averageContribution ?? noDataValue;
-                const yearlyChange = averageContribution === null ? null : averageContribution * 12;
-                const projectedBalance = yearlyChange === null || currentBalance === null ? null : currentBalance + yearlyChange;
-                const currentPlannedBalance = currentPlanByAccountKey.get(accountKey) ?? null;
-                const plannedBalance = yearlyPlanByAccountKey.get(accountKey) ?? null;
-                return {
-                    accountId: metadata?.accountId ?? "",
-                    name: metadata?.name ?? "",
-                    bankName: metadata?.bankName ?? "",
-                    currencyCode: metadata?.currencyCode ?? "",
-                    averageContribution,
-                    currentBalance,
-                    currentPlannedBalance,
-                    currentDifferenceToPlan: currentBalance === null || currentPlannedBalance === null ? null : currentBalance - currentPlannedBalance,
-                    projectedBalance,
-                    yearlyChange,
-                    projectedChangePercent: yearlyChange === null || currentBalance === null || currentBalance === 0 ? null : (yearlyChange * 100) / currentBalance,
-                    plannedBalance,
-                    differenceToPlan: projectedBalance === null || plannedBalance === null ? null : projectedBalance - plannedBalance
-                };
-            })
-            .sort((left, right) => left.name.localeCompare(right.name, locale()) || left.currencyCode.localeCompare(right.currencyCode, locale()));
-
-    const totals = [...rows.reduce((accumulator, row) => {
-        const nextValue = accumulator.get(row.currencyCode) ?? {
-            currencyCode: row.currencyCode,
-            accountCount: 0,
-            currentBalance: 0,
-            averageContribution: 0,
-            projectedBalance: 0,
-            yearlyChange: 0,
-            currentPlannedBalance: 0,
-            plannedBalance: 0,
-            currentBalanceCount: 0,
-            averageContributionCount: 0,
-            currentPlanCount: 0,
-            yearlyPlanCount: 0
-        };
-        nextValue.accountCount += 1;
-        if (row.currentBalance !== null) {
-            nextValue.currentBalance += row.currentBalance;
-            nextValue.currentBalanceCount += 1;
-        }
-        if (row.averageContribution !== null) {
-            nextValue.averageContribution += row.averageContribution;
-            nextValue.averageContributionCount += 1;
-        }
-        if (row.projectedBalance !== null) {
-            nextValue.projectedBalance += row.projectedBalance;
-        }
-        if (row.yearlyChange !== null) {
-            nextValue.yearlyChange += row.yearlyChange;
-        }
-        if (row.currentPlannedBalance !== null) {
-            nextValue.currentPlannedBalance += row.currentPlannedBalance;
-            nextValue.currentPlanCount += 1;
-        }
-        if (row.plannedBalance !== null) {
-            nextValue.plannedBalance += row.plannedBalance;
-            nextValue.yearlyPlanCount += 1;
-        }
-        accumulator.set(row.currencyCode, nextValue);
-        return accumulator;
-    }, new Map()).values()]
-            .map((total) => ({
-                ...total,
-                currentBalance: total.accountCount > 0 && total.currentBalanceCount === total.accountCount
-                        ? total.currentBalance
-                        : null,
-                averageContribution: total.accountCount > 0 && total.averageContributionCount === total.accountCount
-                        ? total.averageContribution
-                        : null,
-                projectedBalance: total.accountCount > 0
-                        && total.currentBalanceCount === total.accountCount
-                        && total.averageContributionCount === total.accountCount
-                        ? total.projectedBalance
-                        : null,
-                yearlyChange: total.accountCount > 0
-                        && total.currentBalanceCount === total.accountCount
-                        && total.averageContributionCount === total.accountCount
-                        ? total.yearlyChange
-                        : null,
-                projectedChangePercent: total.accountCount > 0
-                        && total.currentBalanceCount === total.accountCount
-                        && total.averageContributionCount === total.accountCount
-                        && total.currentBalance !== 0
-                        ? (total.yearlyChange * 100) / total.currentBalance
-                        : null,
-                currentPlannedBalance: total.accountCount > 0 && total.currentPlanCount === total.accountCount
-                        ? total.currentPlannedBalance
-                        : null,
-                currentDifferenceToPlan: total.accountCount > 0
-                        && total.currentBalanceCount === total.accountCount
-                        && total.currentPlanCount === total.accountCount
-                        ? total.currentBalance - total.currentPlannedBalance
-                        : null,
-                plannedBalance: total.accountCount > 0 && total.yearlyPlanCount === total.accountCount
-                        ? total.plannedBalance
-                        : null,
-                differenceToPlan: total.accountCount > 0
-                        && total.currentBalanceCount === total.accountCount
-                        && total.averageContributionCount === total.accountCount
-                        && total.yearlyPlanCount === total.accountCount
-                        ? total.projectedBalance - total.plannedBalance
-                        : null
-            }))
-            .sort((left, right) => left.currencyCode.localeCompare(right.currencyCode, locale()));
-
-    return {rows, totals};
 }
 
 function renderPlanningEmpty(message) {
@@ -1450,9 +948,8 @@ function renderOverviewChart(rows) {
     });
 }
 
-function renderOverview(toDate) {
+function renderOverview(rawRows) {
     setOverviewMessage("");
-    const rawRows = buildOverviewRows(cachedSnapshots, toDate, currentOverviewScope);
     if (rawRows.length === 0) {
         clearReportPdfData("overview");
         renderOverviewEmpty(messages["reports.overview.empty"]);
@@ -1515,104 +1012,6 @@ function resolveHistoryRange() {
     };
 }
 
-function buildHistoryRows(range) {
-    validateHistoryRange(range.fromDate, range.toDate);
-    const snapshotsByAccountId = new Map();
-    cachedSnapshots.forEach((snapshot) => {
-        const accountSnapshots = snapshotsByAccountId.get(snapshot.accountId) ?? [];
-        accountSnapshots.push(snapshot);
-        snapshotsByAccountId.set(snapshot.accountId, accountSnapshots);
-    });
-
-    const snapshotsInRange = cachedSnapshots.filter((snapshot) =>
-        snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate
-    );
-    if (snapshotsInRange.length === 0) {
-        return {accounts: [], rows: []};
-    }
-
-    const accountsMap = new Map();
-    const dates = [...new Set(snapshotsInRange.map((snapshot) => snapshot.snapshotDate))]
-            .sort((left, right) => right.localeCompare(left));
-
-    snapshotsInRange.forEach((snapshot) => {
-        const account = accountsMap.get(snapshot.accountId) ?? {
-            id: snapshot.accountId,
-            accountName: snapshot.accountName,
-            bankName: snapshot.bankName,
-            currencyCode: snapshot.currencyCode
-        };
-        accountsMap.set(snapshot.accountId, account);
-    });
-
-    const accounts = [...accountsMap.values()]
-            .sort((left, right) => left.accountName.localeCompare(right.accountName, locale()) || left.currencyCode.localeCompare(right.currencyCode));
-
-    const seriesByAccountId = new Map();
-    accounts.forEach((account) => {
-        const snapshots = [...(snapshotsByAccountId.get(account.id) ?? [])]
-                .sort((left, right) => left.snapshotDate.localeCompare(right.snapshotDate));
-        const series = new Map();
-        let previousBalance = null;
-        snapshots.forEach((snapshot) => {
-            const balance = Number(snapshot.balance);
-            const isInRange = snapshot.snapshotDate >= range.fromDate && snapshot.snapshotDate <= range.toDate;
-            if (isInRange) {
-                series.set(snapshot.snapshotDate, {
-                    balance,
-                    diff: previousBalance === null ? balance : balance - previousBalance
-                });
-            }
-            previousBalance = balance;
-        });
-        seriesByAccountId.set(account.id, series);
-    });
-
-    const rows = dates.map((date) => ({
-        date,
-        values: accounts.map((account) => seriesByAccountId.get(account.id).get(date) ?? null)
-    }));
-
-    return {accounts, rows};
-}
-
-function historyRangeCacheKey(range) {
-    return `${range.fromDate}:${range.toDate}:${currentLanguage}`;
-}
-
-function historyMatrixForRange(range) {
-    const cacheKey = historyRangeCacheKey(range);
-    if (historyMatrixCache && historyMatrixCacheKey === cacheKey) {
-        return historyMatrixCache;
-    }
-
-    historyMatrixCache = buildHistoryRows(range);
-    historyMatrixCacheKey = cacheKey;
-    return historyMatrixCache;
-}
-
-function paginateHistoryMatrix(matrix) {
-    const pageSize = Number(historyPageSizeSelect.value);
-    const totalElements = matrix.rows.length;
-    const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
-    if (currentHistoryPage >= totalPages) {
-        currentHistoryPage = totalPages - 1;
-    }
-
-    const startIndex = currentHistoryPage * pageSize;
-    const endIndex = startIndex + pageSize;
-    return {
-        accounts: matrix.accounts,
-        rows: matrix.rows.slice(startIndex, endIndex),
-        page: currentHistoryPage,
-        pageSize,
-        totalElements,
-        totalPages,
-        first: currentHistoryPage === 0,
-        last: currentHistoryPage >= totalPages - 1
-    };
-}
-
 function renderHistoryPagination(pageData) {
     if (!pageData) {
         historyPageInfo.textContent = "-";
@@ -1660,88 +1059,40 @@ function reportSectionKeyForElement(element) {
 }
 
 function clearReportPdfData(key) {
+    if (!key) {
+        Object.keys(reportPdfData).forEach((entryKey) => delete reportPdfData[entryKey]);
+        return;
+    }
     delete reportPdfData[key];
 }
 
-async function ensureSnapshotsLoaded(force = false) {
-    if (force) {
-        snapshotsLoaded = false;
-        snapshotsPromise = null;
+async function fetchReportJson(url) {
+    const response = await fetch(url, {cache: "no-store"});
+    if (!response.ok) {
+        throw new Error(messages["reports.error.load"] ?? "Cannot load report.");
     }
 
-    if (snapshotsLoaded && snapshotsPromise) {
-        return snapshotsPromise;
-    }
-
-    if (!snapshotsPromise) {
-        snapshotsPromise = fetch("/api/snapshots")
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(messages["reports.error.load"]);
-                    }
-                    return response.json();
-                })
-                .then((snapshots) => {
-                    cachedSnapshots = snapshots;
-                    snapshotsLoaded = true;
-                    snapshotsVersion += 1;
-                    invalidateAverageContributionReportCache();
-                    invalidateHistoryCache();
-                    return cachedSnapshots;
-                })
-                .catch((error) => {
-                    snapshotsLoaded = false;
-                    snapshotsPromise = null;
-                    throw error;
-                });
-    }
-
-    return snapshotsPromise;
+    return response.json();
 }
 
-async function ensureLatestSavingsForecastLoaded(force = false) {
-    if (force) {
-        cachedSavingsForecast = null;
-        savingsForecastPromise = null;
+async function clearReportsCache() {
+    const response = await fetch("/api/reports/cache/clear", {
+        method: "POST",
+        cache: "no-store"
+    });
+    if (!response.ok) {
+        throw new Error(messages["reports.error.clearCache"] ?? messages["reports.error.load"] ?? "Cannot clear report cache.");
     }
-
-    if (!savingsForecastPromise) {
-        savingsForecastPromise = fetch("/api/savings-planning/forecasts/latest", {
-            cache: "no-store"
-        })
-                .then((response) => {
-                    if (response.status === 204) {
-                        return null;
-                    }
-
-                    if (!response.ok) {
-                        console.warn("Failed to load latest savings forecast for reports.", {status: response.status});
-                        return null;
-                    }
-
-                    return response.json();
-                })
-                .catch((error) => {
-                    console.warn("Failed to fetch latest savings forecast for reports.", error);
-                    return null;
-                })
-                .then((forecast) => {
-                    cachedSavingsForecast = forecast;
-                    return cachedSavingsForecast;
-                });
-    }
-
-    return savingsForecastPromise;
 }
 
 async function renderSummaryReportSection() {
-    await ensureSnapshotsLoaded();
-    setMessage("");
     const range = resolveDateRange();
-    const {rows, step, checkpoints} = buildRows(cachedSnapshots, range, currentScope);
+    const effectiveFromDate = periodSelect.value === "billing" ? addDays(range.fromDate, 1) : range.fromDate;
+    const summary = await fetchReportJson(`/api/reports/summary?scope=${encodeURIComponent(currentScope)}&fromDate=${encodeURIComponent(effectiveFromDate)}&toDate=${encodeURIComponent(range.toDate)}`);
+    setMessage("");
     setMessage(displayRangeLabel(range, periodSelect.value));
 
-    if (rows.length === 0) {
+    if (!summary.rows || summary.rows.length === 0) {
         clearReportPdfData("summary");
         renderEmpty(messages["reports.empty"]);
         return;
@@ -1751,7 +1102,7 @@ async function renderSummaryReportSection() {
         title: messages["reports.table.title"],
         subtitle: displayRangeLabel(range, periodSelect.value),
         chartType: "line",
-        chart: {rows, checkpoints},
+        chart: {rows: summary.rows, checkpoints: summary.checkpoints},
         table: {
             columns: [
                 messages["reports.table.name"],
@@ -1761,7 +1112,7 @@ async function renderSummaryReportSection() {
                 messages["reports.table.change"],
                 messages["reports.table.percent"]
             ],
-            rows: rows.map((row) => [
+            rows: summary.rows.map((row) => [
                 row.name,
                 row.currencyCode,
                 formatAmount(row.startBalance),
@@ -1771,18 +1122,17 @@ async function renderSummaryReportSection() {
             ])
         }
     };
-    renderChart(rows, step, checkpoints);
-    renderTable(rows);
+    renderChart(summary.rows, summary.step, summary.checkpoints);
+    renderTable(summary.rows);
 }
 
 async function renderOverviewReportSection() {
-    await ensureSnapshotsLoaded();
-    renderOverview(todayIsoDate());
+    const overview = await fetchReportJson(`/api/reports/overview?scope=${encodeURIComponent(currentOverviewScope)}&toDate=${encodeURIComponent(todayIsoDate())}`);
+    renderOverview(overview.rows ?? []);
 }
 
 async function renderAverageContributionsReportSection() {
-    await ensureSnapshotsLoaded();
-    const averageContributionReport = getAverageContributionReport(cachedSnapshots);
+    const averageContributionReport = await fetchReportJson("/api/reports/average-contributions");
     if (averageContributionReport.rows.length === 0) {
         clearReportPdfData("averageContributions");
         renderAverageContributionsEmpty(messages["reports.average.empty"]);
@@ -1816,9 +1166,7 @@ async function renderAverageContributionsReportSection() {
 }
 
 async function renderPlanningReportSection() {
-    await ensureSnapshotsLoaded();
-    await ensureLatestSavingsForecastLoaded();
-    const planningReport = buildPlanningRows(cachedSnapshots);
+    const planningReport = await fetchReportJson("/api/reports/planning");
     if (planningReport.rows.length === 0) {
         clearReportPdfData("planning");
         renderPlanningEmpty(messages["reports.planning.empty"]);
@@ -1869,10 +1217,11 @@ async function renderPlanningReportSection() {
 }
 
 async function renderHistoryReportSection() {
-    await ensureSnapshotsLoaded();
     setHistoryMessage("");
     const range = resolveHistoryRange();
-    const matrix = historyMatrixForRange(range);
+    const matrix = await fetchReportJson(
+            `/api/reports/history?fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}&page=${currentHistoryPage}&size=${Number(historyPageSizeSelect.value)}`
+    );
     if (matrix.accounts.length === 0) {
         clearReportPdfData("history");
         renderHistoryEmpty(messages["reports.history.empty"]);
@@ -1880,16 +1229,51 @@ async function renderHistoryReportSection() {
         return;
     }
 
-    const pagedMatrix = paginateHistoryMatrix(matrix);
-    renderHistoryTable(pagedMatrix);
-    renderHistoryPagination(pagedMatrix);
+    renderHistoryTable(matrix);
+    renderHistoryPagination(matrix);
     setHistoryMessage("");
     clearReportPdfData("history");
 }
 
-function buildHistoryPdfExportData() {
-    const range = resolveHistoryRange();
-    const matrix = historyMatrixForRange(range);
+async function fetchHistoryPdfMatrix(range) {
+    const pageSize = Math.min(HISTORY_PDF_EXPORT_PAGE_SIZE, MAX_REPORT_PDF_TABLE_ROWS);
+    const firstPage = await fetchReportJson(
+            `/api/reports/history?fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}&page=0&size=${pageSize}`
+    );
+    let exportRowCount = firstPage.rows.reduce((count, row) => count + row.values.filter((value) => value).length, 0);
+    if (exportRowCount > MAX_REPORT_PDF_TABLE_ROWS) {
+        throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+    }
+    if ((firstPage.totalPages ?? 1) <= 1) {
+        return firstPage;
+    }
+
+    const rows = [...firstPage.rows];
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+        const nextPage = await fetchReportJson(
+                `/api/reports/history?fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}&page=${page}&size=${pageSize}`
+        );
+        rows.push(...nextPage.rows);
+        exportRowCount += nextPage.rows.reduce((count, row) => count + row.values.filter((value) => value).length, 0);
+        if (exportRowCount > MAX_REPORT_PDF_TABLE_ROWS) {
+            throw new Error((messages["reports.error.pdfRowLimit"] ?? "")
+                    .replace("{rows}", String(MAX_REPORT_PDF_TABLE_ROWS)));
+        }
+    }
+
+    return {
+        ...firstPage,
+        rows,
+        page: 0,
+        pageSize: rows.length,
+        first: true,
+        last: true
+    };
+}
+
+async function buildHistoryPdfExportData() {
+    const matrix = await fetchHistoryPdfMatrix(resolveHistoryRange());
     const columns = [
         messages["reports.history.date"],
         messages["reports.history.account"],
@@ -2074,21 +1458,30 @@ function initializeReportLazyLoading() {
 }
 
 async function refreshVisibleReports() {
-    await ensureSnapshotsLoaded(true);
-    if (reportSections.planning.visible) {
-        await ensureLatestSavingsForecastLoaded(true);
-    } else {
-        cachedSavingsForecast = null;
-        savingsForecastPromise = null;
-    }
-    markReportSectionsDirty();
-    renderVisibleReportSections();
+    const visibleKeys = reportSectionKeys.filter((key) => reportSections[key]?.visible);
+    markReportSectionsDirty(visibleKeys);
+    renderVisibleReportSections(visibleKeys);
+    await Promise.all(visibleKeys.map((key) => waitForSectionSettled(key)));
 }
 
 function waitForSectionIdle(key) {
     return new Promise((resolve) => {
         function check() {
             if (!reportSections[key]?.loading) {
+                resolve();
+                return;
+            }
+            window.setTimeout(check, 40);
+        }
+        check();
+    });
+}
+
+function waitForSectionSettled(key) {
+    return new Promise((resolve) => {
+        function check() {
+            const section = reportSections[key];
+            if (!section || (!section.loading && !section.dirty)) {
                 resolve();
                 return;
             }
@@ -2182,7 +1575,7 @@ async function exportReportSectionToPdf(key, button) {
         }
         await waitForSectionIdle(key);
         const data = key === "history"
-                ? buildHistoryPdfExportData()
+                ? await buildHistoryPdfExportData()
                 : reportPdfData[key];
         if (!data) {
             throw new Error(messages["reports.error.load"]);
@@ -2203,8 +1596,6 @@ async function exportReportSectionToPdf(key, button) {
 function handleLanguageChange(nextLanguage, nextMessages) {
     currentLanguage = nextLanguage;
     messages = nextMessages;
-    invalidateAverageContributionReportCache();
-    invalidateHistoryCache();
     document.title = `${messages["reports.heading.title"]} | ${messages["app.name"]}`;
     chartElement.setAttribute("aria-label", messages["reports.chart.aria.changes"]);
     overviewChartElement.setAttribute("aria-label", messages["reports.chart.aria.overview"]);
@@ -2214,6 +1605,9 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     reportsNavElement.setAttribute("aria-label", messages["reports.nav.aria"]);
     reportFilterButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.filters"]));
     reportPdfButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.pdf"]));
+    if (clearReportsCacheButton) {
+        MoneySnapshotUi.setTooltip(clearReportsCacheButton, messages["reports.actions.clearCache"]);
+    }
     if (!dateToInput.value) {
         dateToInput.value = todayIsoDate();
     }
@@ -2270,6 +1664,24 @@ refreshButton.addEventListener("click", () => {
     });
 });
 
+if (clearReportsCacheButton) {
+    clearReportsCacheButton.addEventListener("click", async () => {
+        clearReportsCacheButton.disabled = true;
+
+        try {
+            await clearReportsCache();
+            currentHistoryPage = 0;
+            clearReportPdfData();
+            markReportSectionsDirty();
+            await refreshVisibleReports();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            clearReportsCacheButton.disabled = false;
+        }
+    });
+}
+
 refreshHistoryButton.addEventListener("click", () => {
     currentHistoryPage = 0;
     markReportSectionsDirty(["history"]);
@@ -2313,6 +1725,11 @@ reportFilterButtons.forEach((button) => {
         toggleReportFilterMenu(button);
     });
 });
+
+if (clearReportsCacheButton) {
+    clearReportsCacheButton.append(MoneySnapshotUi.createTrashIcon());
+    MoneySnapshotUi.setTooltip(clearReportsCacheButton, clearReportsCacheButton.textContent.trim());
+}
 
 updateCustomPeriodVisibility();
 updateHistoryCustomPeriodVisibility();

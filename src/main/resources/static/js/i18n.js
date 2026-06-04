@@ -35,12 +35,21 @@ const MoneySnapshotI18n = (() => {
 
             if (titleKey) {
                 if (messages[titleKey]) {
-                    node.dataset.tooltip = messages[titleKey];
-                    node.classList.add("has-app-tooltip");
-                    node.removeAttribute("title");
+                    if (window.MoneySnapshotUi?.setTooltip) {
+                        window.MoneySnapshotUi.setTooltip(node, messages[titleKey]);
+                    } else {
+                        node.setAttribute("title", messages[titleKey]);
+                        delete node.dataset.tooltip;
+                        node.classList.remove("has-app-tooltip");
+                    }
                 } else {
-                    delete node.dataset.tooltip;
-                    node.classList.remove("has-app-tooltip");
+                    if (window.MoneySnapshotUi?.setTooltip) {
+                        window.MoneySnapshotUi.setTooltip(node, "");
+                    } else {
+                        node.removeAttribute("title");
+                        delete node.dataset.tooltip;
+                        node.classList.remove("has-app-tooltip");
+                    }
                 }
             }
 

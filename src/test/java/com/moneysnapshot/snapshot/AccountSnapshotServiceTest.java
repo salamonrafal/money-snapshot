@@ -4,12 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moneysnapshot.account.Account;
 import com.moneysnapshot.account.AccountRepository;
+import com.moneysnapshot.report.ReportCacheRefreshService;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.snapshot.web.CreateAccountSnapshotRequest;
 import com.moneysnapshot.snapshot.web.UpdateSnapshotTypeRequest;
@@ -22,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @ExtendWith(MockitoExtension.class)
 class AccountSnapshotServiceTest {
@@ -30,11 +34,13 @@ class AccountSnapshotServiceTest {
     private final AccountRepository accountRepository = mock(AccountRepository.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
     private final CurrentUserService currentUserService = mock(CurrentUserService.class);
+    private final ReportCacheRefreshService reportCacheRefreshService = mock(ReportCacheRefreshService.class);
     private final AccountSnapshotService snapshotService = new AccountSnapshotService(
             snapshotRepository,
             accountRepository,
             eventPublisher,
-            currentUserService
+            currentUserService,
+            reportCacheRefreshService
     );
 
     @Test
@@ -68,7 +74,7 @@ class AccountSnapshotServiceTest {
         );
 
         verify(snapshotRepository, never()).saveAll(anyList());
-        verify(eventPublisher, never()).publishEvent(any(AccountSnapshotCreatedEvent.class));
+        verify(eventPublisher, never()).publishEvent(any(AccountSnapshotChangedEvent.class));
     }
 
     @Test
@@ -95,7 +101,7 @@ class AccountSnapshotServiceTest {
         );
 
         verify(snapshotRepository).save(snapshot);
-        verify(eventPublisher, never()).publishEvent(any(AccountSnapshotCreatedEvent.class));
+        verify(eventPublisher).publishEvent(any(AccountSnapshotChangedEvent.class));
         org.junit.jupiter.api.Assertions.assertEquals(SnapshotType.FINAL, updatedSnapshot.getSnapshotType());
         org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("123.45"), updatedSnapshot.getBalance());
         org.junit.jupiter.api.Assertions.assertEquals("note", updatedSnapshot.getNote());
@@ -171,5 +177,30 @@ class AccountSnapshotServiceTest {
         verify(snapshotRepository, never()).findAllByOwnerIdWithAccountOrderBySnapshotDateDesc(any());
         verify(snapshotRepository, never()).findAllByAccountIdAndOwnerIdWithAccountOrderBySnapshotDateDesc(any(), any());
         verify(snapshotRepository, never()).findAllByOwnerIdAndSnapshotDateWithAccountOrderBySnapshotDateDesc(any(), any());
+    }
+
+    @Test
+    void refreshReportCacheAfterCommitSwallowsRefreshFailures() {
+        UUID ownerId = UUID.randomUUID();
+
+        doThrow(new RuntimeException("boom")).when(reportCacheRefreshService).refreshOwner(ownerId);
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            java.lang.reflect.Method method = AccountSnapshotService.class.getDeclaredMethod("refreshReportCache", UUID.class);
+            method.setAccessible(true);
+            method.invoke(snapshotService, ownerId);
+
+            List<TransactionSynchronization> synchronizations = TransactionSynchronizationManager.getSynchronizations();
+            org.junit.jupiter.api.Assertions.assertEquals(1, synchronizations.size());
+            synchronizations.get(0).afterCommit();
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError(exception);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        verify(reportCacheRefreshService).markDirty(ownerId);
+        verify(reportCacheRefreshService).refreshOwner(ownerId);
     }
 }

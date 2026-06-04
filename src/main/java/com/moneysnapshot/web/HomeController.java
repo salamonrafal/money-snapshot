@@ -1,7 +1,7 @@
 package com.moneysnapshot.web;
 
 import com.moneysnapshot.dashboard.SnapshotPanelResponse;
-import com.moneysnapshot.dashboard.SnapshotPanelService;
+import com.moneysnapshot.report.ReportQueryService;
 import com.moneysnapshot.shared.i18n.MessageBundleService;
 import java.util.List;
 import java.util.Locale;
@@ -20,11 +20,11 @@ public class HomeController {
     private static final List<Locale> SUPPORTED_LOCALES = List.of(DEFAULT_LOCALE, Locale.ENGLISH);
 
     private final MessageBundleService messageBundleService;
-    private final SnapshotPanelService snapshotPanelService;
+    private final ReportQueryService reportQueryService;
 
-    public HomeController(MessageBundleService messageBundleService, SnapshotPanelService snapshotPanelService) {
+    public HomeController(MessageBundleService messageBundleService, ReportQueryService reportQueryService) {
         this.messageBundleService = messageBundleService;
-        this.snapshotPanelService = snapshotPanelService;
+        this.reportQueryService = reportQueryService;
     }
 
     @GetMapping("/home/messages")
@@ -45,7 +45,7 @@ public class HomeController {
 
     @GetMapping("/home/snapshot-panel")
     public SnapshotPanelResponse snapshotPanel() {
-        return snapshotPanelService.getPanel();
+        return reportQueryService.snapshotPanel();
     }
 
     @GetMapping("/banks/messages")
