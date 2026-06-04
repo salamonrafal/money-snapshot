@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ReportCacheRefreshServiceTest {
@@ -87,6 +88,33 @@ class ReportCacheRefreshServiceTest {
         verify(appUserRepository).findByIdForUpdate(ownerId);
         verify(state).markDirty();
         verify(refreshStateRepository).save(state);
+    }
+
+    @Test
+    void findDirtyOwnersReturnsEmptyListForNonPositiveLimit() {
+        assertThat(service.findDirtyOwners(0)).isEmpty();
+        assertThat(service.findDirtyOwners(-1)).isEmpty();
+
+        verify(refreshStateRepository, never()).findTop20ByDirtyTrueOrderByRefreshRequestedAtAsc();
+    }
+
+    @Test
+    void findDirtyOwnersCapsLimitAtRepositoryBatchSize() {
+        ReportCacheRefreshState first = mock(ReportCacheRefreshState.class);
+        ReportCacheRefreshState second = mock(ReportCacheRefreshState.class);
+        ReportCacheRefreshState third = mock(ReportCacheRefreshState.class);
+        UUID firstOwnerId = UUID.randomUUID();
+        UUID secondOwnerId = UUID.randomUUID();
+        UUID thirdOwnerId = UUID.randomUUID();
+
+        when(first.getOwnerId()).thenReturn(firstOwnerId);
+        when(second.getOwnerId()).thenReturn(secondOwnerId);
+        when(third.getOwnerId()).thenReturn(thirdOwnerId);
+        when(refreshStateRepository.findTop20ByDirtyTrueOrderByRefreshRequestedAtAsc())
+                .thenReturn(List.of(first, second, third));
+
+        assertThat(service.findDirtyOwners(50))
+                .containsExactly(firstOwnerId, secondOwnerId, thirdOwnerId);
     }
 
     @Test

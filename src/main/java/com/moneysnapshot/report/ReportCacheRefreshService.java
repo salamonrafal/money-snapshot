@@ -32,6 +32,7 @@ import org.springframework.transaction.TransactionDefinition;
 public class ReportCacheRefreshService {
 
     private static final Logger log = LoggerFactory.getLogger(ReportCacheRefreshService.class);
+    private static final int MAX_DIRTY_OWNER_BATCH = 20;
 
     private final ReportCacheRefreshStateRepository refreshStateRepository;
     private final ReportDailyBalanceCacheRepository dailyBalanceCacheRepository;
@@ -108,8 +109,12 @@ public class ReportCacheRefreshService {
     }
 
     public List<UUID> findDirtyOwners(int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+
         return refreshStateRepository.findTop20ByDirtyTrueOrderByRefreshRequestedAtAsc().stream()
-                .limit(Math.max(1, limit))
+                .limit(Math.min(limit, MAX_DIRTY_OWNER_BATCH))
                 .map(ReportCacheRefreshState::getOwnerId)
                 .toList();
     }

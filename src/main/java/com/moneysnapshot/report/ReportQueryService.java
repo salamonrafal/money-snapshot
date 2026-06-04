@@ -287,20 +287,38 @@ public class ReportQueryService {
     public HistoryReportResponse history(LocalDate fromDate, LocalDate toDate, int page, int size) {
         ensureCurrentOwnerCache();
         UUID ownerId = currentUserService.currentUserId();
+        Map<String, BigDecimal> previousByKey = dailyBalanceCacheRepository
+                .findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, fromDate.minusDays(1)).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        row -> key(row.getAccount().getId(), row.getCurrencyCode()),
+                        ReportDailyBalanceCache::getBalance,
+                        (left, right) -> right,
+                        HashMap::new
+                ));
         List<ReportDailyBalanceCache> rows = dailyBalanceCacheRepository
                 .findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
         Map<UUID, HistoryReportResponse.Account> accountsById = new LinkedHashMap<>();
-        Map<String, BigDecimal> previousByKey = new HashMap<>();
         Map<LocalDate, Map<UUID, HistoryReportResponse.Value>> valuesByDate = new LinkedHashMap<>();
+        java.util.Set<String> emittedSnapshotKeys = new java.util.HashSet<>();
 
         rows.forEach(row -> {
+            LocalDate snapshotDate = row.getLatestSnapshotDate();
+            if (snapshotDate.isBefore(fromDate) || snapshotDate.isAfter(toDate)) {
+                return;
+            }
+
+            String cacheKey = key(row.getAccount().getId(), row.getCurrencyCode());
+            String emittedSnapshotKey = cacheKey + "|" + snapshotDate;
+            if (!emittedSnapshotKeys.add(emittedSnapshotKey)) {
+                return;
+            }
+
             accountsById.putIfAbsent(
                     row.getAccount().getId(),
                     new HistoryReportResponse.Account(row.getAccount().getId(), row.getAccountName(), row.getBankName(), row.getCurrencyCode())
             );
-            String cacheKey = key(row.getAccount().getId(), row.getCurrencyCode());
             BigDecimal previous = previousByKey.get(cacheKey);
-            valuesByDate.computeIfAbsent(row.getBalanceDate(), ignored -> new LinkedHashMap<>())
+            valuesByDate.computeIfAbsent(snapshotDate, ignored -> new LinkedHashMap<>())
                     .put(row.getAccount().getId(), new HistoryReportResponse.Value(
                             row.getBalance(),
                             previous == null ? row.getBalance() : row.getBalance().subtract(previous)

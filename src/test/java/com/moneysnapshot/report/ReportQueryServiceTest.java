@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.moneysnapshot.account.Account;
 import com.moneysnapshot.account.Bank;
 import com.moneysnapshot.dashboard.SnapshotPanelChartPointResponse;
+import com.moneysnapshot.report.web.HistoryReportResponse;
 import com.moneysnapshot.report.web.SummaryReportResponse;
 import com.moneysnapshot.savings.SavingsForecastService;
 import com.moneysnapshot.security.AppUser;
@@ -179,5 +180,72 @@ class ReportQueryServiceTest {
         assertThat(points).extracting(SnapshotPanelChartPointResponse::type)
                 .containsExactly("baseline", "snapshot-today", "end");
         assertThat(points.get(2).amount()).isEqualByComparingTo("125.00");
+    }
+
+    @Test
+    void historyUsesPreviousDayBalanceForFirstDiffInRange() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        LocalDate fromDate = LocalDate.of(2026, 5, 10);
+        LocalDate toDate = LocalDate.of(2026, 5, 11);
+        LocalDate previousDate = fromDate.minusDays(1);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(account.getId()).thenReturn(accountId);
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, previousDate))
+                .thenReturn(List.of(
+                        new ReportDailyBalanceCache(owner, account, bank, previousDate, previousDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
+                ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate))
+                .thenReturn(List.of(
+                        new ReportDailyBalanceCache(owner, account, bank, fromDate, fromDate, "Main", "Bank", "PLN", new BigDecimal("125.00")),
+                        new ReportDailyBalanceCache(owner, account, bank, toDate, toDate, "Main", "Bank", "PLN", new BigDecimal("130.00"))
+                ));
+
+        HistoryReportResponse response = service.history(fromDate, toDate, 0, 10);
+
+        assertThat(response.rows()).hasSize(2);
+        HistoryReportResponse.Row firstInRangeRow = response.rows().get(1);
+        assertThat(firstInRangeRow.date()).isEqualTo(fromDate);
+        assertThat(firstInRangeRow.values()).hasSize(1);
+        assertThat(firstInRangeRow.values().get(0).balance()).isEqualByComparingTo("125.00");
+        assertThat(firstInRangeRow.values().get(0).diff()).isEqualByComparingTo("25.00");
+    }
+
+    @Test
+    void historyShowsOnlyActualSnapshotDatesNotCarriedForwardCacheDays() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        LocalDate fromDate = LocalDate.of(2026, 5, 10);
+        LocalDate toDate = LocalDate.of(2026, 5, 15);
+        LocalDate previousDate = fromDate.minusDays(1);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(account.getId()).thenReturn(accountId);
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, previousDate))
+                .thenReturn(List.of(
+                        new ReportDailyBalanceCache(owner, account, bank, previousDate, previousDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
+                ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate))
+                .thenReturn(List.of(
+                        new ReportDailyBalanceCache(owner, account, bank, fromDate, fromDate, "Main", "Bank", "PLN", new BigDecimal("125.00")),
+                        new ReportDailyBalanceCache(owner, account, bank, LocalDate.of(2026, 5, 11), fromDate, "Main", "Bank", "PLN", new BigDecimal("125.00")),
+                        new ReportDailyBalanceCache(owner, account, bank, LocalDate.of(2026, 5, 12), fromDate, "Main", "Bank", "PLN", new BigDecimal("125.00")),
+                        new ReportDailyBalanceCache(owner, account, bank, LocalDate.of(2026, 5, 14), LocalDate.of(2026, 5, 14), "Main", "Bank", "PLN", new BigDecimal("140.00")),
+                        new ReportDailyBalanceCache(owner, account, bank, toDate, LocalDate.of(2026, 5, 14), "Main", "Bank", "PLN", new BigDecimal("140.00"))
+                ));
+
+        HistoryReportResponse response = service.history(fromDate, toDate, 0, 10);
+
+        assertThat(response.rows()).extracting(HistoryReportResponse.Row::date)
+                .containsExactly(LocalDate.of(2026, 5, 14), fromDate);
+        assertThat(response.rows().get(0).values().get(0).diff()).isEqualByComparingTo("15.00");
+        assertThat(response.rows().get(1).values().get(0).diff()).isEqualByComparingTo("25.00");
     }
 }
