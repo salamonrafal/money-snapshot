@@ -50,6 +50,10 @@ public class ReportCacheRefreshCoordinator {
 
     private void refreshOwnerCache(UUID ownerId) {
         reportCacheRefreshService.markDirty(ownerId);
-        reportCacheRefreshService.refreshOwner(ownerId);
+        try {
+            reportCacheRefreshService.refreshOwner(ownerId);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to refresh report cache after owner change event for owner {}", ownerId, exception);
+        }
     }
 }

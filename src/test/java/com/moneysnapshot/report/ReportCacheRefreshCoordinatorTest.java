@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.moneysnapshot.account.AccountChangedEvent;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -26,5 +27,17 @@ class ReportCacheRefreshCoordinatorTest {
 
         verify(reportCacheRefreshService).refreshOwner(firstOwnerId);
         verify(reportCacheRefreshService).refreshOwner(secondOwnerId);
+    }
+
+    @Test
+    void onAccountChangedSwallowsImmediateRefreshFailure() {
+        UUID ownerId = UUID.randomUUID();
+
+        doThrow(new RuntimeException("boom")).when(reportCacheRefreshService).refreshOwner(ownerId);
+
+        coordinator.onAccountChanged(new AccountChangedEvent(ownerId));
+
+        verify(reportCacheRefreshService).markDirty(ownerId);
+        verify(reportCacheRefreshService).refreshOwner(ownerId);
     }
 }
