@@ -183,6 +183,43 @@ class ReportQueryServiceTest {
     }
 
     @Test
+    void snapshotPanelChartMarksCarriedForwardTodayPointAsToday() {
+        UUID ownerId = UUID.randomUUID();
+        LocalDate periodDate = LocalDate.of(2026, 6, 1);
+        LocalDate startDate = periodDate.minusDays(1);
+        LocalDate today = LocalDate.of(2026, 6, 3);
+        LocalDate endDate = periodDate.plusMonths(1).minusDays(1);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(userSettingsService.currentUserSettings()).thenReturn(new UserSettingsResponse(
+                "PLN",
+                "light",
+                "Y-m-d H:m",
+                "### ###,00 zl",
+                1,
+                Map.of()
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                startDate,
+                endDate
+        )).thenReturn(List.of(
+                new ReportDailyBalanceCache(owner, account, bank, startDate, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
+                new ReportDailyBalanceCache(owner, account, bank, today, LocalDate.of(2026, 6, 1), "Main", "Bank", "PLN", new BigDecimal("125.00"))
+        ));
+
+        List<SnapshotPanelChartPointResponse> points = service.snapshotPanelChart(periodDate);
+
+        assertThat(points).extracting(SnapshotPanelChartPointResponse::date)
+                .containsExactly(startDate, today, endDate);
+        assertThat(points).extracting(SnapshotPanelChartPointResponse::type)
+                .containsExactly("baseline", "today", "end");
+    }
+
+    @Test
     void historyUsesPreviousDayBalanceForFirstDiffInRange() {
         UUID ownerId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();

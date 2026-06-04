@@ -1663,7 +1663,6 @@ refreshButton.addEventListener("click", () => {
 if (clearReportsCacheButton) {
     clearReportsCacheButton.addEventListener("click", async () => {
         clearReportsCacheButton.disabled = true;
-        setReportsToolbarMessage(messages["reports.cache.clearing"] ?? "", "info");
 
         try {
             await clearReportsCache();
@@ -1671,9 +1670,8 @@ if (clearReportsCacheButton) {
             clearReportPdfData();
             markReportSectionsDirty();
             await refreshVisibleReports();
-            setReportsToolbarMessage(messages["reports.cache.success"] ?? "", "success");
         } catch (error) {
-            setReportsToolbarMessage(error.message, "error");
+            console.error(error);
         } finally {
             clearReportsCacheButton.disabled = false;
         }

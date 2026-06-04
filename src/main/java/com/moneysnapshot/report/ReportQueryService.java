@@ -120,6 +120,10 @@ public class ReportQueryService {
         }
 
         String preferredCurrency = resolvePreferredCurrency(rows);
+        java.util.Set<LocalDate> snapshotDates = rows.stream()
+                .filter(row -> preferredCurrency.equals(row.getCurrencyCode()))
+                .map(ReportDailyBalanceCache::getLatestSnapshotDate)
+                .collect(java.util.stream.Collectors.toSet());
         Map<LocalDate, BigDecimal> balanceByDate = rows.stream()
                 .filter(row -> preferredCurrency.equals(row.getCurrencyCode()))
                 .collect(java.util.stream.Collectors.groupingBy(
@@ -140,7 +144,7 @@ public class ReportQueryService {
             if (entry.getKey().equals(startDate)) {
                 type = "baseline";
             } else if (entry.getKey().equals(today)) {
-                type = "snapshot-today";
+                type = snapshotDates.contains(today) ? "snapshot-today" : "today";
             } else if (entry.getKey().equals(endDate)) {
                 type = "end";
             }
