@@ -18,6 +18,7 @@ window.MoneySnapshotUi = (() => {
     let settingsPromise = null;
     let tooltipElement = null;
     let activeTooltipTarget = null;
+    let tooltipPositionFrame = null;
     const tooltipDescribedById = "app-tooltip";
 
     function ensureTooltipElement() {
@@ -106,6 +107,19 @@ window.MoneySnapshotUi = (() => {
         positionTooltip(element);
     }
 
+    function scheduleTooltipPositionUpdate() {
+        if (!activeTooltipTarget || tooltipPositionFrame !== null) {
+            return;
+        }
+
+        tooltipPositionFrame = window.requestAnimationFrame(() => {
+            tooltipPositionFrame = null;
+            if (activeTooltipTarget) {
+                positionTooltip(activeTooltipTarget);
+            }
+        });
+    }
+
     function hideTooltip(element) {
         if (element && activeTooltipTarget && element !== activeTooltipTarget) {
             return;
@@ -113,6 +127,10 @@ window.MoneySnapshotUi = (() => {
 
         removeTooltipDescription(activeTooltipTarget);
         activeTooltipTarget = null;
+        if (tooltipPositionFrame !== null) {
+            window.cancelAnimationFrame(tooltipPositionFrame);
+            tooltipPositionFrame = null;
+        }
         if (tooltipElement) {
             tooltipElement.hidden = true;
             tooltipElement.textContent = "";
@@ -296,7 +314,7 @@ window.MoneySnapshotUi = (() => {
         element.removeAttribute("title");
         if (activeTooltipTarget === element && !tooltipElement?.hidden) {
             if (label) {
-                positionTooltip(element);
+                scheduleTooltipPositionUpdate();
             } else {
                 hideTooltip(element);
             }
@@ -304,15 +322,11 @@ window.MoneySnapshotUi = (() => {
     }
 
     document.addEventListener("scroll", () => {
-        if (activeTooltipTarget) {
-            positionTooltip(activeTooltipTarget);
-        }
+        scheduleTooltipPositionUpdate();
     }, {passive: true, capture: true});
 
     window.addEventListener("resize", () => {
-        if (activeTooltipTarget) {
-            positionTooltip(activeTooltipTarget);
-        }
+        scheduleTooltipPositionUpdate();
     });
 
     function createConfirmModal({modalSelector, subjectSelector, confirmSelector, cancelSelector}) {
