@@ -140,11 +140,13 @@ public class ReportQueryService {
         List<SnapshotPanelChartPointResponse> points = new ArrayList<>();
         LocalDate today = LocalDate.now(clock);
         for (Map.Entry<LocalDate, BigDecimal> entry : balanceByDate.entrySet()) {
-            String type = "snapshot";
+            String type = "balance";
             if (entry.getKey().equals(startDate)) {
                 type = "baseline";
             } else if (entry.getKey().equals(today)) {
                 type = snapshotDates.contains(today) ? "snapshot-today" : "today";
+            } else if (snapshotDates.contains(entry.getKey())) {
+                type = "snapshot";
             } else if (entry.getKey().equals(endDate)) {
                 type = "end";
             }

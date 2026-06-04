@@ -146,6 +146,52 @@ function chartValueLabel(point, index, points, height, bottomPadding) {
     return `<text class="chart-value-label" x="${point.x}" y="${y}" text-anchor="${anchor}">${chartAmountLabel(point)}</text>`;
 }
 
+function chartLabelPriority(point, index, points) {
+    if (point.type === "snapshot-today") {
+        return 5;
+    }
+
+    if (point.type === "today") {
+        return 4;
+    }
+
+    if (index === 0 || index === points.length - 1) {
+        return 3;
+    }
+
+    if (point.type === "snapshot") {
+        return 2;
+    }
+
+    return 1;
+}
+
+function selectChartLabelPoints(points) {
+    const selected = [];
+    const horizontalGap = 88;
+    const verticalGap = 28;
+
+    points.forEach((point, index) => {
+        const priority = chartLabelPriority(point, index, points);
+        const conflictingIndex = selected.findIndex((selectedPoint) =>
+            Math.abs(selectedPoint.x - point.x) < horizontalGap && Math.abs(selectedPoint.y - point.y) < verticalGap
+        );
+
+        if (conflictingIndex === -1) {
+            selected.push({...point, labelIndex: index});
+            return;
+        }
+
+        const conflictingPoint = selected[conflictingIndex];
+        const conflictingPriority = chartLabelPriority(conflictingPoint, conflictingPoint.labelIndex, points);
+        if (priority > conflictingPriority) {
+            selected[conflictingIndex] = {...point, labelIndex: index};
+        }
+    });
+
+    return selected.map(({labelIndex, ...point}) => ({...point, labelIndex})).sort((left, right) => left.labelIndex - right.labelIndex);
+}
+
 function renderSnapshotChart(chartPoints, periodDate) {
     const chartPeriodDate = periodDate ?? new Date().toISOString().slice(0, 7) + "-01";
     const data = groupChartPoints(chartPoints);
@@ -174,7 +220,8 @@ function renderSnapshotChart(chartPoints, periodDate) {
         x: leftPadding + ((new Date(`${point.date}T00:00:00Z`).getTime() - startTime) * (width - leftPadding - rightPadding)) / timeRange,
         y: height - bottomPadding - ((point.amount - minAmount) * (height - topPadding - bottomPadding)) / amountRange
     }));
-    const visiblePoints = renderedPoints.filter((point) => point.type !== "end");
+    const visiblePoints = renderedPoints.filter((point) => ["snapshot", "today", "snapshot-today"].includes(point.type));
+    const labelPoints = selectChartLabelPoints(visiblePoints);
 
     const line = linePath(renderedPoints);
     const area = areaPath(renderedPoints, height, bottomPadding);
@@ -184,7 +231,7 @@ function renderSnapshotChart(chartPoints, periodDate) {
             <path class="chart-area" d="${area}"></path>
             <path class="chart-line" d="${line}"></path>
             ${visiblePoints.map((point) => `<circle class="${chartPointClass(point)}" cx="${point.x}" cy="${point.y}" r="4"></circle>`).join("")}
-            ${visiblePoints.map((point, index) => chartValueLabel(point, index, visiblePoints, height, bottomPadding)).join("")}
+            ${labelPoints.map((point) => chartValueLabel(point, point.labelIndex, visiblePoints, height, bottomPadding)).join("")}
             <text class="chart-axis-label" x="${leftPadding}" y="${height - 8}">${chartDateLabel(startDateLabel)}</text>
             <text class="chart-axis-label" x="${width - rightPadding}" y="${height - 8}" text-anchor="end">${chartDateLabel(endDateLabel)}</text>
         </svg>

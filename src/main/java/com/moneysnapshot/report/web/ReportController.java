@@ -81,7 +81,7 @@ public class ReportController {
 
         long rangeDays = ChronoUnit.DAYS.between(fromDate, toDate) + 1L;
         if (rangeDays > MAX_HISTORY_RANGE_DAYS) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "History range cannot exceed 732 days.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "History range cannot exceed " + MAX_HISTORY_RANGE_DAYS + " days.");
         }
     }
 }
