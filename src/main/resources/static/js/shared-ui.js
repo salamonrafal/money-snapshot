@@ -266,11 +266,11 @@ window.MoneySnapshotUi = (() => {
         element.removeAttribute("title");
     }
 
-    window.addEventListener("scroll", () => {
+    document.addEventListener("scroll", () => {
         if (activeTooltipTarget) {
             positionTooltip(activeTooltipTarget);
         }
-    }, {passive: true});
+    }, {passive: true, capture: true});
 
     window.addEventListener("resize", () => {
         if (activeTooltipTarget) {

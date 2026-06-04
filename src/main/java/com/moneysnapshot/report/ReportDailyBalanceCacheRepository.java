@@ -18,7 +18,7 @@ public interface ReportDailyBalanceCacheRepository extends JpaRepository<ReportD
             from ReportDailyBalanceCache entry
             where entry.owner.id = :ownerId
             """)
-    int deleteByOwnerId(UUID ownerId);
+    int deleteByOwnerId(@Param("ownerId") UUID ownerId);
 
     List<ReportDailyBalanceCache> findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
             UUID ownerId,

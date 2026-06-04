@@ -6,7 +6,6 @@ const dateToInput = document.querySelector("#report-date-to");
 const customPeriodFields = document.querySelectorAll(".custom-period-field");
 const refreshButton = document.querySelector("#refresh-reports");
 const clearReportsCacheButton = document.querySelector("#clear-reports-cache");
-const reportsToolbarMessageElement = document.querySelector("#reports-toolbar-message");
 const messageElement = document.querySelector("#reports-message");
 const chartElement = document.querySelector("#reports-chart");
 const tableBody = document.querySelector("#reports-table-body");
@@ -356,11 +355,6 @@ function toggleReportFilterMenu(button) {
 function setMessage(text, type = "") {
     messageElement.textContent = text;
     messageElement.dataset.type = type;
-}
-
-function setReportsToolbarMessage(text, type = "") {
-    reportsToolbarMessageElement.textContent = text;
-    reportsToolbarMessageElement.dataset.type = type;
 }
 
 function setHistoryMessage(text, type = "") {
