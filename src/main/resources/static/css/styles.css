@@ -1502,7 +1502,7 @@ h1 {
     z-index: 120;
     display: grid;
     gap: 12px;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 .app-toast {

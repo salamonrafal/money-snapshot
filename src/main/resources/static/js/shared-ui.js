@@ -341,11 +341,20 @@ window.MoneySnapshotUi = (() => {
             .filter(Boolean);
         const dialog = modal?.querySelector("[role='dialog']") ?? modal?.firstElementChild ?? modal;
         let lastActiveElement = null;
+        let inertedElements = [];
+        const focusableSelector = "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+
+        function focusableElements() {
+            if (!dialog) {
+                return [];
+            }
+
+            return [...dialog.querySelectorAll(focusableSelector)]
+                .filter((element) => element instanceof HTMLElement && !element.hidden && element.offsetParent !== null);
+        }
 
         function focusFirstElement() {
-            const focusTarget = dialog?.querySelector(
-                "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
-            );
+            const focusTarget = focusableElements()[0];
             if (focusTarget instanceof HTMLElement) {
                 focusTarget.focus();
                 return;
@@ -356,16 +365,44 @@ window.MoneySnapshotUi = (() => {
             }
         }
 
+        function setPageInert(isInert) {
+            if (!modal) {
+                return;
+            }
+
+            if (isInert) {
+                inertedElements = [...document.body.children]
+                    .filter((element) => element !== modal && element instanceof HTMLElement)
+                    .map((element) => ({
+                        element,
+                        wasInert: element.inert
+                    }));
+                inertedElements.forEach(({element}) => {
+                    element.inert = true;
+                });
+                return;
+            }
+
+            inertedElements.forEach(({element, wasInert}) => {
+                if (element.isConnected) {
+                    element.inert = wasInert;
+                }
+            });
+            inertedElements = [];
+        }
+
         function open({trigger = document.activeElement} = {}) {
             lastActiveElement = trigger instanceof HTMLElement ? trigger : null;
             hideTooltip(lastActiveElement);
             modal.hidden = false;
             document.body.classList.add("modal-open");
+            setPageInert(true);
             window.requestAnimationFrame(focusFirstElement);
         }
 
         function close() {
             modal.hidden = true;
+            setPageInert(false);
             document.body.classList.remove("modal-open");
             const nextActiveElement = lastActiveElement;
             lastActiveElement = null;
@@ -384,8 +421,34 @@ window.MoneySnapshotUi = (() => {
         });
 
         document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" && modal && !modal.hidden) {
+            if (!modal || modal.hidden) {
+                return;
+            }
+
+            if (event.key === "Escape") {
                 close();
+                return;
+            }
+
+            if (event.key !== "Tab") {
+                return;
+            }
+
+            const focusable = focusableElements();
+            if (focusable.length === 0) {
+                event.preventDefault();
+                focusFirstElement();
+                return;
+            }
+
+            const firstElement = focusable[0];
+            const lastElement = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === firstElement) {
+                event.preventDefault();
+                lastElement.focus();
+            } else if (!event.shiftKey && document.activeElement === lastElement) {
+                event.preventDefault();
+                firstElement.focus();
             }
         });
 

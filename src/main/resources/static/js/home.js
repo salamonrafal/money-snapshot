@@ -18,6 +18,7 @@ let currentLanguage = "pl";
 let userSettings = null;
 let homeMessages = {};
 let snapshotFormController = null;
+let snapshotFormControllerPromise = null;
 
 function formatCurrencyAmount({currencyCode, amount}, includeSign = false) {
     const numericAmount = Number(amount);
@@ -265,6 +266,50 @@ async function loadHomeData() {
     renderSnapshotChart(panel.chartPoints ?? [], panel.periodDate);
 }
 
+async function ensureSnapshotFormController() {
+    if (snapshotFormController) {
+        return snapshotFormController;
+    }
+
+    if (snapshotFormControllerPromise) {
+        return snapshotFormControllerPromise;
+    }
+
+    if (!snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        return null;
+    }
+
+    snapshotFormControllerPromise = window.MoneySnapshotSnapshotForm.init({
+        root: snapshotFormElement,
+        messages: homeMessages,
+        userSettings,
+        onSuccess: async ({rememberAccountEnabled, resetForm, setFormMessage}) => {
+            resetForm();
+            await loadHomeData();
+            if (!rememberAccountEnabled) {
+                snapshotFormModal?.close();
+                return true;
+            }
+
+            setFormMessage(homeMessages["snapshots.form.success"] ?? "", "success");
+            window.requestAnimationFrame(() => {
+                snapshotFormController?.focus();
+            });
+            return true;
+        }
+    })
+            .then((controller) => {
+                snapshotFormController = controller;
+                return controller;
+            })
+            .catch((error) => {
+                snapshotFormControllerPromise = null;
+                throw error;
+            });
+
+    return snapshotFormControllerPromise;
+}
+
 MoneySnapshotI18n.init({
     endpoint: "/api/home/messages",
     onLanguageChange: ({language, messages}) => {
@@ -279,44 +324,37 @@ MoneySnapshotI18n.init({
         .then(() => MoneySnapshotUi.loadUserSettings())
         .then((settings) => {
             userSettings = settings;
-        })
-        .then(async () => {
-            if (!snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
-                return;
-            }
-
-            snapshotFormController = await window.MoneySnapshotSnapshotForm.init({
-                root: snapshotFormElement,
-                messages: homeMessages,
-                userSettings,
-                onSuccess: async ({rememberAccountEnabled, resetForm, setFormMessage}) => {
-                    resetForm();
-                    await loadHomeData();
-                    if (!rememberAccountEnabled) {
-                        snapshotFormModal?.close();
-                        return true;
-                    }
-
-                    setFormMessage(homeMessages["snapshots.form.success"] ?? "", "success");
-                    window.requestAnimationFrame(() => {
-                        snapshotFormController?.focus();
-                    });
-                    return true;
-                }
-            });
+            snapshotFormController?.updateUserSettings(settings);
         })
         .then(loadHomeData)
         .catch((error) => {
             console.error(error);
         });
 
-openSnapshotFormModalButton?.addEventListener("click", () => {
-    snapshotFormController?.resetForm();
-    snapshotFormController?.clearMessage();
-    snapshotFormModal?.open({
-        trigger: openSnapshotFormModalButton
-    });
-    window.requestAnimationFrame(() => {
-        snapshotFormController?.focus();
-    });
+openSnapshotFormModalButton?.addEventListener("click", async (event) => {
+    if (!snapshotFormModal || !snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        return;
+    }
+
+    event.preventDefault();
+
+    try {
+        const controller = await ensureSnapshotFormController();
+        if (!controller) {
+            window.location.href = openSnapshotFormModalButton.href;
+            return;
+        }
+
+        controller.resetForm();
+        controller.clearMessage();
+        snapshotFormModal.open({
+            trigger: openSnapshotFormModalButton
+        });
+        window.requestAnimationFrame(() => {
+            controller.focus();
+        });
+    } catch (error) {
+        console.error(error);
+        window.location.href = openSnapshotFormModalButton.href;
+    }
 });

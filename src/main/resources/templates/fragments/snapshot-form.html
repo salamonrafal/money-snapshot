@@ -118,10 +118,9 @@
                         data-snapshot-modal-close
                         data-i18n="snapshots.form.cancel">Anuluj</button>
                 <button type="submit"
-                        th:attr="form=${formId}"
+                        th:attr="form=${formId},data-i18n=${mode == 'edit' ? 'snapshots.form.update' : 'snapshots.form.submit'}"
                         class="button primary snapshot-form-modal-action-button"
-                        data-role="snapshot-submit-action"
-                        data-i18n="snapshots.form.submit">Zapisz migawkę</button>
+                        data-role="snapshot-submit-action">Zapisz migawkę</button>
             </div>
         </div>
     </div>

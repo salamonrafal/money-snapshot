@@ -47,6 +47,8 @@ let cachedAccounts = [];
 let userSettings = null;
 let snapshotFormController = null;
 let editSnapshotFormController = null;
+let snapshotFormControllerPromise = null;
+let editSnapshotFormControllerPromise = null;
 
 if (clearFiltersButton) {
     clearFiltersButton.append(MoneySnapshotUi.createClearFiltersIcon());
@@ -272,25 +274,120 @@ function snapshotSubject(snapshot) {
     return `${snapshot.accountName} - ${formatDate(snapshot.snapshotDate)}`;
 }
 
+async function ensureSnapshotFormController() {
+    if (snapshotFormController) {
+        return snapshotFormController;
+    }
+
+    if (snapshotFormControllerPromise) {
+        return snapshotFormControllerPromise;
+    }
+
+    if (!snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        return null;
+    }
+
+    snapshotFormControllerPromise = window.MoneySnapshotSnapshotForm.init({
+        root: snapshotFormElement,
+        messages,
+        userSettings,
+        onSuccess: async ({rememberAccountEnabled, resetForm, setFormMessage}) => {
+            resetForm();
+            await loadSnapshots();
+            if (!rememberAccountEnabled) {
+                snapshotFormModal?.close();
+                return true;
+            }
+
+            setFormMessage(messages["snapshots.form.success"] ?? "", "success");
+            window.requestAnimationFrame(() => {
+                snapshotFormController?.focus();
+            });
+            return true;
+        }
+    })
+            .then((controller) => {
+                snapshotFormController = controller;
+                return controller;
+            })
+            .catch((error) => {
+                snapshotFormControllerPromise = null;
+                throw error;
+            });
+
+    return snapshotFormControllerPromise;
+}
+
+async function ensureEditSnapshotFormController() {
+    if (editSnapshotFormController) {
+        return editSnapshotFormController;
+    }
+
+    if (editSnapshotFormControllerPromise) {
+        return editSnapshotFormControllerPromise;
+    }
+
+    if (!editSnapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        return null;
+    }
+
+    editSnapshotFormControllerPromise = window.MoneySnapshotSnapshotForm.init({
+        root: editSnapshotFormElement,
+        messages,
+        userSettings,
+        onSuccess: async () => {
+            editSnapshotFormModal?.close();
+            setListMessage(messages["snapshots.edit.success"] ?? "", "success");
+            await loadSnapshots();
+            return true;
+        }
+    })
+            .then((controller) => {
+                editSnapshotFormController = controller;
+                return controller;
+            })
+            .catch((error) => {
+                editSnapshotFormControllerPromise = null;
+                throw error;
+            });
+
+    return editSnapshotFormControllerPromise;
+}
+
 async function openEditSnapshotModal(snapshot, trigger) {
-    if (!editSnapshotFormModal || !editSnapshotFormController) {
-        window.location.href = `/snapshots/${encodeURIComponent(snapshot.id)}/edit.html`;
+    const editSnapshotHref = `/snapshots/${encodeURIComponent(snapshot.id)}/edit.html`;
+    if (!editSnapshotFormModal || !editSnapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        window.location.href = editSnapshotHref;
         return;
     }
 
-    editSnapshotFormController.clearMessage();
+    let controller;
+    try {
+        controller = await ensureEditSnapshotFormController();
+    } catch (error) {
+        console.error(error);
+        window.location.href = editSnapshotHref;
+        return;
+    }
+
+    if (!controller) {
+        window.location.href = editSnapshotHref;
+        return;
+    }
+
+    controller.clearMessage();
     editSnapshotFormModal.open({
         trigger
     });
 
     try {
-        await editSnapshotFormController.loadSnapshotIntoForm(snapshot.id);
+        await controller.loadSnapshotIntoForm(snapshot.id);
         window.requestAnimationFrame(() => {
-            editSnapshotFormController?.focus();
+            controller.focus();
         });
     } catch (error) {
-        await editSnapshotFormController.loadSnapshotIntoForm("");
-        editSnapshotFormController.showMessage(error?.message ?? messages["snapshots.error.loadSnapshot"] ?? "", "error");
+        await controller.loadSnapshotIntoForm("");
+        controller.showMessage(error?.message ?? messages["snapshots.error.loadSnapshot"] ?? "", "error");
     }
 }
 
@@ -521,20 +618,32 @@ clearFiltersButton?.addEventListener("click", () => {
     });
 });
 
-newSnapshotAction?.addEventListener("click", (event) => {
-    if (!snapshotFormModal || !snapshotFormController) {
+newSnapshotAction?.addEventListener("click", async (event) => {
+    if (!snapshotFormModal || !snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
         return;
     }
 
     event.preventDefault();
-    snapshotFormController.resetForm();
-    snapshotFormController.clearMessage();
-    snapshotFormModal.open({
-        trigger: newSnapshotAction
-    });
-    window.requestAnimationFrame(() => {
-        snapshotFormController?.focus();
-    });
+
+    try {
+        const controller = await ensureSnapshotFormController();
+        if (!controller) {
+            window.location.href = newSnapshotAction.href;
+            return;
+        }
+
+        controller.resetForm();
+        controller.clearMessage();
+        snapshotFormModal.open({
+            trigger: newSnapshotAction
+        });
+        window.requestAnimationFrame(() => {
+            controller.focus();
+        });
+    } catch (error) {
+        setListMessage(error.message, "error");
+        window.location.href = newSnapshotAction.href;
+    }
 });
 
 deleteModal.confirmButton.addEventListener("click", async () => {
@@ -565,46 +674,6 @@ MoneySnapshotI18n.init({
         handleLanguageChange(language, messages);
     }
 })
-        .then(async ({language, messages: loadedMessages}) => {
-            if (!window.MoneySnapshotSnapshotForm) {
-                return {language, messages: loadedMessages};
-            }
-
-            if (snapshotFormElement) {
-                snapshotFormController = await window.MoneySnapshotSnapshotForm.init({
-                    root: snapshotFormElement,
-                    messages: loadedMessages,
-                    onSuccess: async ({rememberAccountEnabled, resetForm, setFormMessage}) => {
-                        resetForm();
-                        await loadSnapshots();
-                        if (!rememberAccountEnabled) {
-                            snapshotFormModal?.close();
-                            return true;
-                        }
-
-                        setFormMessage(messages["snapshots.form.success"] ?? loadedMessages["snapshots.form.success"] ?? "", "success");
-                        window.requestAnimationFrame(() => {
-                            snapshotFormController?.focus();
-                        });
-                        return true;
-                    }
-                });
-            }
-            if (editSnapshotFormElement) {
-                editSnapshotFormController = await window.MoneySnapshotSnapshotForm.init({
-                    root: editSnapshotFormElement,
-                    messages: loadedMessages,
-                    userSettings,
-                    onSuccess: async () => {
-                        editSnapshotFormModal?.close();
-                        setListMessage(messages["snapshots.edit.success"] ?? loadedMessages["snapshots.edit.success"] ?? "", "success");
-                        await loadSnapshots();
-                        return true;
-                    }
-                });
-            }
-            return {language, messages: loadedMessages};
-        })
         .then(restoreListState)
         .then(() => MoneySnapshotUi.loadUserSettings())
         .then((settings) => {
