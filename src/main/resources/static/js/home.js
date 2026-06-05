@@ -78,21 +78,35 @@ function renderSnapshotPanel(panel) {
     changeElement.textContent = formatAmountList(panel.monthlyChanges, true);
 }
 
-function monthEndDate(periodDate) {
+function configuredPeriodEndDate(periodDate) {
     const startDate = new Date(`${periodDate}T00:00:00Z`);
-    const billingMonthStartDay = Math.min(Math.max(userSettings?.billingMonthStartDay ?? 1, 1), 31);
-    const nextMonthDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 1));
+    const billingMonthEndDay = Math.min(Math.max(userSettings?.billingMonthStartDay ?? 1, 1), 31);
+    const currentMonthEnd = new Date(Date.UTC(
+            startDate.getUTCFullYear(),
+            startDate.getUTCMonth(),
+            Math.min(billingMonthEndDay, new Date(Date.UTC(
+                    startDate.getUTCFullYear(),
+                    startDate.getUTCMonth() + 1,
+                    0
+            )).getUTCDate())
+    ));
+
+    if (currentMonthEnd.toISOString().slice(0, 10) >= periodDate) {
+        return currentMonthEnd;
+    }
+
+    const nextMonthEnd = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 1));
     const lastDayOfNextMonth = new Date(Date.UTC(
-            nextMonthDate.getUTCFullYear(),
-            nextMonthDate.getUTCMonth() + 1,
+            nextMonthEnd.getUTCFullYear(),
+            nextMonthEnd.getUTCMonth() + 1,
             0
     )).getUTCDate();
-    nextMonthDate.setUTCDate(Math.min(billingMonthStartDay, lastDayOfNextMonth));
-    return nextMonthDate;
+    nextMonthEnd.setUTCDate(Math.min(billingMonthEndDay, lastDayOfNextMonth));
+    return nextMonthEnd;
 }
 
 function periodEndDate(periodDate) {
-    return monthEndDate(periodDate);
+    return configuredPeriodEndDate(periodDate);
 }
 
 function shiftIsoDate(date, days) {
@@ -106,7 +120,7 @@ function chartStartDate(periodDate) {
 }
 
 function chartEndDate(periodDate) {
-    return shiftIsoDate(periodEndDate(periodDate).toISOString().slice(0, 10), -1);
+    return periodEndDate(periodDate).toISOString().slice(0, 10);
 }
 
 function groupChartPoints(points) {

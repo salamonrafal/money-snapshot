@@ -75,15 +75,16 @@ public class SnapshotPanelService {
         );
     }
 
-    static LocalDate resolvePeriodStart(LocalDate today, int billingMonthStartDay) {
-        int normalizedStartDay = Math.max(1, Math.min(31, billingMonthStartDay));
-        LocalDate currentMonthStart = today.withDayOfMonth(Math.min(normalizedStartDay, today.lengthOfMonth()));
-        if (!today.isBefore(currentMonthStart)) {
-            return currentMonthStart;
+    static LocalDate resolvePeriodStart(LocalDate today, int billingMonthEndDay) {
+        int normalizedEndDay = Math.max(1, Math.min(31, billingMonthEndDay));
+        LocalDate currentMonthEnd = today.withDayOfMonth(Math.min(normalizedEndDay, today.lengthOfMonth()));
+        if (today.isAfter(currentMonthEnd)) {
+            return currentMonthEnd.plusDays(1);
         }
 
         LocalDate previousMonth = today.minusMonths(1);
-        return previousMonth.withDayOfMonth(Math.min(normalizedStartDay, previousMonth.lengthOfMonth()));
+        LocalDate previousMonthEnd = previousMonth.withDayOfMonth(Math.min(normalizedEndDay, previousMonth.lengthOfMonth()));
+        return previousMonthEnd.plusDays(1);
     }
 
     private BigDecimal calculateMonthlyChangePercent(List<CurrencyAmount> currentBalances, List<CurrencyAmount> previousBalances) {

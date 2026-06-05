@@ -4,10 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import com.moneysnapshot.account.Account;
 import com.moneysnapshot.account.Bank;
+import com.moneysnapshot.dashboard.SnapshotPanelResponse;
 import com.moneysnapshot.dashboard.SnapshotPanelChartPointResponse;
+import com.moneysnapshot.report.web.OverviewReportResponse;
 import com.moneysnapshot.report.web.HistoryReportResponse;
 import com.moneysnapshot.report.web.SummaryReportResponse;
 import com.moneysnapshot.savings.SavingsForecastService;
@@ -69,15 +70,8 @@ class ReportQueryServiceTest {
                 LocalDate.of(1900, 1, 1),
                 toDate
         )).thenReturn(List.of(
-                new ReportFinalSnapshotCache(owner, account, bank, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
-        ));
-        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
-                ownerId,
-                fromDate,
-                toDate
-        )).thenReturn(List.of(
-                new ReportDailyBalanceCache(owner, account, bank, fromDate, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
-                new ReportDailyBalanceCache(owner, account, bank, toDate, toDate, "Main", "Bank", "PLN", new BigDecimal("125.00"))
+                new ReportFinalSnapshotCache(owner, account, bank, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
+                new ReportFinalSnapshotCache(owner, account, bank, toDate, "Main", "Bank", "PLN", new BigDecimal("125.00"))
         ));
 
         SummaryReportResponse response = service.summary("accounts", fromDate, toDate);
@@ -112,16 +106,9 @@ class ReportQueryServiceTest {
                 LocalDate.of(1900, 1, 1),
                 toDate
         )).thenReturn(List.of(
-                new ReportFinalSnapshotCache(owner, account, bank, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
-        ));
-        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
-                ownerId,
-                fromDate,
-                toDate
-        )).thenReturn(List.of(
-                new ReportDailyBalanceCache(owner, account, bank, fromDate, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
-                new ReportDailyBalanceCache(owner, account, bank, LocalDate.of(2026, 1, 20), LocalDate.of(2026, 1, 20), "Main", "Bank", "PLN", new BigDecimal("130.00")),
-                new ReportDailyBalanceCache(owner, account, bank, toDate, toDate, "Main", "Bank", "PLN", new BigDecimal("160.00"))
+                new ReportFinalSnapshotCache(owner, account, bank, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
+                new ReportFinalSnapshotCache(owner, account, bank, LocalDate.of(2026, 1, 20), "Main", "Bank", "PLN", new BigDecimal("130.00")),
+                new ReportFinalSnapshotCache(owner, account, bank, toDate, "Main", "Bank", "PLN", new BigDecimal("160.00"))
         ));
 
         SummaryReportResponse response = service.summary("accounts", fromDate, toDate);
@@ -145,6 +132,119 @@ class ReportQueryServiceTest {
     }
 
     @Test
+    void summaryIncludesFirstFinalSnapshotWhenLaterPartialSnapshotExistsInPeriod() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        LocalDate fromDate = LocalDate.of(2026, 1, 1);
+        LocalDate finalSnapshotDate = LocalDate.of(2026, 1, 10);
+        LocalDate partialSnapshotDate = LocalDate.of(2026, 1, 12);
+        LocalDate toDate = LocalDate.of(2026, 1, 15);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(account.getId()).thenReturn(accountId);
+        when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
+                ownerId,
+                LocalDate.of(1900, 1, 1),
+                toDate
+        )).thenReturn(List.of(
+                new ReportFinalSnapshotCache(owner, account, bank, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
+                new ReportFinalSnapshotCache(owner, account, bank, finalSnapshotDate, "Main", "Bank", "PLN", new BigDecimal("150.00"))
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                fromDate,
+                toDate
+        )).thenReturn(List.of(
+                new ReportDailyBalanceCache(owner, account, bank, fromDate, fromDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
+                new ReportDailyBalanceCache(owner, account, bank, partialSnapshotDate, partialSnapshotDate, "Main", "Bank", "PLN", new BigDecimal("170.00")),
+                new ReportDailyBalanceCache(owner, account, bank, toDate, partialSnapshotDate, "Main", "Bank", "PLN", new BigDecimal("170.00"))
+        ));
+
+        SummaryReportResponse response = service.summary("accounts", fromDate, toDate);
+
+        assertThat(response.rows()).hasSize(1);
+        SummaryReportResponse.Row row = response.rows().get(0);
+        assertThat(row.startBalance()).isEqualByComparingTo("100.00");
+        assertThat(row.endBalance()).isEqualByComparingTo("170.00");
+        assertThat(row.change()).isEqualByComparingTo("70.00");
+        assertThat(row.points()).extracting(SummaryReportResponse.Point::date)
+                .containsExactly(fromDate, finalSnapshotDate, partialSnapshotDate, toDate);
+        SummaryReportResponse.Point finalPoint = row.points().stream()
+                .filter(point -> point.date().equals(finalSnapshotDate))
+                .findFirst()
+                .orElseThrow();
+        assertThat(finalPoint.balance()).isEqualByComparingTo("150.00");
+        assertThat(finalPoint.change()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    void snapshotPanelUsesBillingMonthEndDayToResolvePeriodStart() {
+        UUID ownerId = UUID.randomUUID();
+        LocalDate today = LocalDate.of(2026, 6, 3);
+        LocalDate expectedPeriodStart = LocalDate.of(2026, 5, 7);
+        LocalDate previousPeriodEnd = expectedPeriodStart.minusDays(1);
+        LocalDate expectedPeriodEnd = LocalDate.of(2026, 6, 6);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(userSettingsService.currentUserSettings()).thenReturn(new UserSettingsResponse(
+                "PLN",
+                "light",
+                "Y-m-d H:m",
+                "### ###,00 zl",
+                6,
+                Map.of()
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, today)).thenReturn(List.of());
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, previousPeriodEnd)).thenReturn(List.of());
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                previousPeriodEnd,
+                expectedPeriodEnd
+        )).thenReturn(List.of());
+
+        SnapshotPanelResponse response = service.snapshotPanel();
+
+        verify(reportCacheRefreshService).ensureOwnerCacheReady(ownerId, today);
+        verify(dailyBalanceCacheRepository).findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, previousPeriodEnd);
+        verify(dailyBalanceCacheRepository).findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                previousPeriodEnd,
+                expectedPeriodEnd
+        );
+        assertThat(response.periodDate()).isEqualTo(expectedPeriodStart);
+    }
+
+    @Test
+    void overviewFallsBackToLatestAvailableBalanceDateWhenRequestedDateHasNoCacheRows() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        LocalDate requestedDate = LocalDate.of(2026, 6, 6);
+        LocalDate availableDate = LocalDate.of(2026, 6, 5);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(dailyBalanceCacheRepository.findLatestBalanceDateOnOrBefore(ownerId, requestedDate)).thenReturn(java.util.Optional.of(availableDate));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                availableDate,
+                availableDate
+        )).thenReturn(List.of(
+                new ReportDailyBalanceCache(owner, account, bank, availableDate, LocalDate.of(2026, 6, 1), "Main", "Bank", "PLN", new BigDecimal("125.00"))
+        ));
+
+        OverviewReportResponse response = service.overview("accounts", requestedDate);
+
+        assertThat(response.rows()).hasSize(1);
+        assertThat(response.rows().get(0).balance()).isEqualByComparingTo("125.00");
+        assertThat(response.rows().get(0).sharePercent()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
     void snapshotPanelChartAppendsEndPointWhenPeriodEndsInFuture() {
         UUID ownerId = UUID.randomUUID();
         LocalDate periodDate = LocalDate.of(2026, 6, 1);
@@ -161,7 +261,7 @@ class ReportQueryServiceTest {
                 "light",
                 "Y-m-d H:m",
                 "### ###,00 zl",
-                1,
+                30,
                 Map.of()
         ));
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
@@ -183,6 +283,44 @@ class ReportQueryServiceTest {
     }
 
     @Test
+    void snapshotPanelChartEndsOnConfiguredBillingEndDayWhenPreviousMonthWasClamped() {
+        UUID ownerId = UUID.randomUUID();
+        LocalDate periodDate = LocalDate.of(2026, 3, 1);
+        LocalDate startDate = LocalDate.of(2026, 2, 28);
+        LocalDate endDate = LocalDate.of(2026, 3, 30);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(userSettingsService.currentUserSettings()).thenReturn(new UserSettingsResponse(
+                "PLN",
+                "light",
+                "Y-m-d H:m",
+                "### ###,00 zl",
+                30,
+                Map.of()
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                startDate,
+                endDate
+        )).thenReturn(List.of(
+                new ReportDailyBalanceCache(owner, account, bank, startDate, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
+        ));
+
+        List<SnapshotPanelChartPointResponse> points = service.snapshotPanelChart(periodDate);
+
+        verify(dailyBalanceCacheRepository).findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                startDate,
+                endDate
+        );
+        assertThat(points).extracting(SnapshotPanelChartPointResponse::date)
+                .containsExactly(startDate, endDate);
+    }
+
+    @Test
     void snapshotPanelChartMarksCarriedForwardTodayPointAsToday() {
         UUID ownerId = UUID.randomUUID();
         LocalDate periodDate = LocalDate.of(2026, 6, 1);
@@ -199,7 +337,7 @@ class ReportQueryServiceTest {
                 "light",
                 "Y-m-d H:m",
                 "### ###,00 zl",
-                1,
+                30,
                 Map.of()
         ));
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
@@ -237,7 +375,7 @@ class ReportQueryServiceTest {
                 "light",
                 "Y-m-d H:m",
                 "### ###,00 zl",
-                1,
+                30,
                 Map.of()
         ));
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(

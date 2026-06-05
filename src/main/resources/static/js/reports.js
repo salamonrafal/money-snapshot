@@ -132,21 +132,21 @@ function addMonths(date, months) {
     return nextDate.toISOString().slice(0, 10);
 }
 
-function periodStartDateForBillingCycle(today, billingMonthStartDay) {
-    const normalizedStartDay = Math.max(1, Math.min(31, billingMonthStartDay));
+function periodStartDateForBillingCycle(today, billingMonthEndDay) {
+    const normalizedEndDay = Math.max(1, Math.min(31, billingMonthEndDay));
     const currentDate = new Date(`${today}T00:00:00Z`);
-    const currentMonthStart = new Date(Date.UTC(
+    const currentMonthEnd = new Date(Date.UTC(
             currentDate.getUTCFullYear(),
             currentDate.getUTCMonth(),
-            Math.min(normalizedStartDay, new Date(Date.UTC(
+            Math.min(normalizedEndDay, new Date(Date.UTC(
                     currentDate.getUTCFullYear(),
                     currentDate.getUTCMonth() + 1,
                     0
             )).getUTCDate())
     ));
 
-    if (today >= currentMonthStart.toISOString().slice(0, 10)) {
-        return currentMonthStart.toISOString().slice(0, 10);
+    if (today > currentMonthEnd.toISOString().slice(0, 10)) {
+        return addDays(currentMonthEnd.toISOString().slice(0, 10), 1);
     }
 
     const previousMonthDate = new Date(Date.UTC(
@@ -154,21 +154,51 @@ function periodStartDateForBillingCycle(today, billingMonthStartDay) {
             currentDate.getUTCMonth() - 1,
             1
     ));
-    previousMonthDate.setUTCDate(Math.min(normalizedStartDay, new Date(Date.UTC(
+    previousMonthDate.setUTCDate(Math.min(normalizedEndDay, new Date(Date.UTC(
             previousMonthDate.getUTCFullYear(),
             previousMonthDate.getUTCMonth() + 1,
             0
     )).getUTCDate()));
-    return previousMonthDate.toISOString().slice(0, 10);
+    return addDays(previousMonthDate.toISOString().slice(0, 10), 1);
+}
+
+function periodEndDateForBillingCycleStart(periodStartDate, billingMonthEndDay) {
+    const normalizedEndDay = Math.max(1, Math.min(31, billingMonthEndDay));
+    const startDate = new Date(`${periodStartDate}T00:00:00Z`);
+    const currentMonthEnd = new Date(Date.UTC(
+            startDate.getUTCFullYear(),
+            startDate.getUTCMonth(),
+            Math.min(normalizedEndDay, new Date(Date.UTC(
+                    startDate.getUTCFullYear(),
+                    startDate.getUTCMonth() + 1,
+                    0
+            )).getUTCDate())
+    ));
+
+    if (currentMonthEnd.toISOString().slice(0, 10) >= periodStartDate) {
+        return currentMonthEnd.toISOString().slice(0, 10);
+    }
+
+    const nextMonthEnd = new Date(Date.UTC(
+            startDate.getUTCFullYear(),
+            startDate.getUTCMonth() + 1,
+            1
+    ));
+    nextMonthEnd.setUTCDate(Math.min(normalizedEndDay, new Date(Date.UTC(
+            nextMonthEnd.getUTCFullYear(),
+            nextMonthEnd.getUTCMonth() + 1,
+            0
+    )).getUTCDate()));
+    return nextMonthEnd.toISOString().slice(0, 10);
 }
 
 function billingRange() {
     const today = todayIsoDate();
-    const billingMonthStartDay = Math.max(1, Math.min(userSettings?.billingMonthStartDay ?? 1, 31));
-    const periodStartDate = periodStartDateForBillingCycle(today, billingMonthStartDay);
+    const billingMonthEndDay = Math.max(1, Math.min(userSettings?.billingMonthStartDay ?? 1, 31));
+    const periodStartDate = periodStartDateForBillingCycle(today, billingMonthEndDay);
     return {
-        fromDate: addDays(periodStartDate, -1),
-        toDate: addDays(addMonths(periodStartDate, 1), -1)
+        fromDate: periodStartDate,
+        toDate: periodEndDateForBillingCycleStart(periodStartDate, billingMonthEndDay)
     };
 }
 
@@ -230,8 +260,7 @@ function formatAmount(value) {
 }
 
 function displayRangeLabel(range, periodValue) {
-    const displayFromDate = periodValue === "billing" ? addDays(range.fromDate, 1) : range.fromDate;
-    return `${formatDate(displayFromDate)} - ${formatDate(range.toDate)}`;
+    return `${formatDate(range.fromDate)} - ${formatDate(range.toDate)}`;
 }
 
 function formatChange(value) {
@@ -1087,8 +1116,8 @@ async function clearReportsCache() {
 
 async function renderSummaryReportSection() {
     const range = resolveDateRange();
-    const effectiveFromDate = periodSelect.value === "billing" ? addDays(range.fromDate, 1) : range.fromDate;
-    const summary = await fetchReportJson(`/api/reports/summary?scope=${encodeURIComponent(currentScope)}&fromDate=${encodeURIComponent(effectiveFromDate)}&toDate=${encodeURIComponent(range.toDate)}`);
+    const summaryFromDate = periodSelect.value === "billing" ? addDays(range.fromDate, -1) : range.fromDate;
+    const summary = await fetchReportJson(`/api/reports/summary?scope=${encodeURIComponent(currentScope)}&fromDate=${encodeURIComponent(summaryFromDate)}&toDate=${encodeURIComponent(range.toDate)}`);
     setMessage("");
     setMessage(displayRangeLabel(range, periodSelect.value));
 
