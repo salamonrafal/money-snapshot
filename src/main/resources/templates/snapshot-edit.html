@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/page :: head('Edycja migawki | Money Snapshot', 'snapshot-form.js')}"></head>
-<body>
+<body data-snapshot-form-page="true">
 <header th:replace="~{fragments/page :: header('home')}"></header>
 
 <main class="workspace">
@@ -12,41 +12,7 @@
     </section>
 
     <section class="editor-panel account-form-panel">
-        <form id="snapshot-form" data-mode="edit" th:attr="data-snapshot-id=${snapshotId}">
-            <div class="form-grid">
-                <label class="field">
-                    <span data-i18n="snapshots.form.account">Konto</span>
-                    <select id="snapshot-account" name="accountId" required>
-                        <option value="" data-i18n="snapshots.form.accountPlaceholder">Wybierz konto</option>
-                    </select>
-                </label>
-                <label class="field">
-                    <span data-i18n="snapshots.form.date">Data migawki</span>
-                    <input id="snapshot-date" name="snapshotDate" type="date" required>
-                </label>
-                <label class="field">
-                    <span data-i18n="snapshots.form.balance">Saldo</span>
-                    <input id="snapshot-balance" name="balance" type="number" step="0.0001" required>
-                </label>
-                <label class="field">
-                    <span data-i18n="snapshots.form.type">Typ migawki</span>
-                    <select id="snapshot-type" name="snapshotType" required>
-                        <option value="" data-i18n="snapshots.form.typePlaceholder">Wybierz typ migawki</option>
-                        <option value="FINAL" data-i18n="snapshots.type.FINAL">Finalna</option>
-                        <option value="PARTIAL" data-i18n="snapshots.type.PARTIAL">Cząstkowa</option>
-                    </select>
-                </label>
-            </div>
-            <label class="field">
-                <span data-i18n="snapshots.form.note">Notatka</span>
-                <textarea id="snapshot-note" name="note" maxlength="500" rows="5"></textarea>
-            </label>
-            <div class="form-actions split-actions">
-                <button type="submit" class="button primary" data-i18n="snapshots.form.update">Zapisz zmiany</button>
-                <a href="/snapshots.html" class="button secondary" data-i18n="snapshots.form.cancel">Anuluj</a>
-            </div>
-            <p class="form-message" id="snapshot-form-message" role="status"></p>
-        </form>
+        <th:block th:replace="~{fragments/snapshot-form :: snapshotForm('edit', '/snapshots.html', ${snapshotId}, false, null)}"></th:block>
     </section>
 </main>
 </body>

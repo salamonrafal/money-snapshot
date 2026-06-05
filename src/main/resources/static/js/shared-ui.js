@@ -102,6 +102,11 @@ window.MoneySnapshotUi = (() => {
             return;
         }
 
+        if (element.dataset.suppressTooltipOnFocusOnce === "true") {
+            delete element.dataset.suppressTooltipOnFocusOnce;
+            return;
+        }
+
         activeTooltipTarget = element;
         addTooltipDescription(element);
         positionTooltip(element);
@@ -329,38 +334,219 @@ window.MoneySnapshotUi = (() => {
         scheduleTooltipPositionUpdate();
     });
 
-    function createConfirmModal({modalSelector, subjectSelector, confirmSelector, cancelSelector}) {
+    function createModal({modalSelector, closeSelectors = []}) {
         const modal = document.querySelector(modalSelector);
-        const subject = document.querySelector(subjectSelector);
-        const confirmButton = document.querySelector(confirmSelector);
-        const cancelButton = document.querySelector(cancelSelector);
-        let selectedItem = null;
+        const closeButtons = closeSelectors
+            .flatMap((selector) => [...document.querySelectorAll(selector)])
+            .filter(Boolean);
+        const dialog = modal?.querySelector("[role='dialog']") ?? modal?.firstElementChild ?? modal;
+        let lastActiveElement = null;
+        let inertedElements = [];
+        const focusableSelector = "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
-        function open(item, subjectText) {
-            selectedItem = item;
-            subject.textContent = subjectText;
+        function focusableElements() {
+            if (!dialog) {
+                return [];
+            }
+
+            return [...dialog.querySelectorAll(focusableSelector)]
+                .filter((element) => element instanceof HTMLElement && !element.hidden && element.offsetParent !== null);
+        }
+
+        function focusFirstElement() {
+            const focusTarget = focusableElements()[0];
+            if (focusTarget instanceof HTMLElement) {
+                focusTarget.focus();
+                return;
+            }
+
+            if (dialog instanceof HTMLElement) {
+                dialog.focus();
+            }
+        }
+
+        function setPageInert(isInert) {
+            if (!modal) {
+                return;
+            }
+
+            if (isInert) {
+                inertedElements = [...document.body.children]
+                    .filter((element) => element !== modal && element instanceof HTMLElement)
+                    .map((element) => ({
+                        element,
+                        wasInert: element.inert
+                    }));
+                inertedElements.forEach(({element}) => {
+                    element.inert = true;
+                });
+                return;
+            }
+
+            inertedElements.forEach(({element, wasInert}) => {
+                if (element.isConnected) {
+                    element.inert = wasInert;
+                }
+            });
+            inertedElements = [];
+        }
+
+        function open({trigger = document.activeElement} = {}) {
+            lastActiveElement = trigger instanceof HTMLElement ? trigger : null;
+            hideTooltip(lastActiveElement);
             modal.hidden = false;
-            confirmButton.focus();
+            document.body.classList.add("modal-open");
+            setPageInert(true);
+            window.requestAnimationFrame(focusFirstElement);
         }
 
         function close() {
-            selectedItem = null;
             modal.hidden = true;
+            setPageInert(false);
+            document.body.classList.remove("modal-open");
+            const nextActiveElement = lastActiveElement;
+            lastActiveElement = null;
+            if (nextActiveElement?.isConnected) {
+                nextActiveElement.dataset.suppressTooltipOnFocusOnce = "true";
+                nextActiveElement.focus();
+            }
         }
 
-        cancelButton.addEventListener("click", close);
+        closeButtons.forEach((button) => button.addEventListener("click", close));
 
-        modal.addEventListener("click", (event) => {
+        modal?.addEventListener("click", (event) => {
             if (event.target === modal) {
                 close();
             }
         });
 
         document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" && !modal.hidden) {
+            if (!modal || modal.hidden) {
+                return;
+            }
+
+            if (event.key === "Escape") {
                 close();
+                return;
+            }
+
+            if (event.key !== "Tab") {
+                return;
+            }
+
+            const focusable = focusableElements();
+            if (focusable.length === 0) {
+                event.preventDefault();
+                focusFirstElement();
+                return;
+            }
+
+            const firstElement = focusable[0];
+            const lastElement = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === firstElement) {
+                event.preventDefault();
+                lastElement.focus();
+            } else if (!event.shiftKey && document.activeElement === lastElement) {
+                event.preventDefault();
+                firstElement.focus();
             }
         });
+
+        return {
+            open,
+            close,
+            isOpen: () => Boolean(modal && !modal.hidden),
+            modal,
+            dialog
+        };
+    }
+
+    function createToastManager({durationMs = 5000} = {}) {
+        let container = null;
+        let activeToast = null;
+        let removeToastTimer = null;
+
+        function ensureContainer() {
+            if (container) {
+                return container;
+            }
+
+            container = document.createElement("div");
+            container.className = "app-toast-stack";
+            document.body.append(container);
+            return container;
+        }
+
+        function clear() {
+            if (removeToastTimer !== null) {
+                window.clearTimeout(removeToastTimer);
+                removeToastTimer = null;
+            }
+            if (activeToast) {
+                activeToast.remove();
+                activeToast = null;
+            }
+        }
+
+        function show(message, {type = "", timeoutMs = durationMs} = {}) {
+            if (!message) {
+                clear();
+                return;
+            }
+
+            clear();
+            const stack = ensureContainer();
+            const toast = document.createElement("div");
+            toast.className = "app-toast";
+            toast.dataset.type = type;
+            toast.textContent = message;
+            stack.append(toast);
+            activeToast = toast;
+
+            window.requestAnimationFrame(() => {
+                toast.classList.add("is-visible");
+            });
+
+            removeToastTimer = window.setTimeout(() => {
+                toast.classList.remove("is-visible");
+                window.setTimeout(() => {
+                    if (activeToast === toast) {
+                        toast.remove();
+                        activeToast = null;
+                    }
+                }, 180);
+                removeToastTimer = null;
+            }, timeoutMs);
+        }
+
+        return {
+            show,
+            clear
+        };
+    }
+
+    function createConfirmModal({modalSelector, subjectSelector, confirmSelector, cancelSelector}) {
+        const modal = document.querySelector(modalSelector);
+        const subject = document.querySelector(subjectSelector);
+        const confirmButton = document.querySelector(confirmSelector);
+        const cancelButton = document.querySelector(cancelSelector);
+        let selectedItem = null;
+        const modalController = createModal({
+            modalSelector,
+            closeSelectors: [cancelSelector]
+        });
+
+        function open(item, subjectText) {
+            selectedItem = item;
+            subject.textContent = subjectText;
+            modalController.open();
+            window.requestAnimationFrame(() => confirmButton.focus());
+        }
+
+        function close() {
+            selectedItem = null;
+            modalController.close();
+        }
 
         return {
             open,
@@ -547,6 +733,8 @@ window.MoneySnapshotUi = (() => {
         bulkSnapshotSuccessKey,
         clearUserSettingsCache,
         createAddIcon,
+        createModal,
+        createToastManager,
         createConfirmModal,
         createClearFiltersIcon,
         createEditIcon,

@@ -10,12 +10,31 @@ const pageSizeSelect = document.querySelector("#snapshots-page-size");
 const accountFilterSelect = document.querySelector("#snapshots-account-filter");
 const dateFilterInput = document.querySelector("#snapshots-date-filter");
 const clearFiltersButton = document.querySelector("#clear-snapshots-filters");
+const snapshotFormModalElement = document.querySelector("#snapshot-form-modal");
+const snapshotFormModal = snapshotFormModalElement
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#snapshot-form-modal",
+        closeSelectors: ["#snapshot-form-modal [data-snapshot-modal-close]"]
+    })
+    : null;
+const snapshotFormElement = snapshotFormModalElement?.querySelector("[data-snapshot-form]") ?? null;
+const editSnapshotFormModalElement = document.querySelector("#edit-snapshot-form-modal");
+const editSnapshotFormModal = editSnapshotFormModalElement
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#edit-snapshot-form-modal",
+        closeSelectors: ["#edit-snapshot-form-modal [data-snapshot-modal-close]"]
+    })
+    : null;
+const editSnapshotFormElement = editSnapshotFormModalElement?.querySelector("[data-snapshot-form]") ?? null;
 const SNAPSHOT_LIST_STATE_KEY = "money-snapshot-snapshots-list-state";
 const deleteModal = MoneySnapshotUi.createConfirmModal({
     modalSelector: "#delete-snapshot-modal",
     subjectSelector: "#delete-snapshot-name",
     confirmSelector: "#confirm-delete-snapshot",
     cancelSelector: "#cancel-delete-snapshot"
+});
+const toastManager = MoneySnapshotUi.createToastManager({
+    durationMs: 5000
 });
 
 let currentLanguage = "pl";
@@ -26,10 +45,16 @@ let currentPage = 0;
 let currentPageData = null;
 let cachedAccounts = [];
 let userSettings = null;
+let snapshotFormController = null;
+let editSnapshotFormController = null;
+let snapshotFormControllerPromise = null;
+let editSnapshotFormControllerPromise = null;
 
 if (clearFiltersButton) {
     clearFiltersButton.append(MoneySnapshotUi.createClearFiltersIcon());
 }
+
+listMessage?.classList.add("visually-hidden");
 
 function saveListState() {
     try {
@@ -86,11 +111,24 @@ function handleLanguageChange(nextLanguage, nextMessages) {
         renderSnapshots(cachedSnapshots);
         renderPagination(currentPageData);
     }
+    snapshotFormController?.handleLanguageChange(messages);
+    editSnapshotFormController?.handleLanguageChange(messages);
 }
 
 function setListMessage(text, type = "") {
-    listMessage.textContent = text;
-    listMessage.dataset.type = type;
+    if (listMessage) {
+        listMessage.textContent = text;
+        listMessage.dataset.type = type;
+    }
+
+    if (!text) {
+        toastManager.clear();
+        return;
+    }
+
+    toastManager.show(text, {
+        type
+    });
 }
 
 function hasActiveFilters() {
@@ -236,6 +274,123 @@ function snapshotSubject(snapshot) {
     return `${snapshot.accountName} - ${formatDate(snapshot.snapshotDate)}`;
 }
 
+async function ensureSnapshotFormController() {
+    if (snapshotFormController) {
+        return snapshotFormController;
+    }
+
+    if (snapshotFormControllerPromise) {
+        return snapshotFormControllerPromise;
+    }
+
+    if (!snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        return null;
+    }
+
+    snapshotFormControllerPromise = window.MoneySnapshotSnapshotForm.init({
+        root: snapshotFormElement,
+        messages,
+        userSettings,
+        onSuccess: async ({rememberAccountEnabled, resetForm, setFormMessage}) => {
+            resetForm();
+            await loadSnapshots();
+            if (!rememberAccountEnabled) {
+                snapshotFormModal?.close();
+                return true;
+            }
+
+            setFormMessage(messages["snapshots.form.success"] ?? "", "success");
+            window.requestAnimationFrame(() => {
+                snapshotFormController?.focus();
+            });
+            return true;
+        }
+    })
+            .then((controller) => {
+                snapshotFormController = controller;
+                return controller;
+            })
+            .catch((error) => {
+                snapshotFormControllerPromise = null;
+                throw error;
+            });
+
+    return snapshotFormControllerPromise;
+}
+
+async function ensureEditSnapshotFormController() {
+    if (editSnapshotFormController) {
+        return editSnapshotFormController;
+    }
+
+    if (editSnapshotFormControllerPromise) {
+        return editSnapshotFormControllerPromise;
+    }
+
+    if (!editSnapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        return null;
+    }
+
+    editSnapshotFormControllerPromise = window.MoneySnapshotSnapshotForm.init({
+        root: editSnapshotFormElement,
+        messages,
+        userSettings,
+        onSuccess: async () => {
+            editSnapshotFormModal?.close();
+            setListMessage(messages["snapshots.edit.success"] ?? "", "success");
+            await loadSnapshots();
+            return true;
+        }
+    })
+            .then((controller) => {
+                editSnapshotFormController = controller;
+                return controller;
+            })
+            .catch((error) => {
+                editSnapshotFormControllerPromise = null;
+                throw error;
+            });
+
+    return editSnapshotFormControllerPromise;
+}
+
+async function openEditSnapshotModal(snapshot, trigger) {
+    const editSnapshotHref = `/snapshots/${encodeURIComponent(snapshot.id)}/edit.html`;
+    if (!editSnapshotFormModal || !editSnapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        window.location.href = editSnapshotHref;
+        return;
+    }
+
+    let controller;
+    try {
+        controller = await ensureEditSnapshotFormController();
+    } catch (error) {
+        console.error(error);
+        window.location.href = editSnapshotHref;
+        return;
+    }
+
+    if (!controller) {
+        window.location.href = editSnapshotHref;
+        return;
+    }
+
+    controller.clearMessage();
+    editSnapshotFormModal.open({
+        trigger
+    });
+
+    try {
+        await controller.loadSnapshotIntoForm(snapshot.id);
+        window.requestAnimationFrame(() => {
+            controller.focus();
+        });
+    } catch (error) {
+        await controller.loadSnapshotIntoForm("");
+        controller.showMessage(error?.message ?? messages["snapshots.error.loadSnapshot"] ?? "", "error");
+    }
+}
+
 function renderSnapshots(snapshots) {
     cachedSnapshots = snapshots;
     snapshotsLoaded = true;
@@ -278,7 +433,9 @@ function renderSnapshots(snapshots) {
         MoneySnapshotUi.setTooltip(editButton, messages["snapshots.actions.edit"]);
         editButton.append(MoneySnapshotUi.createEditIcon());
         editButton.addEventListener("click", () => {
-            window.location.href = `/snapshots/${encodeURIComponent(snapshot.id)}/edit.html`;
+            openEditSnapshotModal(snapshot, editButton).catch((error) => {
+                setListMessage(error.message, "error");
+            });
         });
         deleteButton.type = "button";
         deleteButton.className = "icon-button danger";
@@ -461,6 +618,34 @@ clearFiltersButton?.addEventListener("click", () => {
     });
 });
 
+newSnapshotAction?.addEventListener("click", async (event) => {
+    if (!snapshotFormModal || !snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+        return;
+    }
+
+    event.preventDefault();
+
+    try {
+        const controller = await ensureSnapshotFormController();
+        if (!controller) {
+            window.location.href = newSnapshotAction.href;
+            return;
+        }
+
+        controller.resetForm();
+        controller.clearMessage();
+        snapshotFormModal.open({
+            trigger: newSnapshotAction
+        });
+        window.requestAnimationFrame(() => {
+            controller.focus();
+        });
+    } catch (error) {
+        setListMessage(error.message, "error");
+        window.location.href = newSnapshotAction.href;
+    }
+});
+
 deleteModal.confirmButton.addEventListener("click", async () => {
     const selectedSnapshot = deleteModal.getSelectedItem();
     if (!selectedSnapshot) {
@@ -493,6 +678,8 @@ MoneySnapshotI18n.init({
         .then(() => MoneySnapshotUi.loadUserSettings())
         .then((settings) => {
             userSettings = settings;
+            snapshotFormController?.updateUserSettings(settings);
+            editSnapshotFormController?.updateUserSettings(settings);
         })
         .then(updateClearFiltersButton)
         .then(showBulkSnapshotSuccessMessage)

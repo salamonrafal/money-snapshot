@@ -13,7 +13,7 @@
                 Money Snapshot przechowuje migawki kont w jednym miejscu, gotowe pod przyszłe pulpity, raporty i alerty.
             </p>
             <div class="hero-actions">
-                <a href="/snapshots/new.html" class="button primary" data-i18n="home.hero.primaryAction">Dodaj migawkę</a>
+                <a href="/snapshots/new.html" class="button primary" id="open-snapshot-form-modal" data-i18n="home.hero.primaryAction">Dodaj migawkę</a>
             </div>
         </div>
 
@@ -112,5 +112,7 @@
         </article>
     </section>
 </main>
+<div th:replace="~{fragments/snapshot-form :: snapshotFormModal('snapshot-form-modal', 'snapshot-form-modal-title', 'create')}"></div>
+<script th:src="@{/js/snapshot-form.js(v='20260605-snapshot-modal')}"></script>
 </body>
 </html>

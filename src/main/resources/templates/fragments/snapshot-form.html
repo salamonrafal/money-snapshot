@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="snapshotForm(mode, cancelHref, snapshotId, closeButton, formId)">
+    <form class="snapshot-form"
+          data-snapshot-form
+          th:attr="id=${formId},data-mode=${mode},data-snapshot-id=${snapshotId}">
+        <div class="form-grid">
+            <label class="field">
+                <span data-i18n="snapshots.form.account">Konto</span>
+                <select name="accountId" data-role="snapshot-account" required>
+                    <option value="" data-i18n="snapshots.form.accountPlaceholder">Wybierz konto</option>
+                </select>
+            </label>
+            <label class="field">
+                <span data-i18n="snapshots.form.date">Data migawki</span>
+                <input name="snapshotDate" type="date" data-role="snapshot-date" required>
+            </label>
+            <label class="field">
+                <span data-i18n="snapshots.form.balance">Saldo</span>
+                <input name="balance" type="number" step="0.0001" data-role="snapshot-balance" required>
+            </label>
+            <label class="field">
+                <span data-i18n="snapshots.form.type">Typ migawki</span>
+                <select name="snapshotType" data-role="snapshot-type" required>
+                    <option value="" data-i18n="snapshots.form.typePlaceholder">Wybierz typ migawki</option>
+                    <option value="FINAL" data-i18n="snapshots.type.FINAL">Finalna</option>
+                    <option value="PARTIAL" data-i18n="snapshots.type.PARTIAL">Cząstkowa</option>
+                </select>
+            </label>
+        </div>
+        <label class="field">
+            <span data-i18n="snapshots.form.note">Notatka</span>
+            <textarea name="note" maxlength="500" rows="5" data-role="snapshot-note"></textarea>
+        </label>
+        <label class="checkbox-field" th:if="${mode == 'create'}">
+            <input type="checkbox" data-role="remember-snapshot-account">
+            <span data-i18n="snapshots.form.rememberAccount">Zapamiętaj wybrane konto na następne dodanie migawki</span>
+        </label>
+        <div class="snapshot-last-summary" data-role="snapshot-last-summary" th:if="${mode == 'create' and !closeButton}" hidden>
+            <span data-i18n="snapshots.form.lastSnapshot">Ostatni wpis</span>
+            <strong data-role="snapshot-last-summary-value">-</strong>
+        </div>
+        <div class="form-actions split-actions" th:if="${!closeButton}">
+            <button type="submit"
+                    class="button primary"
+                    th:attr="data-i18n=${mode == 'edit' ? 'snapshots.form.update' : 'snapshots.form.submit'}">
+                Zapisz migawkę
+            </button>
+            <a th:if="${cancelHref != null}"
+               th:href="${cancelHref}"
+               class="button secondary"
+               data-i18n="snapshots.form.cancel">Anuluj</a>
+            <button th:if="${closeButton}"
+                    type="button"
+                    class="button secondary"
+                    data-snapshot-modal-close
+                    data-i18n="snapshots.form.cancel">Anuluj</button>
+        </div>
+        <p class="form-message" data-role="snapshot-form-message" role="status" th:if="${!closeButton}"></p>
+    </form>
+</th:block>
+
+<div class="modal-backdrop"
+     th:fragment="snapshotFormModal(modalId, titleId, mode)"
+     th:with="formId=${modalId + '-form'}"
+     th:id="${modalId}"
+     hidden>
+    <div class="modal snapshot-form-modal"
+         role="dialog"
+         aria-modal="true"
+         tabindex="-1"
+         th:attr="aria-labelledby=${titleId}">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 th:id="${titleId}"
+                    th:attr="data-i18n=${mode == 'edit' ? 'snapshots.form.edit.title' : 'snapshots.form.title'}">Nowa migawka</h2>
+                <p th:attr="data-i18n=${mode == 'edit' ? 'snapshots.form.edit.subtitle' : 'snapshots.form.subtitle'}">Wybierz konto, datę i zapisz saldo z opcjonalną notatką.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-snapshot-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-message" data-role="snapshot-form-message-container" data-type="error" hidden>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 8v5"></path>
+                    <path d="M12 16h.01"></path>
+                </svg>
+            </span>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-success" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8.5 12.5 2.3 2.3 4.7-5.3"></path>
+                </svg>
+            </span>
+            <p class="form-message" data-role="snapshot-form-message" role="alert"></p>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <th:block th:replace="~{fragments/snapshot-form :: snapshotForm(${mode}, null, null, true, ${formId})}"></th:block>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-last-summary snapshot-form-modal-summary" data-role="snapshot-last-summary" hidden>
+                <span data-i18n="snapshots.form.lastSnapshot">Ostatni wpis</span>
+                <strong data-role="snapshot-last-summary-value">-</strong>
+            </div>
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-snapshot-modal-close
+                        data-i18n="snapshots.form.cancel">Anuluj</button>
+                <button type="submit"
+                        th:attr="form=${formId},data-i18n=${mode == 'edit' ? 'snapshots.form.update' : 'snapshots.form.submit'}"
+                        class="button primary snapshot-form-modal-action-button"
+                        data-role="snapshot-submit-action">Zapisz migawkę</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

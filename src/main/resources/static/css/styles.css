@@ -111,6 +111,10 @@ body {
     color: var(--text);
 }
 
+body.modal-open {
+    overflow: hidden;
+}
+
 .login-page {
     display: grid;
     min-height: 100vh;
@@ -1491,6 +1495,57 @@ h1 {
     color: var(--danger);
 }
 
+.app-toast-stack {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 120;
+    display: grid;
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.app-toast {
+    width: min(420px, calc(100vw - 32px));
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 14px;
+    background: var(--surface-raised);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.app-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.app-toast[data-type="success"] {
+    border-left-color: var(--accent);
+}
+
+.app-toast[data-type="error"] {
+    border-left-color: var(--danger);
+}
+
+@media (max-width: 720px) {
+    .app-toast-stack {
+        top: auto;
+        right: 16px;
+        bottom: 16px;
+        left: 16px;
+    }
+
+    .app-toast {
+        width: 100%;
+    }
+}
+
 .section-header {
     display: flex;
     align-items: center;
@@ -2704,6 +2759,140 @@ td:nth-child(5) {
     margin-top: 24px;
 }
 
+.snapshot-form-modal {
+    width: min(720px, 100%);
+    max-height: min(92vh, 960px);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.snapshot-form-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: clamp(18px, 3vw, 28px) clamp(18px, 3vw, 28px) 0;
+}
+
+.snapshot-form-modal-copy {
+    min-width: 0;
+}
+
+.snapshot-form-modal-header p {
+    margin-bottom: 0;
+}
+
+.snapshot-form-modal-close {
+    flex: 0 0 auto;
+}
+
+.snapshot-form-modal-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px clamp(18px, 3vw, 28px) 0;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.snapshot-form-modal-message[hidden] {
+    display: none;
+}
+
+.snapshot-form-modal-message[data-type="error"] {
+    border: 1px solid var(--danger-soft-strong);
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.snapshot-form-modal-message[data-type="success"] {
+    border: 1px solid var(--accent-border);
+    background: var(--accent-wash);
+    color: var(--accent-strong);
+}
+
+.snapshot-form-modal-message-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-self: center;
+}
+
+.snapshot-form-modal-message-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.snapshot-form-modal-message-icon-success,
+.snapshot-form-modal-message-icon-error {
+    display: none;
+}
+
+.snapshot-form-modal-message[data-type="error"] .snapshot-form-modal-message-icon-error,
+.snapshot-form-modal-message[data-type="success"] .snapshot-form-modal-message-icon-success {
+    display: inline-flex;
+}
+
+.snapshot-form-modal-message .form-message {
+    min-height: 0;
+    margin: 0;
+    color: inherit;
+}
+
+.snapshot-form-modal-body {
+    margin-top: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 clamp(18px, 3vw, 28px) 20px;
+}
+
+.snapshot-form-modal .snapshot-form {
+    min-width: 0;
+}
+
+.snapshot-form-modal .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.snapshot-form-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    padding: 10px clamp(18px, 3vw, 28px);
+}
+
+.snapshot-form-modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.snapshot-form-modal-summary {
+    margin-top: 0;
+    min-width: 0;
+    max-width: min(100%, 360px);
+    padding: 8px 10px;
+    gap: 8px;
+    font-size: 0.84rem;
+}
+
+.snapshot-form-modal-summary strong {
+    overflow-wrap: anywhere;
+}
+
+.snapshot-form-modal-action-button {
+    min-width: 128px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 0.92rem;
+}
+
 .info-list {
     display: grid;
     grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
@@ -3145,5 +3334,40 @@ td:nth-child(5) {
 
     .modal-actions {
         flex-direction: column;
+    }
+
+    .snapshot-form-modal-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .snapshot-form-modal-close {
+        align-self: flex-end;
+        margin: 0;
+    }
+
+    .snapshot-form-modal .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .snapshot-form-modal-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .snapshot-form-modal-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .snapshot-form-modal-summary {
+        width: 100%;
+        max-width: none;
+    }
+
+    .snapshot-form-modal-action-button {
+        flex: 1 1 0;
+        min-width: 0;
     }
 }
