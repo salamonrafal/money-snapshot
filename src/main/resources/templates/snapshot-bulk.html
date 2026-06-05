@@ -12,40 +12,17 @@
     </section>
 
     <section class="table-panel table-panel-wide bulk-snapshot-panel" aria-labelledby="bulk-snapshot-title">
-        <form id="bulk-snapshot-form">
-            <div class="section-header">
-                <h2 id="bulk-snapshot-title" data-i18n="snapshots.bulk.table.title">Salda kont</h2>
-                <div class="section-actions">
-                    <button type="submit" class="button primary compact" data-i18n="snapshots.bulk.submit">Zapisz migawki</button>
-                    <a href="/snapshots.html" class="button secondary compact" data-i18n="snapshots.form.cancel">Anuluj</a>
-                </div>
+        <div class="section-header">
+            <h2 id="bulk-snapshot-title" data-i18n="snapshots.bulk.table.title">Salda kont</h2>
+            <div class="section-actions">
+                <button type="submit"
+                        form="bulk-snapshot-form"
+                        class="button primary compact"
+                        data-i18n="snapshots.bulk.submit">Zapisz migawki</button>
+                <a href="/snapshots.html" class="button secondary compact" data-i18n="snapshots.form.cancel">Anuluj</a>
             </div>
-            <div class="bulk-snapshot-controls">
-                <label class="field">
-                    <span data-i18n="snapshots.form.type">Typ migawki</span>
-                    <select id="bulk-snapshot-type" name="snapshotType" required>
-                        <option value="" data-i18n="snapshots.form.typePlaceholder">Wybierz typ migawki</option>
-                        <option value="FINAL" data-i18n="snapshots.type.FINAL">Finalna</option>
-                        <option value="PARTIAL" data-i18n="snapshots.type.PARTIAL">Cząstkowa</option>
-                    </select>
-                    <span id="bulk-snapshot-type-error" class="bulk-input-error" data-role="validation-error" aria-live="polite" hidden></span>
-                </label>
-                <label class="field">
-                    <span data-i18n="snapshots.bulk.commonNote">Wspólna notatka</span>
-                    <textarea id="bulk-snapshot-note" name="note" maxlength="500" rows="3"></textarea>
-                </label>
-            </div>
-            <p class="form-message" id="bulk-snapshot-message" role="status"></p>
-            <div class="table-wrap bulk-snapshot-table-wrap">
-                <table class="bulk-snapshot-table">
-                    <tbody id="bulk-snapshot-table-body">
-                    <tr>
-                        <td data-i18n="snapshots.loading">Ładowanie...</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </form>
+        </div>
+        <th:block th:replace="~{fragments/snapshot-bulk-form :: snapshotBulkForm('bulk-snapshot-form', true)}"></th:block>
     </section>
 </main>
 </body>

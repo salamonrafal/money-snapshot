@@ -55,7 +55,10 @@
             <p data-i18n="home.feature.snapshots.description">Zapisuj salda według konta i daty, a następnie porównuj je w czasie.</p>
             <div class="feature-actions">
                 <a href="/snapshots.html" class="button secondary feature-action" data-i18n="home.hero.snapshotsAction">Zarządzaj migawkami</a>
-                <a href="/snapshots/bulk.html" class="button secondary feature-action" data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
+                <a href="/snapshots/bulk.html"
+                   class="button secondary feature-action"
+                   id="open-bulk-snapshot-form-modal"
+                   data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
             </div>
         </article>
         <article>
@@ -113,6 +116,8 @@
     </section>
 </main>
 <div th:replace="~{fragments/snapshot-form :: snapshotFormModal('snapshot-form-modal', 'snapshot-form-modal-title', 'create')}"></div>
+<div th:replace="~{fragments/snapshot-bulk-form :: snapshotBulkFormModal('bulk-snapshot-form-modal', 'bulk-snapshot-form-modal-title')}"></div>
 <script th:src="@{/js/snapshot-form.js(v='20260605-snapshot-modal')}"></script>
+<script th:src="@{/js/snapshot-bulk.js(v='20260605-snapshot-modal-bulk')}"></script>
 </body>
 </html>

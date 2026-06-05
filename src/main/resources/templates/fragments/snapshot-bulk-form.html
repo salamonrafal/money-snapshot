@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="snapshotBulkForm(formId, autoInit)">
+    <form th:attr="id=${formId},data-bulk-snapshot-auto-init=${autoInit}"
+          class="bulk-snapshot-form"
+          data-bulk-snapshot-form>
+        <div class="snapshot-form-modal-message bulk-snapshot-form-message"
+             data-role="bulk-snapshot-message-container"
+             data-type="error"
+             hidden>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 8v5"></path>
+                    <path d="M12 16h.01"></path>
+                </svg>
+            </span>
+            <p class="form-message" data-role="bulk-snapshot-message" role="alert"></p>
+        </div>
+        <div class="bulk-snapshot-controls">
+            <label class="field bulk-snapshot-control-type">
+                <span data-i18n="snapshots.form.type">Typ migawki</span>
+                <select data-role="bulk-snapshot-type" name="snapshotType" required>
+                    <option value="" data-i18n="snapshots.form.typePlaceholder">Wybierz typ migawki</option>
+                    <option value="FINAL" data-i18n="snapshots.type.FINAL">Finalna</option>
+                    <option value="PARTIAL" data-i18n="snapshots.type.PARTIAL">Cząstkowa</option>
+                </select>
+                <span class="bulk-input-error" data-role="bulk-snapshot-type-error" data-validation-role="type" aria-live="polite" hidden></span>
+            </label>
+            <label class="field bulk-snapshot-control-date">
+                <span data-i18n="snapshots.form.date">Data migawki</span>
+                <input data-role="bulk-snapshot-date" name="snapshotDate" type="date" required>
+                <span class="bulk-input-error" data-role="bulk-snapshot-date-error" data-validation-role="date" aria-live="polite" hidden></span>
+            </label>
+            <label class="field bulk-snapshot-control-note">
+                <span data-i18n="snapshots.bulk.commonNote">Wspólna notatka</span>
+                <textarea data-role="bulk-snapshot-note" name="note" maxlength="500" rows="3"></textarea>
+            </label>
+        </div>
+        <div class="table-wrap bulk-snapshot-table-wrap">
+            <table class="bulk-snapshot-table">
+                <tbody data-role="bulk-snapshot-table-body">
+                <tr>
+                    <td data-i18n="snapshots.loading">Ładowanie...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </form>
+</th:block>
+
+<div class="modal-backdrop"
+     th:fragment="snapshotBulkFormModal(modalId, titleId)"
+     th:with="formId=${modalId + '-form'}"
+     th:id="${modalId}"
+     hidden>
+    <div class="modal snapshot-bulk-modal"
+         role="dialog"
+         aria-modal="true"
+         tabindex="-1"
+         th:attr="aria-labelledby=${titleId}">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 th:id="${titleId}" data-i18n="snapshots.bulk.title">Migawki wielu kont</h2>
+                <p data-i18n="snapshots.bulk.subtitle">Wybierz dzień i zapisz salda dla wielu kont w jednym widoku tabelarycznym.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-bulk-snapshot-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <th:block th:replace="~{fragments/snapshot-bulk-form :: snapshotBulkForm(${formId}, false)}"></th:block>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-bulk-snapshot-modal-close
+                        data-i18n="snapshots.form.cancel">Anuluj</button>
+                <button type="submit"
+                        th:attr="form=${formId}"
+                        class="button primary snapshot-form-modal-action-button"
+                        data-i18n="snapshots.bulk.submit">Zapisz migawki</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
