@@ -1116,8 +1116,9 @@ async function clearReportsCache() {
 
 async function renderSummaryReportSection() {
     const range = resolveDateRange();
-    const summaryFromDate = periodSelect.value === "billing" ? addDays(range.fromDate, -1) : range.fromDate;
-    const summary = await fetchReportJson(`/api/reports/summary?scope=${encodeURIComponent(currentScope)}&fromDate=${encodeURIComponent(summaryFromDate)}&toDate=${encodeURIComponent(range.toDate)}`);
+    const baselineDate = periodSelect.value === "billing" ? addDays(range.fromDate, -1) : null;
+    const baselineQuery = baselineDate ? `&baselineDate=${encodeURIComponent(baselineDate)}` : "";
+    const summary = await fetchReportJson(`/api/reports/summary?scope=${encodeURIComponent(currentScope)}&fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}${baselineQuery}`);
     setMessage("");
     setMessage(displayRangeLabel(range, periodSelect.value));
 

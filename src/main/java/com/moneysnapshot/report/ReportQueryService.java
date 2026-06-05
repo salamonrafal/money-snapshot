@@ -161,10 +161,17 @@ public class ReportQueryService {
     }
 
     public SummaryReportResponse summary(String scope, LocalDate fromDate, LocalDate toDate) {
+        return summary(scope, fromDate, toDate, null);
+    }
+
+    public SummaryReportResponse summary(String scope, LocalDate fromDate, LocalDate toDate, LocalDate baselineDate) {
         ensureCurrentOwnerCache();
         String step = resolveStep(fromDate, toDate);
         List<LocalDate> checkpoints = buildCheckpoints(fromDate, toDate, step);
-        List<EntrySeries> entries = buildSummaryEntrySeries(scope, fromDate, toDate);
+        LocalDate effectiveBaselineDate = baselineDate == null || baselineDate.isAfter(fromDate)
+                ? fromDate
+                : baselineDate;
+        List<EntrySeries> entries = buildSummaryEntrySeries(scope, effectiveBaselineDate, toDate);
         List<SummaryReportResponse.Row> rows = entries.stream()
                 .map(entry -> {
                     BigDecimal startBalance = entry.startBalance();
@@ -174,10 +181,10 @@ public class ReportQueryService {
                             ? null
                             : change.multiply(BigDecimal.valueOf(100)).divide(startBalance, 2, RoundingMode.HALF_UP);
                     List<LocalDate> seriesDates = new ArrayList<>();
-                    seriesDates.add(fromDate);
+                    seriesDates.add(effectiveBaselineDate);
                     seriesDates.addAll(checkpoints);
                     seriesDates.addAll(entry.pointDates().stream()
-                            .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
+                            .filter(date -> !date.isBefore(effectiveBaselineDate) && !date.isAfter(toDate))
                             .toList());
                     seriesDates.add(toDate);
                     List<LocalDate> distinctDates = seriesDates.stream().distinct().sorted().toList();
@@ -189,7 +196,7 @@ public class ReportQueryService {
                             })
                             .toList();
                     List<SummaryReportResponse.Point> points = entry.pointDates().stream()
-                            .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
+                            .filter(date -> !date.isBefore(effectiveBaselineDate) && !date.isAfter(toDate))
                             .sorted()
                             .map(date -> {
                                 BigDecimal balance = balanceAt(balanceByDate, date);
@@ -620,6 +627,7 @@ public class ReportQueryService {
             }
             previousDisplayedBalance = displayedBalance;
         }
+        balanceByDate.put(fromDate, startBalance);
 
         BigDecimal endBalance = balanceAt(balanceByDate, toDate);
         balanceByDate.put(toDate, endBalance);

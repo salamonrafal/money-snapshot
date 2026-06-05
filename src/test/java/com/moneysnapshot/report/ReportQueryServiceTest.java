@@ -181,6 +181,57 @@ class ReportQueryServiceTest {
     }
 
     @Test
+    void summaryUsesExplicitBaselineDateForBillingPeriodChanges() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        LocalDate baselineDate = LocalDate.of(2026, 5, 6);
+        LocalDate fromDate = LocalDate.of(2026, 5, 7);
+        LocalDate toDate = LocalDate.of(2026, 6, 6);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(account.getId()).thenReturn(accountId);
+        when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
+                ownerId,
+                LocalDate.of(1900, 1, 1),
+                toDate
+        )).thenReturn(List.of(
+                new ReportFinalSnapshotCache(owner, account, bank, baselineDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                baselineDate,
+                toDate
+        )).thenReturn(List.of(
+                new ReportDailyBalanceCache(owner, account, bank, baselineDate, baselineDate, "Main", "Bank", "PLN", new BigDecimal("120.00")),
+                new ReportDailyBalanceCache(owner, account, bank, fromDate, fromDate, "Main", "Bank", "PLN", new BigDecimal("125.00")),
+                new ReportDailyBalanceCache(owner, account, bank, toDate, fromDate, "Main", "Bank", "PLN", new BigDecimal("125.00"))
+        ));
+
+        SummaryReportResponse response = service.summary("accounts", fromDate, toDate, baselineDate);
+
+        SummaryReportResponse.Row row = response.rows().get(0);
+        assertThat(row.startBalance()).isEqualByComparingTo("100.00");
+        assertThat(row.endBalance()).isEqualByComparingTo("125.00");
+        assertThat(row.change()).isEqualByComparingTo("25.00");
+        assertThat(row.series()).extracting(SummaryReportResponse.Point::date)
+                .startsWith(baselineDate);
+        SummaryReportResponse.Point baselinePoint = row.series().stream()
+                .filter(point -> point.date().equals(baselineDate))
+                .findFirst()
+                .orElseThrow();
+        SummaryReportResponse.Point firstBillingDayPoint = row.series().stream()
+                .filter(point -> point.date().equals(fromDate))
+                .findFirst()
+                .orElseThrow();
+        assertThat(baselinePoint.balance()).isEqualByComparingTo("100.00");
+        assertThat(baselinePoint.change()).isEqualByComparingTo("0.00");
+        assertThat(firstBillingDayPoint.change()).isEqualByComparingTo("25.00");
+    }
+
+    @Test
     void snapshotPanelUsesBillingMonthEndDayToResolvePeriodStart() {
         UUID ownerId = UUID.randomUUID();
         LocalDate today = LocalDate.of(2026, 6, 3);
