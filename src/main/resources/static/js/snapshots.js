@@ -11,13 +11,21 @@ const accountFilterSelect = document.querySelector("#snapshots-account-filter");
 const dateFilterInput = document.querySelector("#snapshots-date-filter");
 const clearFiltersButton = document.querySelector("#clear-snapshots-filters");
 const snapshotFormModalElement = document.querySelector("#snapshot-form-modal");
+const bulkSnapshotFormModalElement = document.querySelector("#bulk-snapshot-form-modal");
 const snapshotFormModal = snapshotFormModalElement
     ? MoneySnapshotUi.createModal({
         modalSelector: "#snapshot-form-modal",
         closeSelectors: ["#snapshot-form-modal [data-snapshot-modal-close]"]
     })
     : null;
+const bulkSnapshotFormModal = bulkSnapshotFormModalElement
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#bulk-snapshot-form-modal",
+        closeSelectors: ["#bulk-snapshot-form-modal [data-bulk-snapshot-modal-close]"]
+    })
+    : null;
 const snapshotFormElement = snapshotFormModalElement?.querySelector("[data-snapshot-form]") ?? null;
+const bulkSnapshotFormElement = bulkSnapshotFormModalElement?.querySelector("[data-bulk-snapshot-form]") ?? null;
 const editSnapshotFormModalElement = document.querySelector("#edit-snapshot-form-modal");
 const editSnapshotFormModal = editSnapshotFormModalElement
     ? MoneySnapshotUi.createModal({
@@ -47,8 +55,10 @@ let cachedAccounts = [];
 let userSettings = null;
 let snapshotFormController = null;
 let editSnapshotFormController = null;
+let bulkSnapshotFormController = null;
 let snapshotFormControllerPromise = null;
 let editSnapshotFormControllerPromise = null;
+let bulkSnapshotFormControllerPromise = null;
 
 if (clearFiltersButton) {
     clearFiltersButton.append(MoneySnapshotUi.createClearFiltersIcon());
@@ -113,6 +123,7 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     }
     snapshotFormController?.handleLanguageChange(messages);
     editSnapshotFormController?.handleLanguageChange(messages);
+    bulkSnapshotFormController?.handleLanguageChange(messages);
 }
 
 function setListMessage(text, type = "") {
@@ -352,6 +363,45 @@ async function ensureEditSnapshotFormController() {
             });
 
     return editSnapshotFormControllerPromise;
+}
+
+async function ensureBulkSnapshotFormController() {
+    if (bulkSnapshotFormController) {
+        return bulkSnapshotFormController;
+    }
+
+    if (bulkSnapshotFormControllerPromise) {
+        return bulkSnapshotFormControllerPromise;
+    }
+
+    if (!bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
+        return null;
+    }
+
+    bulkSnapshotFormControllerPromise = window.MoneySnapshotBulkSnapshotForm.init({
+        root: bulkSnapshotFormElement,
+        messages,
+        userSettings,
+        autoPrepare: false,
+        redirectOnSuccess: false,
+        onSuccess: async ({savedSnapshots, controller}) => {
+            controller.resetForm();
+            bulkSnapshotFormModal?.close();
+            const successMessageTemplate = messages["snapshots.bulk.success"] ?? "";
+            setListMessage(successMessageTemplate.replace("{count}", String(savedSnapshots.length)), "success");
+            await loadSnapshots();
+        }
+    })
+        .then((controller) => {
+            bulkSnapshotFormController = controller;
+            return controller;
+        })
+        .catch((error) => {
+            bulkSnapshotFormControllerPromise = null;
+            throw error;
+        });
+
+    return bulkSnapshotFormControllerPromise;
 }
 
 async function openEditSnapshotModal(snapshot, trigger) {
@@ -646,6 +696,35 @@ newSnapshotAction?.addEventListener("click", async (event) => {
     }
 });
 
+newBulkSnapshotsAction?.addEventListener("click", async (event) => {
+    if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
+        return;
+    }
+
+    event.preventDefault();
+
+    try {
+        const controller = await ensureBulkSnapshotFormController();
+        if (!controller) {
+            window.location.href = newBulkSnapshotsAction.href;
+            return;
+        }
+
+        await controller.prepare({forceReload: true});
+        controller.resetForm();
+        controller.clearMessage();
+        bulkSnapshotFormModal.open({
+            trigger: newBulkSnapshotsAction
+        });
+        window.requestAnimationFrame(() => {
+            controller.focus();
+        });
+    } catch (error) {
+        setListMessage(error.message, "error");
+        window.location.href = newBulkSnapshotsAction.href;
+    }
+});
+
 deleteModal.confirmButton.addEventListener("click", async () => {
     const selectedSnapshot = deleteModal.getSelectedItem();
     if (!selectedSnapshot) {
@@ -680,6 +759,7 @@ MoneySnapshotI18n.init({
             userSettings = settings;
             snapshotFormController?.updateUserSettings(settings);
             editSnapshotFormController?.updateUserSettings(settings);
+            bulkSnapshotFormController?.updateUserSettings(settings);
         })
         .then(updateClearFiltersButton)
         .then(showBulkSnapshotSuccessMessage)

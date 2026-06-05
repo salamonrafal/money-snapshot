@@ -6,19 +6,33 @@ const changeElement = document.querySelector("#snapshot-panel-change");
 const chartElement = document.querySelector("#snapshot-panel-chart");
 const openSnapshotFormModalButton = document.querySelector("#open-snapshot-form-modal");
 const snapshotFormModalElement = document.querySelector("#snapshot-form-modal");
+const openBulkSnapshotFormModalButton = document.querySelector("#open-bulk-snapshot-form-modal");
+const bulkSnapshotFormModalElement = document.querySelector("#bulk-snapshot-form-modal");
 const snapshotFormModal = snapshotFormModalElement
     ? MoneySnapshotUi.createModal({
         modalSelector: "#snapshot-form-modal",
         closeSelectors: ["#snapshot-form-modal [data-snapshot-modal-close]"]
     })
     : null;
+const bulkSnapshotFormModal = bulkSnapshotFormModalElement
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#bulk-snapshot-form-modal",
+        closeSelectors: ["#bulk-snapshot-form-modal [data-bulk-snapshot-modal-close]"]
+    })
+    : null;
 const snapshotFormElement = snapshotFormModalElement?.querySelector("[data-snapshot-form]") ?? null;
+const bulkSnapshotFormElement = bulkSnapshotFormModalElement?.querySelector("[data-bulk-snapshot-form]") ?? null;
 
 let currentLanguage = "pl";
 let userSettings = null;
 let homeMessages = {};
 let snapshotFormController = null;
 let snapshotFormControllerPromise = null;
+let bulkSnapshotFormController = null;
+let bulkSnapshotFormControllerPromise = null;
+const toastManager = MoneySnapshotUi.createToastManager({
+    durationMs: 4200
+});
 
 function formatCurrencyAmount({currencyCode, amount}, includeSign = false) {
     const numericAmount = Number(amount);
@@ -310,12 +324,53 @@ async function ensureSnapshotFormController() {
     return snapshotFormControllerPromise;
 }
 
+async function ensureBulkSnapshotFormController() {
+    if (bulkSnapshotFormController) {
+        return bulkSnapshotFormController;
+    }
+
+    if (bulkSnapshotFormControllerPromise) {
+        return bulkSnapshotFormControllerPromise;
+    }
+
+    if (!bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
+        return null;
+    }
+
+    bulkSnapshotFormControllerPromise = window.MoneySnapshotBulkSnapshotForm.init({
+        root: bulkSnapshotFormElement,
+        messages: homeMessages,
+        userSettings,
+        autoPrepare: false,
+        redirectOnSuccess: false,
+        onSuccess: async ({savedSnapshots, controller}) => {
+            controller.resetForm();
+            bulkSnapshotFormModal?.close();
+            await loadHomeData();
+            const successMessageTemplate = homeMessages["snapshots.bulk.success"] ?? "";
+            const successMessage = successMessageTemplate.replace("{count}", String(savedSnapshots.length));
+            toastManager.show(successMessage, {type: "success"});
+        }
+    })
+        .then((controller) => {
+            bulkSnapshotFormController = controller;
+            return controller;
+        })
+        .catch((error) => {
+            bulkSnapshotFormControllerPromise = null;
+            throw error;
+        });
+
+    return bulkSnapshotFormControllerPromise;
+}
+
 MoneySnapshotI18n.init({
     endpoint: "/api/home/messages",
     onLanguageChange: ({language, messages}) => {
         currentLanguage = language;
         homeMessages = messages;
         snapshotFormController?.handleLanguageChange(messages);
+        bulkSnapshotFormController?.handleLanguageChange(messages);
         loadHomeData().catch((error) => {
             console.error(error);
         });
@@ -325,6 +380,7 @@ MoneySnapshotI18n.init({
         .then((settings) => {
             userSettings = settings;
             snapshotFormController?.updateUserSettings(settings);
+            bulkSnapshotFormController?.updateUserSettings(settings);
         })
         .then(loadHomeData)
         .catch((error) => {
@@ -356,5 +412,34 @@ openSnapshotFormModalButton?.addEventListener("click", async (event) => {
     } catch (error) {
         console.error(error);
         window.location.href = openSnapshotFormModalButton.href;
+    }
+});
+
+openBulkSnapshotFormModalButton?.addEventListener("click", async (event) => {
+    if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
+        return;
+    }
+
+    event.preventDefault();
+
+    try {
+        const controller = await ensureBulkSnapshotFormController();
+        if (!controller) {
+            window.location.href = openBulkSnapshotFormModalButton.href;
+            return;
+        }
+
+        await controller.prepare({forceReload: true});
+        controller.resetForm();
+        controller.clearMessage();
+        bulkSnapshotFormModal.open({
+            trigger: openBulkSnapshotFormModalButton
+        });
+        window.requestAnimationFrame(() => {
+            controller.focus();
+        });
+    } catch (error) {
+        console.error(error);
+        window.location.href = openBulkSnapshotFormModalButton.href;
     }
 });
