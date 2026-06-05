@@ -656,7 +656,10 @@ function renderChart(rows, step, checkpoints) {
         return;
     }
 
-    const startTime = new Date(`${checkpoints[0]}T00:00:00Z`).getTime();
+    const chartStartDate = rows
+            .flatMap((row) => row.series.map((point) => point.date))
+            .sort((left, right) => left.localeCompare(right))[0] ?? checkpoints[0];
+    const startTime = new Date(`${chartStartDate}T00:00:00Z`).getTime();
     const endTime = new Date(`${checkpoints.at(-1)}T00:00:00Z`).getTime();
     const timeRange = endTime - startTime || 1;
     const allChanges = rows.flatMap((row) => row.series.map((point) => point.change));
