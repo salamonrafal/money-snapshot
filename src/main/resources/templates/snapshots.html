@@ -111,6 +111,8 @@
         </div>
     </section>
 </main>
+<div th:replace="~{fragments/snapshot-form :: snapshotFormModal('snapshot-form-modal', 'snapshot-form-modal-title', 'create')}"></div>
+<div th:replace="~{fragments/snapshot-form :: snapshotFormModal('edit-snapshot-form-modal', 'edit-snapshot-form-modal-title', 'edit')}"></div>
 <div th:replace="~{fragments/page :: confirmDeleteModal(
         'delete-snapshot-modal',
         'delete-snapshot-title',
@@ -119,5 +121,6 @@
         'delete-snapshot-name',
         'confirm-delete-snapshot',
         'cancel-delete-snapshot')}"></div>
+<script th:src="@{/js/snapshot-form.js(v='20260605-snapshot-modal')}"></script>
 </body>
 </html>

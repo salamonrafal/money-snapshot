@@ -4,9 +4,20 @@ const accountsElement = document.querySelector("#snapshot-panel-accounts");
 const balanceElement = document.querySelector("#snapshot-panel-balance");
 const changeElement = document.querySelector("#snapshot-panel-change");
 const chartElement = document.querySelector("#snapshot-panel-chart");
+const openSnapshotFormModalButton = document.querySelector("#open-snapshot-form-modal");
+const snapshotFormModalElement = document.querySelector("#snapshot-form-modal");
+const snapshotFormModal = snapshotFormModalElement
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#snapshot-form-modal",
+        closeSelectors: ["#snapshot-form-modal [data-snapshot-modal-close]"]
+    })
+    : null;
+const snapshotFormElement = snapshotFormModalElement?.querySelector("[data-snapshot-form]") ?? null;
 
 let currentLanguage = "pl";
 let userSettings = null;
+let homeMessages = {};
+let snapshotFormController = null;
 
 function formatCurrencyAmount({currencyCode, amount}, includeSign = false) {
     const numericAmount = Number(amount);
@@ -256,8 +267,10 @@ async function loadHomeData() {
 
 MoneySnapshotI18n.init({
     endpoint: "/api/home/messages",
-    onLanguageChange: ({language}) => {
+    onLanguageChange: ({language, messages}) => {
         currentLanguage = language;
+        homeMessages = messages;
+        snapshotFormController?.handleLanguageChange(messages);
         loadHomeData().catch((error) => {
             console.error(error);
         });
@@ -267,7 +280,43 @@ MoneySnapshotI18n.init({
         .then((settings) => {
             userSettings = settings;
         })
+        .then(async () => {
+            if (!snapshotFormElement || !window.MoneySnapshotSnapshotForm) {
+                return;
+            }
+
+            snapshotFormController = await window.MoneySnapshotSnapshotForm.init({
+                root: snapshotFormElement,
+                messages: homeMessages,
+                userSettings,
+                onSuccess: async ({rememberAccountEnabled, resetForm, setFormMessage}) => {
+                    resetForm();
+                    await loadHomeData();
+                    if (!rememberAccountEnabled) {
+                        snapshotFormModal?.close();
+                        return true;
+                    }
+
+                    setFormMessage(homeMessages["snapshots.form.success"] ?? "", "success");
+                    window.requestAnimationFrame(() => {
+                        snapshotFormController?.focus();
+                    });
+                    return true;
+                }
+            });
+        })
         .then(loadHomeData)
         .catch((error) => {
             console.error(error);
         });
+
+openSnapshotFormModalButton?.addEventListener("click", () => {
+    snapshotFormController?.resetForm();
+    snapshotFormController?.clearMessage();
+    snapshotFormModal?.open({
+        trigger: openSnapshotFormModalButton
+    });
+    window.requestAnimationFrame(() => {
+        snapshotFormController?.focus();
+    });
+});

@@ -11,6 +11,7 @@ public class MessageBundleService {
 
     private static final Set<String> COMMON_KEYS = Set.of(
             "app.name",
+            "common.close",
             "common.delete.cancel",
             "common.delete.confirm",
             "common.nav.accounts",
@@ -27,27 +28,55 @@ public class MessageBundleService {
             "common.nav.users"
     );
 
-    private static final Set<String> HOME_PAGE_KEYS = Set.of(
-            "home.hero.eyebrow",
-            "home.hero.title",
-            "home.hero.subtitle",
-            "home.hero.primaryAction",
-            "home.hero.snapshotsAction",
-            "home.hero.banksAccountsAction",
-            "home.summary.accounts",
-            "home.summary.balance",
-            "home.summary.change",
-            "home.feature.snapshots.title",
-            "home.feature.snapshots.description",
-            "home.feature.banksAccounts.title",
-            "home.feature.banksAccounts.description",
-            "home.feature.reports.title",
-            "home.feature.reports.description",
-            "home.feature.savingsPlanning.title",
-            "home.feature.savingsPlanning.description",
-            "home.feature.savingsPlanning.action",
-            "snapshots.actions.addBulk"
-    );
+    private static final Set<String> HOME_PAGE_KEYS =
+            java.util.stream.Stream.of(
+                            "home.hero.eyebrow",
+                            "home.hero.title",
+                            "home.hero.subtitle",
+                            "home.hero.primaryAction",
+                            "home.hero.snapshotsAction",
+                            "home.hero.banksAccountsAction",
+                            "home.summary.accounts",
+                            "home.summary.balance",
+                            "home.summary.change",
+                            "home.feature.snapshots.title",
+                            "home.feature.snapshots.description",
+                            "home.feature.banksAccounts.title",
+                            "home.feature.banksAccounts.description",
+                            "home.feature.reports.title",
+                            "home.feature.reports.description",
+                            "home.feature.savingsPlanning.title",
+                            "home.feature.savingsPlanning.description",
+                            "home.feature.savingsPlanning.action",
+                            "snapshots.actions.addBulk",
+                            "snapshots.error.accountNotFound",
+                            "snapshots.error.create",
+                            "snapshots.error.duplicate",
+                            "snapshots.error.load",
+                            "snapshots.error.loadAccounts",
+                            "snapshots.form.account",
+                            "snapshots.form.accountPlaceholder",
+                            "snapshots.form.balance",
+                            "snapshots.form.cancel",
+                            "snapshots.form.date",
+                            "snapshots.form.lastSnapshot",
+                            "snapshots.form.noLastSnapshot",
+                            "snapshots.form.note",
+                            "snapshots.form.rememberAccount",
+                            "snapshots.form.required",
+                            "snapshots.form.submit",
+                            "snapshots.form.subtitle",
+                            "snapshots.form.title",
+                            "snapshots.form.success",
+                            "snapshots.form.type",
+                            "snapshots.form.typePlaceholder",
+                            "snapshots.type.FINAL",
+                            "snapshots.type.PARTIAL"
+                    )
+                    .collect(java.util.stream.Collectors.collectingAndThen(
+                            java.util.stream.Collectors.toSet(),
+                            Set::copyOf
+                    ));
 
     private static final Set<String> SAVINGS_PLANNING_PAGE_KEYS = Set.of(
             "savingsPlanning.heading.eyebrow",
@@ -287,6 +316,7 @@ public class MessageBundleService {
             "snapshots.error.loadSnapshot",
             "snapshots.error.notFound",
             "snapshots.error.update",
+            "snapshots.edit.success",
             "snapshots.update.success",
             "snapshots.actions.add",
             "snapshots.actions.addBulk",
