@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 
 import static org.mockito.Mockito.mock;
@@ -88,6 +90,16 @@ class ReportCacheRefreshServiceTest {
         verify(appUserRepository).findByIdForUpdate(ownerId);
         verify(state).markDirty();
         verify(refreshStateRepository).save(state);
+    }
+
+    @Test
+    void markDirtyRunsInRequiresNewTransaction() throws NoSuchMethodException {
+        Transactional transactional = ReportCacheRefreshService.class
+                .getMethod("markDirty", UUID.class)
+                .getAnnotation(Transactional.class);
+
+        assertThat(transactional).isNotNull();
+        assertThat(transactional.propagation()).isEqualTo(Propagation.REQUIRES_NEW);
     }
 
     @Test

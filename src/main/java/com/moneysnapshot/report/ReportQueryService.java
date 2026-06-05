@@ -94,7 +94,8 @@ public class ReportQueryService {
         UUID ownerId = currentUserService.currentUserId();
         LocalDate today = LocalDate.now(clock);
         reportCacheRefreshService.ensureOwnerCacheReady(ownerId, today);
-        LocalDate periodDate = resolvePeriodStart(today, userSettingsService.currentUserSettings().billingMonthStartDay());
+        int billingMonthEndDay = userSettingsService.currentUserSettings().billingMonthStartDay();
+        LocalDate periodDate = resolvePeriodStart(today, billingMonthEndDay);
         List<ReportDailyBalanceCache> currentRows = dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, today);
         List<ReportDailyBalanceCache> previousRows = dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, periodDate.minusDays(1));
         List<SnapshotPanelAmountResponse> currentBalances = sumByCurrency(currentRows);
@@ -105,14 +106,18 @@ public class ReportQueryService {
                 dailyBalanceCacheRepository.countTrackedAccounts(ownerId, today),
                 currentBalances,
                 monthlyChanges,
-                snapshotPanelChart(periodDate)
+                snapshotPanelChart(periodDate, billingMonthEndDay)
         );
     }
 
     public List<SnapshotPanelChartPointResponse> snapshotPanelChart(LocalDate periodDate) {
+        return snapshotPanelChart(periodDate, userSettingsService.currentUserSettings().billingMonthStartDay());
+    }
+
+    private List<SnapshotPanelChartPointResponse> snapshotPanelChart(LocalDate periodDate, int billingMonthEndDay) {
         UUID ownerId = currentUserService.currentUserId();
         LocalDate startDate = periodDate.minusDays(1);
-        LocalDate endDate = periodDate.plusMonths(1).minusDays(1);
+        LocalDate endDate = resolvePeriodEnd(periodDate, billingMonthEndDay);
         List<ReportDailyBalanceCache> rows = dailyBalanceCacheRepository
                 .findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, startDate, endDate);
         if (rows.isEmpty()) {
@@ -156,10 +161,17 @@ public class ReportQueryService {
     }
 
     public SummaryReportResponse summary(String scope, LocalDate fromDate, LocalDate toDate) {
+        return summary(scope, fromDate, toDate, null);
+    }
+
+    public SummaryReportResponse summary(String scope, LocalDate fromDate, LocalDate toDate, LocalDate baselineDate) {
         ensureCurrentOwnerCache();
         String step = resolveStep(fromDate, toDate);
         List<LocalDate> checkpoints = buildCheckpoints(fromDate, toDate, step);
-        List<EntrySeries> entries = buildSummaryEntrySeries(scope, fromDate, toDate);
+        LocalDate effectiveBaselineDate = baselineDate == null || baselineDate.isAfter(fromDate)
+                ? fromDate
+                : baselineDate;
+        List<EntrySeries> entries = buildSummaryEntrySeries(scope, effectiveBaselineDate, toDate);
         List<SummaryReportResponse.Row> rows = entries.stream()
                 .map(entry -> {
                     BigDecimal startBalance = entry.startBalance();
@@ -169,10 +181,10 @@ public class ReportQueryService {
                             ? null
                             : change.multiply(BigDecimal.valueOf(100)).divide(startBalance, 2, RoundingMode.HALF_UP);
                     List<LocalDate> seriesDates = new ArrayList<>();
-                    seriesDates.add(fromDate);
+                    seriesDates.add(effectiveBaselineDate);
                     seriesDates.addAll(checkpoints);
                     seriesDates.addAll(entry.pointDates().stream()
-                            .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
+                            .filter(date -> !date.isBefore(effectiveBaselineDate) && !date.isAfter(toDate))
                             .toList());
                     seriesDates.add(toDate);
                     List<LocalDate> distinctDates = seriesDates.stream().distinct().sorted().toList();
@@ -184,7 +196,7 @@ public class ReportQueryService {
                             })
                             .toList();
                     List<SummaryReportResponse.Point> points = entry.pointDates().stream()
-                            .filter(date -> !date.isBefore(fromDate) && !date.isAfter(toDate))
+                            .filter(date -> !date.isBefore(effectiveBaselineDate) && !date.isAfter(toDate))
                             .sorted()
                             .map(date -> {
                                 BigDecimal balance = balanceAt(balanceByDate, date);
@@ -201,13 +213,16 @@ public class ReportQueryService {
 
     public OverviewReportResponse overview(String scope, LocalDate toDate) {
         ensureCurrentOwnerCache();
-        List<EntrySeries> entries = buildEntrySeries(scope, toDate, toDate);
+        UUID ownerId = currentUserService.currentUserId();
+        LocalDate effectiveToDate = dailyBalanceCacheRepository.findLatestBalanceDateOnOrBefore(ownerId, toDate)
+                .orElse(toDate);
+        List<EntrySeries> entries = buildEntrySeries(scope, effectiveToDate, effectiveToDate);
         BigDecimal total = entries.stream()
-                .map(entry -> balanceAt(entry.balanceByDate(), toDate).abs())
+                .map(entry -> balanceAt(entry.balanceByDate(), effectiveToDate).abs())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         List<OverviewReportResponse.Row> rows = entries.stream()
                 .map(entry -> {
-                    BigDecimal balance = balanceAt(entry.balanceByDate(), toDate);
+                    BigDecimal balance = balanceAt(entry.balanceByDate(), effectiveToDate);
                     BigDecimal sharePercent = total.compareTo(BigDecimal.ZERO) == 0
                             ? null
                             : balance.abs().multiply(BigDecimal.valueOf(100)).divide(total, 2, RoundingMode.HALF_UP);
@@ -518,6 +533,16 @@ public class ReportQueryService {
                         row.getAccount().getId(),
                         ignored -> new AccountSummarySeries(row.getAccount().getId(), row.getAccountName(), row.getBankName(), row.getCurrencyCode())
                 ).pointDates().add(row.getLatestSnapshotDate()));
+        snapshots.stream()
+                .filter(snapshot -> !snapshot.getSnapshotDate().isBefore(fromDate) && !snapshot.getSnapshotDate().isAfter(toDate))
+                .forEach(snapshot -> {
+                    AccountSummarySeries series = byAccountId.computeIfAbsent(
+                            snapshot.getAccount().getId(),
+                            ignored -> new AccountSummarySeries(snapshot.getAccount().getId(), snapshot.getAccountName(), snapshot.getBankName(), snapshot.getCurrencyCode())
+                    );
+                    series.dailyBalances().put(snapshot.getSnapshotDate(), snapshot.getBalance());
+                    series.pointDates().add(snapshot.getSnapshotDate());
+                });
 
         return switch (scope == null ? "accounts" : scope) {
             case "banks" -> aggregateSummaryEntriesByBank(byAccountId.values(), fromDate, toDate);
@@ -602,6 +627,7 @@ public class ReportQueryService {
             }
             previousDisplayedBalance = displayedBalance;
         }
+        balanceByDate.put(fromDate, startBalance);
 
         BigDecimal endBalance = balanceAt(balanceByDate, toDate);
         balanceByDate.put(toDate, endBalance);
@@ -670,15 +696,27 @@ public class ReportQueryService {
         reportCacheRefreshService.ensureOwnerCacheReady(currentUserService.currentUserId(), LocalDate.now(clock));
     }
 
-    private LocalDate resolvePeriodStart(LocalDate today, int billingMonthStartDay) {
-        int normalizedStartDay = Math.max(1, Math.min(31, billingMonthStartDay));
-        LocalDate currentMonthStart = today.withDayOfMonth(Math.min(normalizedStartDay, today.lengthOfMonth()));
-        if (!today.isBefore(currentMonthStart)) {
-            return currentMonthStart;
+    private LocalDate resolvePeriodStart(LocalDate today, int billingMonthEndDay) {
+        int normalizedEndDay = Math.max(1, Math.min(31, billingMonthEndDay));
+        LocalDate currentMonthEnd = today.withDayOfMonth(Math.min(normalizedEndDay, today.lengthOfMonth()));
+        if (today.isAfter(currentMonthEnd)) {
+            return currentMonthEnd.plusDays(1);
         }
 
         LocalDate previousMonth = today.minusMonths(1);
-        return previousMonth.withDayOfMonth(Math.min(normalizedStartDay, previousMonth.lengthOfMonth()));
+        LocalDate previousMonthEnd = previousMonth.withDayOfMonth(Math.min(normalizedEndDay, previousMonth.lengthOfMonth()));
+        return previousMonthEnd.plusDays(1);
+    }
+
+    private LocalDate resolvePeriodEnd(LocalDate periodStart, int billingMonthEndDay) {
+        int normalizedEndDay = Math.max(1, Math.min(31, billingMonthEndDay));
+        LocalDate currentMonthEnd = periodStart.withDayOfMonth(Math.min(normalizedEndDay, periodStart.lengthOfMonth()));
+        if (!currentMonthEnd.isBefore(periodStart)) {
+            return currentMonthEnd;
+        }
+
+        LocalDate nextMonth = periodStart.plusMonths(1);
+        return nextMonth.withDayOfMonth(Math.min(normalizedEndDay, nextMonth.lengthOfMonth()));
     }
 
     private String resolveStep(LocalDate fromDate, LocalDate toDate) {

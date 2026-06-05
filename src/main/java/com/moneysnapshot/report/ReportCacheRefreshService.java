@@ -93,7 +93,7 @@ public class ReportCacheRefreshService {
                 .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(user.getId()))));
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markDirty(UUID ownerId) {
         withOwnerLock(ownerId, () -> {
             AppUser owner = lockOwner(ownerId);

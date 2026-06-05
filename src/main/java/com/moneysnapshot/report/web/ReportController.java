@@ -34,9 +34,10 @@ public class ReportController {
     public SummaryReportResponse summary(
             @RequestParam(defaultValue = "accounts") String scope,
             @RequestParam LocalDate fromDate,
-            @RequestParam LocalDate toDate
+            @RequestParam LocalDate toDate,
+            @RequestParam(required = false) LocalDate baselineDate
     ) {
-        return reportQueryService.summary(scope, fromDate, toDate);
+        return reportQueryService.summary(scope, fromDate, toDate, baselineDate);
     }
 
     @GetMapping("/overview")
