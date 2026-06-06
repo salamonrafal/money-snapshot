@@ -9,16 +9,10 @@ with normalized_emails as (
     from app_users
 )
 update app_users user_row
-set email = case
-    when normalized_emails.duplicate_rank = 1 then normalized_emails.normalized_email
-    when position('@' in normalized_emails.normalized_email) > 0 then
-        split_part(normalized_emails.normalized_email, '@', 1)
-        || '+dup'
-        || normalized_emails.duplicate_rank::text
-        || '@'
-        || split_part(normalized_emails.normalized_email, '@', 2)
-    else normalized_emails.normalized_email || '+dup' || normalized_emails.duplicate_rank::text
-end
+set email = left(
+    normalized_emails.normalized_email,
+    180 - length('+dup' || normalized_emails.duplicate_rank::text)
+) || '+dup' || normalized_emails.duplicate_rank::text
 from normalized_emails
 where user_row.id = normalized_emails.id
   and normalized_emails.duplicate_rank > 1;
