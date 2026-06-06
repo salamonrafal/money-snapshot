@@ -17,7 +17,7 @@
             <div class="section-actions savings-planning-tool-menu">
                 <a href="/savings-planning/forecasts/new.html" class="button primary compact savings-planning-generate-button" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
                 <a href="/savings-planning/settings.html"
-                   class="icon-button secondary"
+                   class="icon-button secondary savings-planning-settings-button"
                    title="Ustawienia oszczędności"
                    data-i18n-title="savingsPlanning.actions.settings"
                    data-i18n-aria-label="savingsPlanning.actions.settings"
@@ -74,7 +74,7 @@
         <div class="savings-forecast-empty" id="savings-planning-empty-state" hidden>
             <h3 data-i18n="savingsPlanning.empty.title">Brak wygenerowanych prognoz</h3>
             <p data-i18n="savingsPlanning.empty.description">Wygeneruj pierwszy zestaw prognoz, aby zobaczyć przewidywane salda dla wszystkich kont.</p>
-            <a href="/savings-planning/forecasts/new.html" class="button primary" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
+            <a href="/savings-planning/forecasts/new.html" class="button primary savings-planning-generate-button" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
         </div>
         <div class="savings-forecast-sticky-head-wrap" id="savings-planning-sticky-head-wrap" hidden>
             <table class="savings-forecast-table savings-forecast-sticky-head-table" id="savings-planning-sticky-head-table" aria-hidden="true">
@@ -115,5 +115,142 @@
         'delete-savings-forecasts-subject',
         'confirm-delete-savings-forecasts',
         'cancel-delete-savings-forecasts')}"></div>
+<div class="modal-backdrop" id="savings-planning-settings-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="savings-planning-settings-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="savings-planning-settings-modal-title" data-i18n="savingsPlanningSettings.heading.title">Ustawienia oszczędności</h2>
+                <p data-i18n="savingsPlanningSettings.heading.subtitle">Ustaw prognozowaną miesięczną wpłatę dla każdego konta w jego walucie.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-savings-planning-settings-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="savings-planning-settings-modal-form">
+                <div class="table-wrap savings-planning-settings-table-wrap">
+                    <table class="reports-table savings-planning-settings-table">
+                        <thead>
+                        <tr>
+                            <th data-i18n="savingsPlanningSettings.table.account">Konto</th>
+                            <th data-i18n="savingsPlanningSettings.table.bank">Bank</th>
+                            <th data-i18n="savingsPlanningSettings.table.currency">Waluta</th>
+                            <th data-i18n="savingsPlanningSettings.table.forecast">Prognozowana miesięczna wpłata</th>
+                        </tr>
+                        </thead>
+                        <tbody id="savings-planning-settings-modal-table-body">
+                        <tr>
+                            <td colspan="4" data-i18n="savingsPlanningSettings.loading">Ładowanie...</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="form-helper" data-i18n="savingsPlanningSettings.form.hint">Pozostaw puste pole, jeśli konto nie ma stałej miesięcznej wpłaty.</p>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-savings-planning-settings-modal-close
+                        data-i18n="common.close">Zamknij</button>
+                <button type="submit"
+                        form="savings-planning-settings-modal-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="savings-planning-settings-modal-submit"
+                        data-i18n="savingsPlanningSettings.form.submit">Zapisz ustawienia</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop" id="savings-planning-generator-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="savings-planning-generator-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="savings-planning-generator-modal-title" data-i18n="savingsPlanningGenerator.heading.title">Generowanie prognoz oszczędności</h2>
+                <p data-i18n="savingsPlanningGenerator.heading.subtitle">Wygeneruj prognozy dla wszystkich kont na podstawie zapisanych miesięcznych wpłat i ostatnich sald.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-savings-planning-generator-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="savings-planning-generator-modal-form">
+                <div class="planner-warning" id="savings-planning-generator-modal-warning" hidden>
+                    <span class="planner-warning-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 10v6"></path>
+                            <path d="M12 7h.01"></path>
+                        </svg>
+                    </span>
+                    <div class="planner-warning-copy">
+                        <strong data-i18n="savingsPlanningGenerator.warning.title">Aktywny plan oszczędnościowy</strong>
+                        <p id="savings-planning-generator-modal-warning-text" data-i18n="savingsPlanningGenerator.warning.description">Istnieje już nieukończony plan oszczędnościowy.</p>
+                    </div>
+                </div>
+                <label class="field">
+                    <span data-i18n="savingsPlanningGenerator.form.startDate">Od kiedy</span>
+                    <input id="savings-planning-generator-modal-start-date" type="date" required>
+                </label>
+                <label class="field">
+                    <span data-i18n="savingsPlanningGenerator.form.duration">Czas trwania</span>
+                    <div class="range-control">
+                        <input id="savings-planning-generator-modal-duration"
+                               class="duration-range-input"
+                               type="range"
+                               min="0"
+                               max="4"
+                               step="1"
+                               value="1"
+                               list="savings-planning-generator-modal-duration-options">
+                        <datalist id="savings-planning-generator-modal-duration-options">
+                            <option value="0"></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                        </datalist>
+                        <div class="range-ticks" id="savings-planning-generator-modal-range-ticks" aria-hidden="true">
+                            <span data-range-index="0" data-i18n="savingsPlanningGenerator.form.duration.6m">6 miesięcy</span>
+                            <span data-range-index="1" data-i18n="savingsPlanningGenerator.form.duration.1y">1 rok</span>
+                            <span data-range-index="2" data-i18n="savingsPlanningGenerator.form.duration.2y">2 lata</span>
+                            <span data-range-index="3" data-i18n="savingsPlanningGenerator.form.duration.5y">5 lat</span>
+                            <span data-range-index="4" data-i18n="savingsPlanningGenerator.form.duration.10y">10 lat</span>
+                        </div>
+                    </div>
+                </label>
+                <p class="form-helper" data-i18n="savingsPlanningGenerator.form.hint">Generowanie obejmuje wszystkie konta użytkownika z ostatnim znanym saldem oraz ustawioną miesięczną wpłatą.</p>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-savings-planning-generator-modal-close
+                        data-i18n="common.close">Zamknij</button>
+                <button type="submit"
+                        form="savings-planning-generator-modal-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="savings-planning-generator-modal-submit"
+                        data-i18n="savingsPlanningGenerator.form.submit">Generuj prognozy</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

@@ -156,7 +156,8 @@ function chartDateLabel(date) {
 }
 
 function chartAmountLabel(point) {
-    return MoneySnapshotUi.formatMoneyValue(point.amount, userSettings);
+    const sign = point.amount > 0 ? "+" : "";
+    return `${sign}${MoneySnapshotUi.formatMoneyValue(point.amount, userSettings)}`;
 }
 
 function chartPointClass(point) {

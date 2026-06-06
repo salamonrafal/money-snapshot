@@ -13,6 +13,7 @@ const accountId = accountForm.dataset.accountId;
 const searchParams = new URLSearchParams(window.location.search);
 const preselectedBankName = searchParams.get("bank") ?? "";
 const returnTo = searchParams.get("returnTo") ?? "";
+const BANKS_ACCOUNTS_NOTIFICATION_KEY = "money-snapshot-banks-accounts-notification";
 
 let messages = {};
 let cachedBanks = [];
@@ -49,6 +50,22 @@ function buildReturnUrl(savedAccount) {
         url.searchParams.set("highlightAccount", savedAccount.id);
     }
     return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function persistBanksAccountsNotification(messageKey, type = "success", savedAccount = null) {
+    const redirectUrl = buildReturnUrl(savedAccount);
+    if (!redirectUrl.startsWith("/banks-accounts.html")) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.setItem(BANKS_ACCOUNTS_NOTIFICATION_KEY, JSON.stringify({
+            messageKey,
+            type
+        }));
+    } catch (error) {
+        console.warn("Cannot save banks-accounts notification state", error);
+    }
 }
 
 function handleLanguageChange(nextMessages) {
@@ -164,6 +181,7 @@ accountForm.addEventListener("submit", async (event) => {
 
     try {
         const savedAccount = await saveAccount(payload);
+        persistBanksAccountsNotification("accounts.form.success", "success", savedAccount);
         window.location.href = buildReturnUrl(savedAccount);
     } catch (error) {
         setFormMessage(error.message, "error");

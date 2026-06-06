@@ -6,6 +6,10 @@ const rangeTicksElement = document.querySelector(".range-ticks");
 const messageElement = document.querySelector("#savings-planning-generator-message");
 const warningElement = document.querySelector("#savings-planning-generator-warning");
 const warningTextElement = document.querySelector("#savings-planning-generator-warning-text");
+const SAVINGS_PLANNING_NOTIFICATION_KEY = "money-snapshot-savings-planning-notification";
+const toastManager = MoneySnapshotUi.createToastManager({
+    durationMs: 5000
+});
 
 let messages = {};
 let currentActiveForecast = null;
@@ -15,6 +19,13 @@ const durations = [6, 12, 24, 60, 120];
 function setMessage(text, type = "") {
     messageElement.textContent = text;
     messageElement.dataset.type = type;
+
+    if (!text) {
+        toastManager.clear();
+        return;
+    }
+
+    toastManager.show(text, {type});
 }
 
 function todayIsoDate() {
@@ -91,6 +102,17 @@ function clearActiveForecastWarning() {
     warningElement.hidden = true;
 }
 
+function persistSavingsPlanningNotification(messageKey, type = "success") {
+    try {
+        window.sessionStorage.setItem(SAVINGS_PLANNING_NOTIFICATION_KEY, JSON.stringify({
+            messageKey,
+            type
+        }));
+    } catch (error) {
+        console.warn("Cannot save savings planning notification state", error);
+    }
+}
+
 function syncWarningText() {
     if (!currentActiveForecast) {
         warningElement.hidden = true;
@@ -155,7 +177,7 @@ form.addEventListener("submit", async (event) => {
 
     try {
         await generateForecast();
-        setMessage(messages["savingsPlanningGenerator.form.success"], "success");
+        persistSavingsPlanningNotification("savingsPlanningGenerator.form.success", "success");
         window.location.href = "/savings-planning.html";
     } catch (error) {
         setMessage(error.message, "error");

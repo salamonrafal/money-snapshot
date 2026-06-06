@@ -14,6 +14,7 @@ import com.moneysnapshot.savings.web.SavingsForecastMonthValueResponse;
 import com.moneysnapshot.savings.web.SavingsForecastRunResponse;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.security.UserSettingsService;
+import com.moneysnapshot.security.web.UserSettingsResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -26,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
@@ -94,68 +96,77 @@ public class ReportQueryService {
         UUID ownerId = currentUserService.currentUserId();
         LocalDate today = LocalDate.now(clock);
         reportCacheRefreshService.ensureOwnerCacheReady(ownerId, today);
-        int billingMonthEndDay = userSettingsService.currentUserSettings().billingMonthStartDay();
+        UserSettingsResponse userSettings = userSettingsService.currentUserSettings();
+        int billingMonthEndDay = userSettings.billingMonthStartDay();
         LocalDate periodDate = resolvePeriodStart(today, billingMonthEndDay);
-        List<ReportDailyBalanceCache> currentRows = dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, today);
-        List<ReportDailyBalanceCache> previousRows = dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, periodDate.minusDays(1));
-        List<SnapshotPanelAmountResponse> currentBalances = sumByCurrency(currentRows);
-        List<SnapshotPanelAmountResponse> monthlyChanges = subtractByCurrency(currentBalances, sumByCurrency(previousRows));
+        LocalDate baselineDate = periodDate.minusDays(1);
+        LocalDate periodEndDate = resolvePeriodEnd(periodDate, billingMonthEndDay);
+        List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", baselineDate, periodEndDate);
+        List<SnapshotPanelAmountResponse> currentBalances = balancesByCurrency(periodEntries, EntrySeries::endBalance);
+        List<SnapshotPanelAmountResponse> monthlyChanges = changesByCurrency(periodEntries);
+        String preferredCurrency = resolvePreferredCurrency(periodEntries, userSettings.defaultCurrency());
         return new SnapshotPanelResponse(
                 periodDate,
-                calculateMonthlyChangePercent(currentBalances, sumByCurrency(previousRows)),
+                calculateMonthlyChangePercent(periodEntries),
                 dailyBalanceCacheRepository.countTrackedAccounts(ownerId, today),
                 currentBalances,
                 monthlyChanges,
-                snapshotPanelChart(periodDate, billingMonthEndDay)
+                snapshotPanelChart(periodEntries, periodDate, periodEndDate, preferredCurrency)
         );
     }
 
     public List<SnapshotPanelChartPointResponse> snapshotPanelChart(LocalDate periodDate) {
-        return snapshotPanelChart(periodDate, userSettingsService.currentUserSettings().billingMonthStartDay());
+        UserSettingsResponse userSettings = userSettingsService.currentUserSettings();
+        LocalDate periodEndDate = resolvePeriodEnd(periodDate, userSettings.billingMonthStartDay());
+        List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", periodDate.minusDays(1), periodEndDate);
+        String preferredCurrency = resolvePreferredCurrency(periodEntries, userSettings.defaultCurrency());
+        return snapshotPanelChart(periodEntries, periodDate, periodEndDate, preferredCurrency);
     }
 
-    private List<SnapshotPanelChartPointResponse> snapshotPanelChart(LocalDate periodDate, int billingMonthEndDay) {
-        UUID ownerId = currentUserService.currentUserId();
-        LocalDate startDate = periodDate.minusDays(1);
-        LocalDate endDate = resolvePeriodEnd(periodDate, billingMonthEndDay);
-        List<ReportDailyBalanceCache> rows = dailyBalanceCacheRepository
-                .findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, startDate, endDate);
-        if (rows.isEmpty()) {
+    private List<SnapshotPanelChartPointResponse> snapshotPanelChart(
+            List<EntrySeries> entries,
+            LocalDate periodDate,
+            LocalDate periodEndDate,
+            String preferredCurrency
+    ) {
+        if (entries.isEmpty() || preferredCurrency == null) {
             return List.of();
         }
 
-        String preferredCurrency = resolvePreferredCurrency(rows);
-        java.util.Set<LocalDate> snapshotDates = rows.stream()
-                .filter(row -> preferredCurrency.equals(row.getCurrencyCode()))
-                .map(ReportDailyBalanceCache::getLatestSnapshotDate)
-                .collect(java.util.stream.Collectors.toSet());
-        Map<LocalDate, BigDecimal> balanceByDate = rows.stream()
-                .filter(row -> preferredCurrency.equals(row.getCurrencyCode()))
-                .collect(java.util.stream.Collectors.groupingBy(
-                        ReportDailyBalanceCache::getBalanceDate,
-                        LinkedHashMap::new,
-                        java.util.stream.Collectors.mapping(ReportDailyBalanceCache::getBalance, java.util.stream.Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
-                ));
-        if (!balanceByDate.containsKey(endDate)) {
-            balanceByDate.entrySet().stream()
-                    .reduce((left, right) -> right)
-                    .ifPresent(lastEntry -> balanceByDate.put(endDate, lastEntry.getValue()));
+        EntrySeries entry = entries.stream()
+                .filter(candidate -> preferredCurrency.equals(candidate.currencyCode()))
+                .findFirst()
+                .orElse(null);
+        if (entry == null) {
+            return List.of();
         }
 
+        LocalDate baselineDate = periodDate.minusDays(1);
+        String step = resolveStep(periodDate, periodEndDate);
+        List<LocalDate> seriesDates = new ArrayList<>();
+        seriesDates.add(baselineDate);
+        seriesDates.addAll(buildCheckpoints(periodDate, periodEndDate, step));
+        seriesDates.addAll(entry.pointDates().stream()
+                .filter(date -> !date.isBefore(baselineDate) && !date.isAfter(periodEndDate))
+                .toList());
+        seriesDates.add(periodEndDate);
+
+        List<LocalDate> distinctDates = seriesDates.stream().distinct().sorted().toList();
         List<SnapshotPanelChartPointResponse> points = new ArrayList<>();
         LocalDate today = LocalDate.now(clock);
-        for (Map.Entry<LocalDate, BigDecimal> entry : balanceByDate.entrySet()) {
+        for (LocalDate date : distinctDates) {
             String type = "balance";
-            if (entry.getKey().equals(startDate)) {
+            if (date.equals(baselineDate)) {
                 type = "baseline";
-            } else if (entry.getKey().equals(today)) {
-                type = snapshotDates.contains(today) ? "snapshot-today" : "today";
-            } else if (snapshotDates.contains(entry.getKey())) {
-                type = "snapshot";
-            } else if (entry.getKey().equals(endDate)) {
+            } else if (date.equals(today)) {
+                type = entry.pointDates().contains(today) ? "snapshot-today" : "today";
+            } else if (date.equals(periodEndDate)) {
                 type = "end";
+            } else if (entry.pointDates().contains(date)) {
+                type = "snapshot";
             }
-            points.add(new SnapshotPanelChartPointResponse(entry.getKey(), entry.getValue(), preferredCurrency, type));
+            BigDecimal balance = balanceAt(entry.balanceByDate(), date);
+            points.add(new SnapshotPanelChartPointResponse(date, balance.subtract(entry.startBalance()), preferredCurrency, type));
         }
         return points;
     }
@@ -750,46 +761,57 @@ public class ReportQueryService {
         return checkpoints;
     }
 
-    private List<SnapshotPanelAmountResponse> sumByCurrency(List<ReportDailyBalanceCache> rows) {
-        return rows.stream()
+    private List<SnapshotPanelAmountResponse> balancesByCurrency(
+            List<EntrySeries> entries,
+            Function<EntrySeries, BigDecimal> amountExtractor
+    ) {
+        return entries.stream()
                 .collect(java.util.stream.Collectors.groupingBy(
-                        ReportDailyBalanceCache::getCurrencyCode,
+                        EntrySeries::currencyCode,
                         LinkedHashMap::new,
-                        java.util.stream.Collectors.mapping(ReportDailyBalanceCache::getBalance, java.util.stream.Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
+                        java.util.stream.Collectors.mapping(amountExtractor, java.util.stream.Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
                 ))
                 .entrySet().stream()
                 .map(entry -> new SnapshotPanelAmountResponse(entry.getKey(), entry.getValue()))
                 .toList();
     }
 
-    private List<SnapshotPanelAmountResponse> subtractByCurrency(
-            List<SnapshotPanelAmountResponse> current,
-            List<SnapshotPanelAmountResponse> previous
-    ) {
-        Map<String, BigDecimal> totals = new LinkedHashMap<>();
-        current.forEach(amount -> totals.put(amount.currencyCode(), amount.amount()));
-        previous.forEach(amount -> totals.merge(amount.currencyCode(), amount.amount().negate(), BigDecimal::add));
-        return totals.entrySet().stream()
+    private List<SnapshotPanelAmountResponse> changesByCurrency(List<EntrySeries> entries) {
+        return entries.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        EntrySeries::currencyCode,
+                        LinkedHashMap::new,
+                        java.util.stream.Collectors.mapping(
+                                entry -> entry.endBalance().subtract(entry.startBalance()),
+                                java.util.stream.Collectors.reducing(BigDecimal.ZERO, BigDecimal::add)
+                        )
+                ))
+                .entrySet().stream()
                 .map(entry -> new SnapshotPanelAmountResponse(entry.getKey(), entry.getValue()))
                 .toList();
     }
 
-    private BigDecimal calculateMonthlyChangePercent(
-            List<SnapshotPanelAmountResponse> current,
-            List<SnapshotPanelAmountResponse> previous
-    ) {
-        if (current.size() != 1 || previous.size() != 1) {
+    private BigDecimal calculateMonthlyChangePercent(List<EntrySeries> entries) {
+        if (entries.size() != 1) {
             return null;
         }
-        SnapshotPanelAmountResponse currentValue = current.get(0);
-        SnapshotPanelAmountResponse previousValue = previous.get(0);
-        if (!currentValue.currencyCode().equals(previousValue.currencyCode()) || previousValue.amount().compareTo(BigDecimal.ZERO) == 0) {
+        EntrySeries entry = entries.get(0);
+        if (entry.startBalance().compareTo(BigDecimal.ZERO) == 0) {
             return null;
         }
-        return currentValue.amount()
-                .subtract(previousValue.amount())
+        return entry.endBalance()
+                .subtract(entry.startBalance())
                 .multiply(BigDecimal.valueOf(100))
-                .divide(previousValue.amount(), 1, RoundingMode.HALF_UP);
+                .divide(entry.startBalance(), 1, RoundingMode.HALF_UP);
+    }
+
+    private String resolvePreferredCurrency(List<EntrySeries> entries, String defaultCurrency) {
+        if (entries.isEmpty()) {
+            return null;
+        }
+        return entries.stream().anyMatch(entry -> defaultCurrency.equals(entry.currencyCode()))
+                ? defaultCurrency
+                : entries.get(0).currencyCode();
     }
 
     private String key(UUID accountId, String currencyCode) {
