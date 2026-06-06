@@ -39,6 +39,23 @@
     let messagesLanguage = "";
     let logoutConfirmed = false;
 
+    function closeMobileMenu() {
+        if (!window.matchMedia("(max-width: 1024px)").matches) {
+            return;
+        }
+
+        const menuToggle = document.querySelector(".menu-toggle");
+        const topbarActions = document.querySelector(".topbar-actions");
+        const openLabel = menuToggle?.querySelector(".menu-toggle-open-label")?.textContent?.trim();
+
+        menuToggle?.setAttribute("aria-expanded", "false");
+        if (openLabel) {
+            menuToggle?.setAttribute("aria-label", openLabel);
+        }
+        topbarActions?.classList.remove("is-open");
+        document.body.classList.remove("menu-open");
+    }
+
     function showToast(text, type = "") {
         if (!text) {
             return;
@@ -223,6 +240,7 @@
         }
 
         event.preventDefault();
+        closeMobileMenu();
         try {
             await openProfileModal(profileTrigger);
         } catch (error) {
@@ -236,6 +254,7 @@
         }
 
         event.preventDefault();
+        closeMobileMenu();
         try {
             await openSettingsModal(settingsTrigger);
         } catch (error) {
@@ -249,6 +268,7 @@
         }
 
         event.preventDefault();
+        closeMobileMenu();
         try {
             await ensureMessages();
             logoutConfirmModal.open({trigger: logoutForm.querySelector("button[type='submit']")});

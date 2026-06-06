@@ -305,7 +305,7 @@ input {
 
 .topbar-account-actions .topbar-language-switcher select {
     display: block;
-    width: 100%;
+    width: auto;
     min-width: 64px;
     min-height: 40px;
     padding: 0 8px;
@@ -1488,6 +1488,22 @@ h1 {
     font-weight: 800;
 }
 
+.field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.required-mark {
+    color: var(--danger-strong);
+    font-weight: 900;
+    line-height: 1;
+}
+
+.required-mark[hidden] {
+    display: none;
+}
+
 .field input,
 .field select,
 .field textarea {
@@ -1515,6 +1531,19 @@ h1 {
 .field textarea:focus {
     border-color: var(--accent);
     outline: 3px solid var(--focus-ring);
+}
+
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+    border-color: var(--danger-strong);
+}
+
+.field input[aria-invalid="true"]:focus,
+.field select[aria-invalid="true"]:focus,
+.field textarea[aria-invalid="true"]:focus {
+    border-color: var(--danger-strong);
+    outline-color: var(--danger-focus);
 }
 
 .checkbox-field {
@@ -3439,23 +3468,10 @@ td:nth-child(5) {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 0;
         flex-wrap: nowrap;
-        border: 0;
-        background: transparent;
-        padding: 0;
-    }
-
-    .topbar-language-switcher {
-        width: auto;
-    }
-
-    .topbar-language-switcher select {
-        min-width: 76px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--surface);
-        padding: 9px 12px;
+        width: fit-content;
+        margin-inline: auto;
     }
 
     .main-nav a {
@@ -3463,17 +3479,6 @@ td:nth-child(5) {
         padding: 10px 12px;
         border-radius: 8px;
         background: var(--accent-wash-faint);
-    }
-
-    .main-nav a.topbar-icon-link {
-        display: inline-grid;
-        width: 36px;
-        padding: 0;
-        background: var(--surface);
-    }
-
-    .language-switcher {
-        justify-content: space-between;
     }
 
     .topbar-account-actions .logout-form,

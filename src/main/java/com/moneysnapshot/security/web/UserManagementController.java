@@ -4,11 +4,15 @@ import com.moneysnapshot.security.UserManagementService;
 import com.moneysnapshot.security.UserSettingsService;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestController
 @RequestMapping("/api")
@@ -84,5 +89,19 @@ public class UserManagementController {
     @PutMapping("/users/me/settings")
     public UserSettingsResponse updateCurrentUserSettings(@Valid @RequestBody UpdateUserSettingsRequest request) {
         return userSettingsService.updateCurrentUserSettings(request);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> handleValidationFailure(MethodArgumentNotValidException exception) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
+            fieldErrors.putIfAbsent(fieldError.getField(), fieldError.getCode());
+        }
+
+        return Map.of(
+                "message", "Validation failed.",
+                "fieldErrors", fieldErrors
+        );
     }
 }

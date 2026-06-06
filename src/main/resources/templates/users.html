@@ -15,7 +15,7 @@
             <div class="section-header">
                 <h2 id="users-list-title" data-i18n="users.table.title">Lista użytkowników</h2>
                 <div class="section-actions">
-                    <a class="button primary compact" href="/users/new.html" data-i18n="users.actions.add">Dodaj użytkownika</a>
+                    <a class="button primary compact" id="new-user-action" href="/users/new.html" data-i18n="users.actions.add">Dodaj użytkownika</a>
                     <button type="button" class="button secondary compact" id="refresh-users" data-i18n="users.actions.refresh">Odśwież</button>
                 </div>
             </div>
@@ -50,5 +50,143 @@
         'delete-user-name',
         'confirm-delete-user',
         'cancel-delete-user')}"></div>
+
+<div class="modal-backdrop" id="new-user-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="new-user-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="new-user-modal-title" data-i18n="users.form.title">Nowy użytkownik</h2>
+                <p data-i18n="users.heading.subtitle">Zarządzaj kontami użytkowników, rolami i statusem dostępu.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-new-user-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="new-user-form">
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.email">E-mail</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="new-user-email" type="email" maxlength="180" autocomplete="email" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.firstName">Imię</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="new-user-first-name" type="text" maxlength="120" autocomplete="given-name" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.lastName">Nazwisko</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="new-user-last-name" type="text" maxlength="120" autocomplete="family-name" required>
+                </label>
+                <label class="field">
+                    <span data-i18n="users.form.description">Krótki opis</span>
+                    <textarea id="new-user-description" maxlength="500" rows="4"></textarea>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="new-user-role" required></select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="new-user-status" required>
+                        <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
+                        <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.password">Hasło</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="new-user-password" type="password" minlength="8" maxlength="120" autocomplete="new-password" required>
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-new-user-modal-close
+                        data-i18n="users.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="new-user-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="new-user-submit"
+                        data-i18n="users.form.submit">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="edit-user-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="edit-user-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="edit-user-modal-title" data-i18n="users.form.editTitle">Edytuj użytkownika</h2>
+                <p data-i18n="users.heading.subtitle">Zarządzaj kontami użytkowników, rolami i statusem dostępu.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-edit-user-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="edit-user-form">
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.email">E-mail</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="edit-user-email" type="email" maxlength="180" autocomplete="email" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.firstName">Imię</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="edit-user-first-name" type="text" maxlength="120" autocomplete="given-name" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.lastName">Nazwisko</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="edit-user-last-name" type="text" maxlength="120" autocomplete="family-name" required>
+                </label>
+                <label class="field">
+                    <span data-i18n="users.form.description">Krótki opis</span>
+                    <textarea id="edit-user-description" maxlength="500" rows="4"></textarea>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="edit-user-role" required></select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="edit-user-status" required>
+                        <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
+                        <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span data-i18n="users.form.password">Hasło</span>
+                    <input id="edit-user-password" type="password" minlength="8" maxlength="120" autocomplete="new-password">
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-edit-user-modal-close
+                        data-i18n="users.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="edit-user-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="edit-user-submit"
+                        data-i18n="users.form.update">Zapisz zmiany</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

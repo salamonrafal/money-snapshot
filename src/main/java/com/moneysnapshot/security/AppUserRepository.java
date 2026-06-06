@@ -10,8 +10,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
-    Optional<AppUser> findByEmailIgnoreCase(String email);
-    boolean existsByEmailIgnoreCase(String email);
+    @Query("select user from AppUser user where lower(trim(user.email)) = lower(trim(:email))")
+    Optional<AppUser> findByNormalizedEmail(@Param("email") String email);
+
+    @Query("select count(user) > 0 from AppUser user where lower(trim(user.email)) = lower(trim(:email))")
+    boolean existsByNormalizedEmail(@Param("email") String email);
+
     List<AppUser> findAllByOrderByEmail();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
