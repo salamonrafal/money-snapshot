@@ -73,7 +73,7 @@ public class UserManagementService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found."));
 
         try {
-            return userRepository.save(new AppUser(
+            return userRepository.saveAndFlush(new AppUser(
                     email,
                     request.firstName().trim(),
                     request.lastName().trim(),
@@ -112,7 +112,7 @@ public class UserManagementService {
         );
 
         try {
-            return userRepository.save(user);
+            return userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException exception) {
             throw duplicateEmailConflict(exception);
         }

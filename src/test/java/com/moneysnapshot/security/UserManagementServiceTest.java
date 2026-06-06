@@ -77,7 +77,7 @@ class UserManagementServiceTest {
         when(userRepository.findByNormalizedEmail("user@example.com")).thenReturn(Optional.empty());
         when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
         when(passwordEncoder.encode("secret123")).thenReturn("encoded-secret");
-        when(userRepository.save(any(AppUser.class))).thenThrow(new DataIntegrityViolationException("duplicate key"));
+        when(userRepository.saveAndFlush(any(AppUser.class))).thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         assertThatThrownBy(() -> service.createUser(request))
                 .isInstanceOf(ResponseStatusException.class)
@@ -117,7 +117,7 @@ class UserManagementServiceTest {
         when(roleRepository.findById(roleId)).thenReturn(Optional.of(nextRole));
         when(currentUser.getId()).thenReturn(UUID.randomUUID());
         when(currentUserService.currentUser()).thenReturn(currentUser);
-        when(userRepository.save(user)).thenThrow(new DataIntegrityViolationException("duplicate key"));
+        when(userRepository.saveAndFlush(user)).thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         assertThatThrownBy(() -> service.updateUser(userId, request))
                 .isInstanceOf(ResponseStatusException.class)
