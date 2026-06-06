@@ -101,7 +101,8 @@ public class ReportQueryService {
         LocalDate periodDate = resolvePeriodStart(today, billingMonthEndDay);
         LocalDate baselineDate = periodDate.minusDays(1);
         LocalDate periodEndDate = resolvePeriodEnd(periodDate, billingMonthEndDay);
-        List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", baselineDate, periodEndDate);
+        LocalDate balanceCutoffDate = resolveSnapshotPanelBalanceCutoff(periodDate, periodEndDate, today);
+        List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", baselineDate, balanceCutoffDate);
         List<SnapshotPanelAmountResponse> currentBalances = balancesByCurrency(periodEntries, EntrySeries::endBalance);
         List<SnapshotPanelAmountResponse> monthlyChanges = changesByCurrency(periodEntries);
         String preferredCurrency = resolvePreferredCurrency(periodEntries, userSettings.defaultCurrency());
@@ -118,9 +119,17 @@ public class ReportQueryService {
     public List<SnapshotPanelChartPointResponse> snapshotPanelChart(LocalDate periodDate) {
         UserSettingsResponse userSettings = userSettingsService.currentUserSettings();
         LocalDate periodEndDate = resolvePeriodEnd(periodDate, userSettings.billingMonthStartDay());
-        List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", periodDate.minusDays(1), periodEndDate);
+        LocalDate balanceCutoffDate = resolveSnapshotPanelBalanceCutoff(periodDate, periodEndDate, LocalDate.now(clock));
+        List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", periodDate.minusDays(1), balanceCutoffDate);
         String preferredCurrency = resolvePreferredCurrency(periodEntries, userSettings.defaultCurrency());
         return snapshotPanelChart(periodEntries, periodDate, periodEndDate, preferredCurrency);
+    }
+
+    private LocalDate resolveSnapshotPanelBalanceCutoff(LocalDate periodDate, LocalDate periodEndDate, LocalDate today) {
+        if (today.isBefore(periodDate)) {
+            return periodDate.minusDays(1);
+        }
+        return today.isBefore(periodEndDate) ? today : periodEndDate;
     }
 
     private List<SnapshotPanelChartPointResponse> snapshotPanelChart(

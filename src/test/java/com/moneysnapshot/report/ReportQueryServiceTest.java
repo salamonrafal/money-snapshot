@@ -251,12 +251,12 @@ class ReportQueryServiceTest {
         when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
                 ownerId,
                 LocalDate.of(1900, 1, 1),
-                expectedPeriodEnd
+                today
         )).thenReturn(List.of());
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
                 ownerId,
                 previousPeriodEnd,
-                expectedPeriodEnd
+                today
         )).thenReturn(List.of());
 
         SnapshotPanelResponse response = service.snapshotPanel();
@@ -265,7 +265,7 @@ class ReportQueryServiceTest {
         verify(dailyBalanceCacheRepository).findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
                 ownerId,
                 previousPeriodEnd,
-                expectedPeriodEnd
+                today
         );
         assertThat(response.periodDate()).isEqualTo(expectedPeriodStart);
     }
@@ -294,14 +294,14 @@ class ReportQueryServiceTest {
         when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
                 ownerId,
                 LocalDate.of(1900, 1, 1),
-                LocalDate.of(2026, 6, 30)
+                today
         )).thenReturn(List.of(
                 new ReportFinalSnapshotCache(owner, account, bank, previousPeriodEnd, "Main", "Bank", "PLN", new BigDecimal("100.00"))
         ));
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
                 ownerId,
                 previousPeriodEnd,
-                LocalDate.of(2026, 6, 30)
+                today
         )).thenReturn(List.of(
                 new ReportDailyBalanceCache(owner, account, bank, previousPeriodEnd, previousPeriodEnd, "Main", "Bank", "PLN", new BigDecimal("125.00")),
                 new ReportDailyBalanceCache(owner, account, bank, today, today, "Main", "Bank", "PLN", new BigDecimal("150.00"))
@@ -313,6 +313,65 @@ class ReportQueryServiceTest {
         assertThat(response.monthlyChanges().get(0).amount()).isEqualByComparingTo("50.00");
         assertThat(response.monthlyChangePercent()).isEqualByComparingTo("50.0");
         assertThat(response.chartPoints().get(0).amount()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    void snapshotPanelIgnoresFutureFinalSnapshotInCurrentValues() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        LocalDate today = LocalDate.of(2026, 6, 3);
+        LocalDate periodStart = LocalDate.of(2026, 6, 1);
+        LocalDate previousPeriodEnd = periodStart.minusDays(1);
+        LocalDate futureSnapshotDate = LocalDate.of(2026, 6, 20);
+        LocalDate periodEnd = LocalDate.of(2026, 6, 30);
+        AppUser owner = mock(AppUser.class);
+        Account account = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(userSettingsService.currentUserSettings()).thenReturn(new UserSettingsResponse(
+                "PLN",
+                "light",
+                "Y-m-d H:m",
+                "### ###,00 zl",
+                31,
+                Map.of()
+        ));
+        when(account.getId()).thenReturn(accountId);
+        when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
+                ownerId,
+                LocalDate.of(1900, 1, 1),
+                today
+        )).thenReturn(List.of(
+                new ReportFinalSnapshotCache(owner, account, bank, previousPeriodEnd, "Main", "Bank", "PLN", new BigDecimal("100.00"))
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+                ownerId,
+                previousPeriodEnd,
+                today
+        )).thenReturn(List.of(
+                new ReportDailyBalanceCache(owner, account, bank, previousPeriodEnd, previousPeriodEnd, "Main", "Bank", "PLN", new BigDecimal("100.00")),
+                new ReportDailyBalanceCache(owner, account, bank, today, today, "Main", "Bank", "PLN", new BigDecimal("125.00"))
+        ));
+
+        SnapshotPanelResponse response = service.snapshotPanel();
+
+        verify(finalSnapshotCacheRepository).findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
+                ownerId,
+                LocalDate.of(1900, 1, 1),
+                today
+        );
+        assertThat(response.currentBalances()).hasSize(1);
+        assertThat(response.currentBalances().get(0).amount()).isEqualByComparingTo("125.00");
+        assertThat(response.monthlyChanges().get(0).amount()).isEqualByComparingTo("25.00");
+        SnapshotPanelChartPointResponse futureAxisPoint = response.chartPoints().stream()
+                .filter(point -> point.date().equals(futureSnapshotDate))
+                .findFirst()
+                .orElseThrow();
+        assertThat(futureAxisPoint.amount()).isEqualByComparingTo("25.00");
+        assertThat(futureAxisPoint.type()).isEqualTo("balance");
+        assertThat(response.chartPoints().get(response.chartPoints().size() - 1).date()).isEqualTo(periodEnd);
+        assertThat(response.chartPoints().get(response.chartPoints().size() - 1).amount()).isEqualByComparingTo("25.00");
     }
 
     @Test
@@ -365,7 +424,7 @@ class ReportQueryServiceTest {
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
                 ownerId,
                 startDate,
-                endDate
+                today
         )).thenReturn(List.of(
                 new ReportDailyBalanceCache(owner, account, bank, startDate, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
                 new ReportDailyBalanceCache(owner, account, bank, today, today, "Main", "Bank", "PLN", new BigDecimal("125.00"))
@@ -373,7 +432,7 @@ class ReportQueryServiceTest {
         when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
                 ownerId,
                 LocalDate.of(1900, 1, 1),
-                endDate
+                today
         )).thenReturn(List.of(
                 new ReportFinalSnapshotCache(owner, account, bank, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
         ));
@@ -461,7 +520,7 @@ class ReportQueryServiceTest {
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
                 ownerId,
                 startDate,
-                endDate
+                today
         )).thenReturn(List.of(
                 new ReportDailyBalanceCache(owner, account, bank, startDate, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
                 new ReportDailyBalanceCache(owner, account, bank, today, LocalDate.of(2026, 6, 1), "Main", "Bank", "PLN", new BigDecimal("125.00"))
@@ -469,7 +528,7 @@ class ReportQueryServiceTest {
         when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
                 ownerId,
                 LocalDate.of(1900, 1, 1),
-                endDate
+                today
         )).thenReturn(List.of(
                 new ReportFinalSnapshotCache(owner, account, bank, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
         ));
@@ -480,7 +539,7 @@ class ReportQueryServiceTest {
                 .filter(point -> point.date().equals(today))
                 .findFirst()
                 .orElseThrow();
-        assertThat(todayPoint.type()).isEqualTo("today");
+        assertThat(todayPoint.type()).isEqualTo("snapshot-today");
     }
 
     @Test
@@ -507,7 +566,7 @@ class ReportQueryServiceTest {
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
                 ownerId,
                 startDate,
-                endDate
+                today
         )).thenReturn(List.of(
                 new ReportDailyBalanceCache(owner, account, bank, startDate, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00")),
                 new ReportDailyBalanceCache(owner, account, bank, carriedForwardDate, LocalDate.of(2026, 6, 1), "Main", "Bank", "PLN", new BigDecimal("125.00")),
@@ -516,7 +575,7 @@ class ReportQueryServiceTest {
         when(finalSnapshotCacheRepository.findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
                 ownerId,
                 LocalDate.of(1900, 1, 1),
-                endDate
+                today
         )).thenReturn(List.of(
                 new ReportFinalSnapshotCache(owner, account, bank, startDate, "Main", "Bank", "PLN", new BigDecimal("100.00"))
         ));
@@ -532,7 +591,7 @@ class ReportQueryServiceTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(carriedForwardPoint.type()).isEqualTo("balance");
-        assertThat(todayPoint.type()).isEqualTo("today");
+        assertThat(todayPoint.type()).isEqualTo("snapshot-today");
     }
 
     @Test
