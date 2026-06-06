@@ -5,6 +5,7 @@ const dateTimeFormatInput = document.querySelector("#settings-date-time-format")
 const moneyFormatInput = document.querySelector("#settings-money-format");
 const billingMonthStartDayInput = document.querySelector("#settings-billing-month-start-day");
 const formMessage = document.querySelector("#settings-form-message");
+const toastManager = MoneySnapshotUi.createToastManager({durationMs: 5000});
 
 let messages = {};
 
@@ -16,6 +17,15 @@ function handleLanguageChange(nextMessages) {
 function setMessage(text, type = "") {
     formMessage.textContent = text;
     formMessage.dataset.type = type;
+}
+
+function showToast(text, type = "") {
+    if (!text) {
+        return;
+    }
+
+    toastManager.clear();
+    toastManager.show(text, {type});
 }
 
 function normalizedBillingMonthStartDayValue() {
@@ -89,9 +99,9 @@ settingsForm.addEventListener("submit", async (event) => {
     setMessage("");
     try {
         await saveSettings();
-        setMessage(messages["settings.form.success"], "success");
+        showToast(messages["settings.form.success"], "success");
     } catch (error) {
-        setMessage(error.message, "error");
+        showToast(error.message, "error");
     } finally {
         submitButton.disabled = false;
     }
@@ -106,4 +116,5 @@ MoneySnapshotI18n.init({
         .then(loadSettings)
         .catch((error) => {
             setMessage(error.message, "error");
+            showToast(error.message, "error");
         });

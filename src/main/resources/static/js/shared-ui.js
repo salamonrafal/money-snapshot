@@ -342,6 +342,7 @@ window.MoneySnapshotUi = (() => {
         const dialog = modal?.querySelector("[role='dialog']") ?? modal?.firstElementChild ?? modal;
         let lastActiveElement = null;
         let inertedElements = [];
+        let backdropPointerDown = false;
         const focusableSelector = "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
         function focusableElements() {
@@ -372,7 +373,9 @@ window.MoneySnapshotUi = (() => {
 
             if (isInert) {
                 inertedElements = [...document.body.children]
-                    .filter((element) => element !== modal && element instanceof HTMLElement)
+                    .filter((element) => element instanceof HTMLElement
+                        && element !== modal
+                        && !element.contains(modal))
                     .map((element) => ({
                         element,
                         wasInert: element.inert
@@ -414,10 +417,15 @@ window.MoneySnapshotUi = (() => {
 
         closeButtons.forEach((button) => button.addEventListener("click", close));
 
+        modal?.addEventListener("pointerdown", (event) => {
+            backdropPointerDown = event.target === modal;
+        });
+
         modal?.addEventListener("click", (event) => {
-            if (event.target === modal) {
+            if (backdropPointerDown && event.target === modal) {
                 close();
             }
+            backdropPointerDown = false;
         });
 
         document.addEventListener("keydown", (event) => {
