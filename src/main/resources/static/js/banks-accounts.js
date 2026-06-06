@@ -3,6 +3,36 @@ const listMessage = document.querySelector("#bank-account-list-message");
 const refreshButton = document.querySelector("#refresh-bank-account-list");
 const newBankAction = document.querySelector("#new-bank-action");
 const newAccountAction = document.querySelector("#new-account-action");
+const editBankModalForm = document.querySelector("#edit-bank-form");
+const editBankNameInput = document.querySelector("#edit-bank-name");
+const editBankFormMessageContainer = document.querySelector("#edit-bank-form-message-container");
+const editBankFormMessage = document.querySelector("#edit-bank-form-message");
+const editBankSubmitButton = document.querySelector("#edit-bank-submit");
+const newBankModalForm = document.querySelector("#new-bank-form");
+const newBankNameInput = document.querySelector("#new-bank-name");
+const newBankFormMessageContainer = document.querySelector("#new-bank-form-message-container");
+const newBankFormMessage = document.querySelector("#new-bank-form-message");
+const newBankSubmitButton = document.querySelector("#new-bank-submit");
+const editAccountModalForm = document.querySelector("#edit-account-form");
+const editAccountNameInput = document.querySelector("#edit-account-name");
+const editAccountBankSelect = document.querySelector("#edit-account-bank");
+const editAccountTypeSelect = document.querySelector("#edit-account-type");
+const editAccountCurrencySelect = document.querySelector("#edit-account-currency");
+const editAccountStatusSelect = document.querySelector("#edit-account-status");
+const editAccountDescriptionInput = document.querySelector("#edit-account-description");
+const editAccountFormMessageContainer = document.querySelector("#edit-account-form-message-container");
+const editAccountFormMessage = document.querySelector("#edit-account-form-message");
+const editAccountSubmitButton = document.querySelector("#edit-account-submit");
+const newAccountModalForm = document.querySelector("#new-account-form");
+const newAccountNameInput = document.querySelector("#new-account-name");
+const newAccountBankSelect = document.querySelector("#new-account-bank");
+const newAccountTypeSelect = document.querySelector("#new-account-type");
+const newAccountCurrencySelect = document.querySelector("#new-account-currency");
+const newAccountStatusSelect = document.querySelector("#new-account-status");
+const newAccountDescriptionInput = document.querySelector("#new-account-description");
+const newAccountFormMessageContainer = document.querySelector("#new-account-form-message-container");
+const newAccountFormMessage = document.querySelector("#new-account-form-message");
+const newAccountSubmitButton = document.querySelector("#new-account-submit");
 const pageParams = new URLSearchParams(window.location.search);
 const infoModal = document.querySelector("#entity-info-modal");
 const infoModalTitle = document.querySelector("#entity-info-title");
@@ -22,6 +52,30 @@ const deleteAccountModal = MoneySnapshotUi.createConfirmModal({
     confirmSelector: "#confirm-delete-account",
     cancelSelector: "#cancel-delete-account"
 });
+const toastManager = MoneySnapshotUi.createToastManager({
+    durationMs: 5000
+});
+const BANKS_ACCOUNTS_NOTIFICATION_KEY = "money-snapshot-banks-accounts-notification";
+
+const editBankModal = MoneySnapshotUi.createModal({
+    modalSelector: "#edit-bank-modal",
+    closeSelectors: ["#edit-bank-modal [data-edit-bank-modal-close]"]
+});
+
+const newBankModal = MoneySnapshotUi.createModal({
+    modalSelector: "#new-bank-modal",
+    closeSelectors: ["#new-bank-modal [data-new-bank-modal-close]"]
+});
+
+const editAccountModal = MoneySnapshotUi.createModal({
+    modalSelector: "#edit-account-modal",
+    closeSelectors: ["#edit-account-modal [data-edit-account-modal-close]"]
+});
+
+const newAccountModal = MoneySnapshotUi.createModal({
+    modalSelector: "#new-account-modal",
+    closeSelectors: ["#new-account-modal [data-new-account-modal-close]"]
+});
 
 let messages = {};
 let userSettings = null;
@@ -30,6 +84,8 @@ let cachedAccounts = [];
 let dataLoaded = false;
 let infoModalState = null;
 let infoModalTrigger = null;
+let editingBankId = null;
+let editingAccountId = null;
 const expandedBankIds = new Set();
 const highlightedAccountId = pageParams.get("highlightAccount") ?? "";
 
@@ -59,6 +115,188 @@ function accountTypeLabel(accountTypeCode) {
 function setMessage(element, text, type = "") {
     element.textContent = text;
     element.dataset.type = type;
+
+    if (!text) {
+        toastManager.clear();
+        return;
+    }
+
+    if (element === listMessage) {
+        toastManager.show(text, {type});
+    }
+}
+
+function setModalFormMessage(container, element, text, type = "") {
+    if (!container || !element) {
+        return;
+    }
+
+    element.textContent = text;
+    element.dataset.type = type;
+    container.dataset.type = type || "error";
+    container.hidden = !text;
+}
+
+function showPendingNotification() {
+    let rawValue = "";
+    try {
+        rawValue = window.sessionStorage.getItem(BANKS_ACCOUNTS_NOTIFICATION_KEY) ?? "";
+    } catch (error) {
+        console.warn("Cannot access banks-accounts notification state", error);
+        return;
+    }
+
+    if (!rawValue) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.removeItem(BANKS_ACCOUNTS_NOTIFICATION_KEY);
+    } catch (error) {
+        console.warn("Cannot clear banks-accounts notification state", error);
+    }
+
+    try {
+        const notification = JSON.parse(rawValue);
+        const messageKey = typeof notification?.messageKey === "string" ? notification.messageKey : "";
+        const type = typeof notification?.type === "string" ? notification.type : "";
+        const text = messages[messageKey] ?? "";
+        if (text) {
+            setMessage(listMessage, text, type);
+        }
+    } catch (error) {
+        console.warn("Cannot parse banks-accounts notification state", error);
+    }
+}
+
+function setNewBankFormMessage(text, type = "") {
+    setModalFormMessage(newBankFormMessageContainer, newBankFormMessage, text, type);
+}
+
+function setEditBankFormMessage(text, type = "") {
+    setModalFormMessage(editBankFormMessageContainer, editBankFormMessage, text, type);
+}
+
+function resetEditBankForm() {
+    if (!editBankModalForm || !editBankNameInput || !editBankSubmitButton) {
+        return;
+    }
+
+    editingBankId = null;
+    editBankModalForm.reset();
+    setEditBankFormMessage("");
+    editBankSubmitButton.disabled = false;
+}
+
+function resetNewBankForm() {
+    if (!newBankModalForm || !newBankNameInput || !newBankSubmitButton) {
+        return;
+    }
+
+    newBankModalForm.reset();
+    setNewBankFormMessage("");
+    newBankSubmitButton.disabled = false;
+}
+
+function setEditAccountFormMessage(text, type = "") {
+    setModalFormMessage(editAccountFormMessageContainer, editAccountFormMessage, text, type);
+}
+
+function setNewAccountFormMessage(text, type = "") {
+    setModalFormMessage(newAccountFormMessageContainer, newAccountFormMessage, text, type);
+}
+
+function renderAccountBankOptions(selectElement, selectedValue = "") {
+    if (!selectElement) {
+        return;
+    }
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = messages["accounts.form.bankPlaceholder"] ?? "";
+
+    selectElement.replaceChildren(
+        placeholder,
+        ...cachedBanks.map((bank) => {
+            const option = document.createElement("option");
+            option.value = bank.name;
+            option.textContent = bank.name;
+            return option;
+        })
+    );
+    selectElement.value = selectedValue;
+}
+
+function renderNewAccountBankOptions(selectedValue = "") {
+    renderAccountBankOptions(newAccountBankSelect, selectedValue);
+}
+
+function renderEditAccountBankOptions(selectedValue = "") {
+    renderAccountBankOptions(editAccountBankSelect, selectedValue);
+}
+
+function resetNewAccountForm() {
+    if (!newAccountModalForm || !newAccountNameInput || !newAccountSubmitButton) {
+        return;
+    }
+
+    newAccountModalForm.reset();
+    renderNewAccountBankOptions();
+    newAccountTypeSelect.value = "BANK_ACCOUNT";
+    newAccountCurrencySelect.value = "PLN";
+    newAccountStatusSelect.value = "ACTIVE";
+    setNewAccountFormMessage("");
+    newAccountSubmitButton.disabled = false;
+}
+
+function resetEditAccountForm() {
+    if (!editAccountModalForm || !editAccountNameInput || !editAccountSubmitButton) {
+        return;
+    }
+
+    editingAccountId = null;
+    editAccountModalForm.reset();
+    renderEditAccountBankOptions();
+    editAccountTypeSelect.value = "BANK_ACCOUNT";
+    editAccountCurrencySelect.value = "PLN";
+    editAccountStatusSelect.value = "ACTIVE";
+    setEditAccountFormMessage("");
+    editAccountSubmitButton.disabled = false;
+}
+
+function openNewAccountModal({trigger, bankName = ""} = {}) {
+    resetNewAccountForm();
+    if (bankName) {
+        renderNewAccountBankOptions(bankName);
+    }
+    newAccountModal.open({trigger});
+}
+
+function openEditBankModal({trigger, bank} = {}) {
+    if (!bank || !editBankNameInput) {
+        return;
+    }
+
+    resetEditBankForm();
+    editingBankId = bank.id;
+    editBankNameInput.value = bank.name ?? "";
+    editBankModal.open({trigger});
+}
+
+function openEditAccountModal({trigger, account} = {}) {
+    if (!account || !editAccountNameInput) {
+        return;
+    }
+
+    resetEditAccountForm();
+    editingAccountId = account.id;
+    editAccountNameInput.value = account.accountName ?? "";
+    renderEditAccountBankOptions(account.bankName ?? "");
+    editAccountTypeSelect.value = account.accountTypeCode ?? "BANK_ACCOUNT";
+    editAccountCurrencySelect.value = account.currencyCode ?? "PLN";
+    editAccountStatusSelect.value = account.status ?? "ACTIVE";
+    editAccountDescriptionInput.value = account.description ?? "";
+    editAccountModal.open({trigger});
 }
 
 function renderInfoModal() {
@@ -99,6 +337,7 @@ function modalFocusableElements() {
 function openInfoModal(kind, entity, accountCount = 0, triggerElement = null) {
     infoModalState = {kind, entity, accountCount};
     infoModalTrigger = triggerElement;
+    MoneySnapshotUi.dismissTooltip?.(triggerElement);
     renderInfoModal();
     infoModal.hidden = false;
     infoModalCloseButton.focus();
@@ -108,6 +347,7 @@ function closeInfoModal() {
     infoModalState = null;
     infoModal.hidden = true;
     if (infoModalTrigger instanceof HTMLElement) {
+        infoModalTrigger.dataset.suppressTooltipOnFocusOnce = "true";
         infoModalTrigger.focus();
     }
     infoModalTrigger = null;
@@ -152,6 +392,8 @@ function handleLanguageChange(nextMessages) {
     MoneySnapshotUi.setTooltip(newBankAction, messages["banks.actions.add"]);
     MoneySnapshotUi.setTooltip(newAccountAction, messages["accounts.actions.add"]);
     MoneySnapshotUi.setTooltip(refreshButton, messages["banks.actions.refresh"]);
+    renderEditAccountBankOptions(editAccountBankSelect?.value ?? "");
+    renderNewAccountBankOptions(newAccountBankSelect?.value ?? "");
     if (!infoModal.hidden) {
         renderInfoModal();
     }
@@ -177,6 +419,138 @@ function accountsByBankId() {
         map.set(key, items);
         return map;
     }, new Map());
+}
+
+async function createBank(name) {
+    const response = await fetch("/api/banks", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({name})
+    });
+
+    if (response.status === 409) {
+        throw new Error(messages["banks.error.duplicate"]);
+    }
+
+    if (!response.ok) {
+        throw new Error(messages["banks.error.create"]);
+    }
+
+    return response.json();
+}
+
+async function updateBank(id, name) {
+    const response = await fetch(`/api/banks/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({name})
+    });
+
+    if (response.status === 404) {
+        throw new Error(messages["banks.error.notFound"]);
+    }
+
+    if (response.status === 409) {
+        throw new Error(messages["banks.error.duplicate"]);
+    }
+
+    if (!response.ok) {
+        throw new Error(messages["banks.error.update"]);
+    }
+
+    return response.json();
+}
+
+function accountPayloadFromFields({
+    nameInput,
+    bankSelect,
+    typeSelect,
+    currencySelect,
+    descriptionInput,
+    statusSelect
+}) {
+    return {
+        accountName: nameInput.value.trim(),
+        bankName: bankSelect.value,
+        accountTypeCode: typeSelect.value,
+        currencyCode: currencySelect.value,
+        description: descriptionInput.value.trim(),
+        status: statusSelect.value
+    };
+}
+
+function accountPayloadFromModal() {
+    return accountPayloadFromFields({
+        nameInput: newAccountNameInput,
+        bankSelect: newAccountBankSelect,
+        typeSelect: newAccountTypeSelect,
+        currencySelect: newAccountCurrencySelect,
+        descriptionInput: newAccountDescriptionInput,
+        statusSelect: newAccountStatusSelect
+    });
+}
+
+function editAccountPayloadFromModal() {
+    return accountPayloadFromFields({
+        nameInput: editAccountNameInput,
+        bankSelect: editAccountBankSelect,
+        typeSelect: editAccountTypeSelect,
+        currencySelect: editAccountCurrencySelect,
+        descriptionInput: editAccountDescriptionInput,
+        statusSelect: editAccountStatusSelect
+    });
+}
+
+async function createAccount(payload) {
+    const response = await fetch("/api/accounts", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (response.status === 404) {
+        throw new Error(messages["accounts.error.notFound"]);
+    }
+
+    if (response.status === 409) {
+        throw new Error(messages["accounts.error.duplicate"]);
+    }
+
+    if (!response.ok) {
+        throw new Error(messages["accounts.error.create"]);
+    }
+
+    return response.json();
+}
+
+async function updateAccount(id, payload) {
+    const response = await fetch(`/api/accounts/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (response.status === 404) {
+        throw new Error(messages["accounts.error.notFound"]);
+    }
+
+    if (response.status === 409) {
+        throw new Error(messages["accounts.error.duplicate"]);
+    }
+
+    if (!response.ok) {
+        throw new Error(messages["accounts.error.update"]);
+    }
+
+    return response.json();
 }
 
 function createAccountTable(accounts) {
@@ -230,7 +604,7 @@ function createAccountTable(accounts) {
             const actionsCell = document.createElement("td");
             const actions = document.createElement("div");
             const infoButton = document.createElement("button");
-            const editButton = document.createElement("button");
+            const editButton = document.createElement("a");
             const deleteButton = document.createElement("button");
             actions.className = "row-actions";
 
@@ -243,13 +617,18 @@ function createAccountTable(accounts) {
                 openInfoModal("account", account, 0, infoButton);
             });
 
-            editButton.type = "button";
             editButton.className = "icon-button";
+            editButton.href = `/accounts/${encodeURIComponent(account.id)}/edit.html?returnTo=${encodeURIComponent(`/banks-accounts.html?expandBank=${account.bankId}`)}`;
             editButton.setAttribute("aria-label", messages["accounts.actions.edit"]);
             MoneySnapshotUi.setTooltip(editButton, messages["accounts.actions.edit"]);
             editButton.append(MoneySnapshotUi.createEditIcon());
-            editButton.addEventListener("click", () => {
-                window.location.href = `/accounts/${encodeURIComponent(account.id)}/edit.html?returnTo=${encodeURIComponent("/banks-accounts.html")}`;
+            editButton.addEventListener("click", (event) => {
+                if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                event.preventDefault();
+                openEditAccountModal({trigger: editButton, account});
             });
 
             deleteButton.type = "button";
@@ -321,19 +700,24 @@ function renderBankAccounts() {
 
         const actionsCell = document.createElement("td");
         const actions = document.createElement("div");
-        const addAccountButton = document.createElement("button");
+        const addAccountButton = document.createElement("a");
         const infoButton = document.createElement("button");
-        const editButton = document.createElement("button");
+        const editButton = document.createElement("a");
         const deleteButton = document.createElement("button");
         actions.className = "row-actions";
 
-        addAccountButton.type = "button";
         addAccountButton.className = "icon-button";
+        addAccountButton.href = `/accounts/new.html?bank=${encodeURIComponent(bank.name)}&returnTo=${encodeURIComponent(`/banks-accounts.html?expandBank=${bank.id}`)}`;
         addAccountButton.setAttribute("aria-label", messages["accounts.actions.add"]);
         MoneySnapshotUi.setTooltip(addAccountButton, messages["accounts.actions.add"]);
         addAccountButton.append(MoneySnapshotUi.createAddIcon());
-        addAccountButton.addEventListener("click", () => {
-            window.location.href = `/accounts/new.html?bank=${encodeURIComponent(bank.name)}&returnTo=${encodeURIComponent("/banks-accounts.html")}`;
+        addAccountButton.addEventListener("click", (event) => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
+            event.preventDefault();
+            openNewAccountModal({trigger: addAccountButton, bankName: bank.name});
         });
 
         infoButton.type = "button";
@@ -345,13 +729,18 @@ function renderBankAccounts() {
             openInfoModal("bank", bank, bankAccounts.length, infoButton);
         });
 
-        editButton.type = "button";
         editButton.className = "icon-button";
+        editButton.href = `/banks/${encodeURIComponent(bank.id)}/edit.html?returnTo=${encodeURIComponent(`/banks-accounts.html?expandBank=${bank.id}`)}`;
         editButton.setAttribute("aria-label", messages["banks.actions.edit"]);
         MoneySnapshotUi.setTooltip(editButton, messages["banks.actions.edit"]);
         editButton.append(MoneySnapshotUi.createEditIcon());
-        editButton.addEventListener("click", () => {
-            window.location.href = `/banks/${encodeURIComponent(bank.id)}/edit.html?returnTo=${encodeURIComponent(`/banks-accounts.html?expandBank=${bank.id}`)}`;
+        editButton.addEventListener("click", (event) => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
+            event.preventDefault();
+            openEditBankModal({trigger: editButton, bank});
         });
 
         deleteButton.type = "button";
@@ -400,6 +789,8 @@ async function loadBanks() {
     }
 
     cachedBanks = await response.json();
+    renderEditAccountBankOptions(editAccountBankSelect?.value ?? "");
+    renderNewAccountBankOptions(newAccountBankSelect?.value ?? "");
 }
 
 async function loadAccounts() {
@@ -458,6 +849,174 @@ refreshButton.addEventListener("click", () => {
         renderEmpty(error.message);
     });
 });
+
+if (newBankAction && newBankModalForm && newBankNameInput && newBankSubmitButton) {
+    newBankAction.addEventListener("click", (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        event.preventDefault();
+        resetNewBankForm();
+        newBankModal.open({trigger: newBankAction});
+    });
+
+    newBankModalForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const name = newBankNameInput.value.trim();
+        if (!name) {
+            setNewBankFormMessage(messages["banks.form.requiredName"], "error");
+            newBankNameInput.focus();
+            return;
+        }
+
+        newBankSubmitButton.disabled = true;
+        setNewBankFormMessage("");
+
+        try {
+            const bank = await createBank(name);
+            if (bank?.id) {
+                expandedBankIds.add(bank.id);
+            }
+            newBankModal.close();
+            setMessage(listMessage, messages["banks.form.success"], "success");
+            await loadAll();
+        } catch (error) {
+            setNewBankFormMessage(error.message, "error");
+            newBankSubmitButton.disabled = false;
+            newBankNameInput.focus();
+        }
+    });
+}
+
+if (editBankModalForm && editBankNameInput && editBankSubmitButton) {
+    editBankModalForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const name = editBankNameInput.value.trim();
+        if (!name) {
+            setEditBankFormMessage(messages["banks.form.requiredName"], "error");
+            editBankNameInput.focus();
+            return;
+        }
+
+        if (!editingBankId) {
+            setEditBankFormMessage(messages["banks.error.notFound"], "error");
+            return;
+        }
+
+        editBankSubmitButton.disabled = true;
+        setEditBankFormMessage("");
+
+        try {
+            const bank = await updateBank(editingBankId, name);
+            if (bank?.id) {
+                expandedBankIds.add(bank.id);
+            }
+            editBankModal.close();
+            setMessage(listMessage, messages["banks.form.success"], "success");
+            await loadAll();
+        } catch (error) {
+            setEditBankFormMessage(error.message, "error");
+            editBankSubmitButton.disabled = false;
+            editBankNameInput.focus();
+        }
+    });
+}
+
+if (
+    editAccountModalForm &&
+    editAccountNameInput &&
+    editAccountBankSelect &&
+    editAccountTypeSelect &&
+    editAccountCurrencySelect &&
+    editAccountStatusSelect &&
+    editAccountDescriptionInput &&
+    editAccountSubmitButton
+) {
+    editAccountModalForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const payload = editAccountPayloadFromModal();
+        if (!payload.accountName || !payload.bankName || !payload.accountTypeCode || !payload.currencyCode || !payload.status) {
+            setEditAccountFormMessage(messages["accounts.form.required"], "error");
+            editAccountNameInput.focus();
+            return;
+        }
+
+        if (!editingAccountId) {
+            setEditAccountFormMessage(messages["accounts.error.notFound"], "error");
+            return;
+        }
+
+        editAccountSubmitButton.disabled = true;
+        setEditAccountFormMessage("");
+
+        try {
+            const account = await updateAccount(editingAccountId, payload);
+            if (account?.bankId) {
+                expandedBankIds.add(account.bankId);
+            }
+            editAccountModal.close();
+            setMessage(listMessage, messages["accounts.form.success"], "success");
+            await loadAll();
+        } catch (error) {
+            setEditAccountFormMessage(error.message, "error");
+            editAccountSubmitButton.disabled = false;
+            editAccountNameInput.focus();
+        }
+    });
+}
+
+if (
+    newAccountAction &&
+    newAccountModalForm &&
+    newAccountNameInput &&
+    newAccountBankSelect &&
+    newAccountTypeSelect &&
+    newAccountCurrencySelect &&
+    newAccountStatusSelect &&
+    newAccountDescriptionInput &&
+    newAccountSubmitButton
+) {
+    newAccountAction.addEventListener("click", (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        event.preventDefault();
+        openNewAccountModal({trigger: newAccountAction});
+    });
+
+    newAccountModalForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const payload = accountPayloadFromModal();
+        if (!payload.accountName || !payload.bankName || !payload.accountTypeCode || !payload.currencyCode || !payload.status) {
+            setNewAccountFormMessage(messages["accounts.form.required"], "error");
+            newAccountNameInput.focus();
+            return;
+        }
+
+        newAccountSubmitButton.disabled = true;
+        setNewAccountFormMessage("");
+
+        try {
+            const account = await createAccount(payload);
+            if (account?.bankId) {
+                expandedBankIds.add(account.bankId);
+            }
+            newAccountModal.close();
+            setMessage(listMessage, messages["accounts.form.success"], "success");
+            await loadAll();
+        } catch (error) {
+            setNewAccountFormMessage(error.message, "error");
+            newAccountSubmitButton.disabled = false;
+            newAccountNameInput.focus();
+        }
+    });
+}
 
 infoModalCloseButton.addEventListener("click", closeInfoModal);
 
@@ -550,6 +1109,9 @@ MoneySnapshotI18n.init({
         })
         .then(() => {
             applyInitialExpansionState();
+        })
+        .then(() => {
+            showPendingNotification();
         })
         .then(loadAll)
         .catch((error) => {

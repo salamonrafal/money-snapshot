@@ -5,6 +5,7 @@ const cancelLink = document.querySelector(".split-actions a.button.secondary");
 const formMode = bankForm.dataset.mode;
 const bankId = bankForm.dataset.bankId;
 const returnTo = new URLSearchParams(window.location.search).get("returnTo") ?? "";
+const BANKS_ACCOUNTS_NOTIFICATION_KEY = "money-snapshot-banks-accounts-notification";
 
 let messages = {};
 
@@ -23,6 +24,22 @@ function syncCancelLink() {
     }
 
     cancelLink.href = resolveRedirectUrl();
+}
+
+function persistBanksAccountsNotification(messageKey, type = "success") {
+    const redirectUrl = resolveRedirectUrl();
+    if (!redirectUrl.startsWith("/banks-accounts.html")) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.setItem(BANKS_ACCOUNTS_NOTIFICATION_KEY, JSON.stringify({
+            messageKey,
+            type
+        }));
+    } catch (error) {
+        console.warn("Cannot save banks-accounts notification state", error);
+    }
 }
 
 function handleLanguageChange(nextMessages) {
@@ -93,6 +110,7 @@ bankForm.addEventListener("submit", async (event) => {
 
     try {
         await saveBank(name);
+        persistBanksAccountsNotification("banks.form.success", "success");
         window.location.href = resolveRedirectUrl();
     } catch (error) {
         setFormMessage(error.message, "error");

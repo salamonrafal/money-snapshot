@@ -899,6 +899,10 @@ h1 {
     color: var(--muted);
 }
 
+.savings-forecast-summary[hidden] {
+    display: none;
+}
+
 .savings-forecast-empty {
     border: 1px dashed var(--line);
     border-radius: 8px;

@@ -1,6 +1,8 @@
 const messageElement = document.querySelector("#savings-planning-message");
 const refreshButton = document.querySelector("#refresh-savings-planning");
 const deleteButton = document.querySelector("#delete-savings-planning-forecasts");
+const generateButtons = document.querySelectorAll(".savings-planning-generate-button");
+const settingsButtons = document.querySelectorAll(".savings-planning-settings-button");
 const tableWrap = document.querySelector("#savings-planning-table-wrap");
 const stickyHeadWrap = document.querySelector("#savings-planning-sticky-head-wrap");
 const tableElement = document.querySelector("#savings-planning-table");
@@ -16,20 +18,51 @@ const generatedAtElement = document.querySelector("#savings-planning-generated-a
 const periodElement = document.querySelector("#savings-planning-period");
 const durationElement = document.querySelector("#savings-planning-duration");
 const accountCountElement = document.querySelector("#savings-planning-account-count");
+const settingsModalForm = document.querySelector("#savings-planning-settings-modal-form");
+const settingsModalTableBody = document.querySelector("#savings-planning-settings-modal-table-body");
+const settingsModalSubmitButton = document.querySelector("#savings-planning-settings-modal-submit");
+const generatorModalForm = document.querySelector("#savings-planning-generator-modal-form");
+const generatorModalStartDateInput = document.querySelector("#savings-planning-generator-modal-start-date");
+const generatorModalDurationSlider = document.querySelector("#savings-planning-generator-modal-duration");
+const generatorModalRangeControlElement = generatorModalForm?.querySelector(".range-control") ?? null;
+const generatorModalRangeTicksElement = document.querySelector("#savings-planning-generator-modal-range-ticks");
+const generatorModalWarningElement = document.querySelector("#savings-planning-generator-modal-warning");
+const generatorModalWarningTextElement = document.querySelector("#savings-planning-generator-modal-warning-text");
+const generatorModalSubmitButton = document.querySelector("#savings-planning-generator-modal-submit");
 const deleteModal = MoneySnapshotUi.createConfirmModal({
     modalSelector: "#delete-savings-forecasts-modal",
     subjectSelector: "#delete-savings-forecasts-subject",
     confirmSelector: "#confirm-delete-savings-forecasts",
     cancelSelector: "#cancel-delete-savings-forecasts"
 });
+const settingsModal = settingsModalForm
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#savings-planning-settings-modal",
+        closeSelectors: ["#savings-planning-settings-modal [data-savings-planning-settings-modal-close]"]
+    })
+    : null;
+const generatorModal = generatorModalForm
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#savings-planning-generator-modal",
+        closeSelectors: ["#savings-planning-generator-modal [data-savings-planning-generator-modal-close]"]
+    })
+    : null;
+const toastManager = MoneySnapshotUi.createToastManager({
+    durationMs: 5000
+});
+const SAVINGS_PLANNING_NOTIFICATION_KEY = "money-snapshot-savings-planning-notification";
 
 let currentLanguage = "pl";
 let messages = {};
 let currentForecast = null;
+let currentActiveForecast = null;
 let userSettings = null;
+let settingsAccounts = [];
+let settingsAccountsLoaded = false;
 let lastStickyHeadWidth = 0;
 const tooltipMeasureElement = document.createElement("span");
 let tooltipMeasureElementReady = false;
+const generatorDurations = [6, 12, 24, 60, 120];
 
 tooltipMeasureElement.setAttribute("aria-hidden", "true");
 tooltipMeasureElement.style.position = "fixed";
@@ -55,6 +88,55 @@ function ensureTooltipMeasureElement() {
 function setMessage(text, type = "") {
     messageElement.textContent = text;
     messageElement.dataset.type = type;
+
+    if (!text) {
+        toastManager.clear();
+        return;
+    }
+
+    toastManager.show(text, {type});
+}
+
+function showToastOnly(text, type = "") {
+    messageElement.textContent = "";
+    messageElement.dataset.type = "";
+
+    if (!text) {
+        toastManager.clear();
+        return;
+    }
+
+    toastManager.show(text, {type});
+}
+
+function contributionPlaceholder() {
+    return currentLanguage === "en" ? "0.00" : "0,00";
+}
+
+function normalizeContributionValue(rawValue) {
+    const trimmedValue = rawValue.trim();
+    if (!trimmedValue) {
+        return null;
+    }
+
+    const normalizedValue = trimmedValue.replace(/\s+/g, "").replace(",", ".");
+    if (!/^\d+(\.\d{1,2})?$/.test(normalizedValue)) {
+        return null;
+    }
+
+    return normalizedValue;
+}
+
+function createContributionInput(account) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "forecast-input";
+    input.inputMode = "decimal";
+    input.autocomplete = "off";
+    input.placeholder = contributionPlaceholder();
+    input.value = account.forecastedMonthlyContribution ?? "";
+    input.dataset.accountId = account.accountId;
+    return input;
 }
 
 function formatDate(value) {
@@ -67,6 +149,10 @@ function formatDateTime(value) {
 
 function formatAmount(value) {
     return MoneySnapshotUi.formatMoneyValue(value, userSettings);
+}
+
+function todayIsoDate() {
+    return MoneySnapshotUi.localIsoDate();
 }
 
 function formatMonthLabel(value) {
@@ -88,6 +174,240 @@ function durationLabel(durationMonths) {
     };
     const messageKey = durationKeyByMonths[durationMonths];
     return messageKey ? (messages[messageKey] ?? `${durationMonths}`) : `${durationMonths}`;
+}
+
+function selectedGeneratorDurationMonths() {
+    return generatorDurations[Number(generatorModalDurationSlider?.value)] ?? 12;
+}
+
+function syncGeneratorDurationAriaValueText() {
+    if (!generatorModalDurationSlider) {
+        return;
+    }
+
+    generatorModalDurationSlider.setAttribute("aria-valuetext", durationLabel(selectedGeneratorDurationMonths()));
+}
+
+function syncGeneratorActiveRangeTick() {
+    if (!generatorModalRangeTicksElement || !generatorModalDurationSlider) {
+        return;
+    }
+
+    const selectedIndex = Number(generatorModalDurationSlider.value);
+    generatorModalRangeTicksElement.querySelectorAll("[data-range-index]").forEach((label) => {
+        label.classList.toggle("is-active", Number(label.dataset.rangeIndex ?? "-1") === selectedIndex);
+    });
+}
+
+function layoutGeneratorRangeTicks() {
+    if (!generatorModalRangeControlElement || !generatorModalRangeTicksElement || !generatorModalDurationSlider) {
+        return;
+    }
+
+    const tickLabels = [...generatorModalRangeTicksElement.querySelectorAll("[data-range-index]")];
+    if (tickLabels.length === 0) {
+        return;
+    }
+
+    const sliderStyles = window.getComputedStyle(generatorModalDurationSlider);
+    const paddingLeft = Number.parseFloat(sliderStyles.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(sliderStyles.paddingRight) || 0;
+    const thumbOffset = Number.parseFloat(sliderStyles.getPropertyValue("--range-thumb-offset")) || 10;
+    const trackWidth = Math.max(generatorModalDurationSlider.clientWidth - paddingLeft - paddingRight - (thumbOffset * 2), 0);
+    const maxIndex = Math.max(tickLabels.length - 1, 1);
+    const containerWidth = generatorModalRangeTicksElement.clientWidth;
+
+    tickLabels.forEach((label) => {
+        const index = Number(label.dataset.rangeIndex ?? "0");
+        const pointX = paddingLeft + thumbOffset + (trackWidth * (index / maxIndex));
+        const labelWidth = label.offsetWidth;
+        const desiredLeft = pointX - (labelWidth / 2);
+        const clampedLeft = Math.min(Math.max(desiredLeft, 0), Math.max(containerWidth - labelWidth, 0));
+        label.style.left = `${clampedLeft}px`;
+    });
+}
+
+function clearActiveForecastWarning() {
+    currentActiveForecast = null;
+    if (generatorModalWarningElement) {
+        generatorModalWarningElement.hidden = true;
+    }
+}
+
+function syncGeneratorWarningText() {
+    if (!generatorModalWarningElement || !generatorModalWarningTextElement) {
+        return;
+    }
+
+    if (!currentActiveForecast) {
+        generatorModalWarningElement.hidden = true;
+        return;
+    }
+
+    generatorModalWarningElement.hidden = false;
+    generatorModalWarningTextElement.textContent = (messages["savingsPlanningGenerator.warning.description"] ?? "")
+        .replace("{fromDate}", formatDate(currentActiveForecast.forecastStartDate))
+        .replace("{toDate}", formatDate(currentActiveForecast.forecastEndDate));
+}
+
+function showPendingNotification() {
+    let rawValue = "";
+    try {
+        rawValue = window.sessionStorage.getItem(SAVINGS_PLANNING_NOTIFICATION_KEY) ?? "";
+    } catch (error) {
+        console.warn("Cannot access savings planning notification state", error);
+        return;
+    }
+
+    if (!rawValue) {
+        return;
+    }
+
+    try {
+        window.sessionStorage.removeItem(SAVINGS_PLANNING_NOTIFICATION_KEY);
+    } catch (error) {
+        console.warn("Cannot clear savings planning notification state", error);
+    }
+
+    try {
+        const notification = JSON.parse(rawValue);
+        const text = messages[notification?.messageKey] ?? "";
+        if (text) {
+            if ([
+                "savingsPlanningGenerator.form.success",
+                "savingsPlanningSettings.form.success"
+            ].includes(notification?.messageKey)) {
+                showToastOnly(text, notification?.type ?? "");
+            } else {
+                setMessage(text, notification?.type ?? "");
+            }
+        }
+    } catch (error) {
+        console.warn("Cannot parse savings planning notification state", error);
+    }
+}
+
+function renderSettingsEmpty(message) {
+    if (!settingsModalTableBody) {
+        return;
+    }
+
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 4;
+    cell.textContent = message;
+    row.append(cell);
+    settingsModalTableBody.replaceChildren(row);
+}
+
+function renderSettingsAccounts(accounts) {
+    if (!settingsModalTableBody) {
+        return;
+    }
+
+    settingsAccounts = accounts;
+    settingsAccountsLoaded = true;
+
+    if (accounts.length === 0) {
+        renderSettingsEmpty(messages["savingsPlanningSettings.empty"] ?? "");
+        return;
+    }
+
+    settingsModalTableBody.replaceChildren(...accounts.map((account) => {
+        const row = document.createElement("tr");
+        const accountCell = document.createElement("td");
+        const bankCell = document.createElement("td");
+        const currencyCell = document.createElement("td");
+        const contributionCell = document.createElement("td");
+
+        accountCell.textContent = account.accountName;
+        bankCell.textContent = account.bankName;
+        currencyCell.textContent = account.currencyCode;
+        contributionCell.append(createContributionInput(account));
+        row.append(accountCell, bankCell, currencyCell, contributionCell);
+        return row;
+    }));
+}
+
+async function loadSettingsAccounts() {
+    const response = await fetch("/api/accounts/savings-planning");
+    if (!response.ok) {
+        throw new Error(messages["savingsPlanningSettings.error.load"]);
+    }
+
+    renderSettingsAccounts(await response.json());
+}
+
+function collectSettingsPayload() {
+    if (!settingsModalTableBody) {
+        return {accounts: []};
+    }
+
+    const inputs = settingsModalTableBody.querySelectorAll("input[data-account-id]");
+    const accounts = [];
+
+    for (const input of inputs) {
+        const normalizedValue = normalizeContributionValue(input.value);
+        if (input.value.trim() && normalizedValue === null) {
+            return null;
+        }
+
+        accounts.push({
+            accountId: input.dataset.accountId,
+            forecastedMonthlyContribution: normalizedValue
+        });
+    }
+
+    return {accounts};
+}
+
+async function saveSettingsAccounts(payload) {
+    const response = await fetch("/api/accounts/savings-planning", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(messages["savingsPlanningSettings.error.update"]);
+    }
+
+    renderSettingsAccounts(await response.json());
+}
+
+async function openSettingsModal(trigger) {
+    if (!settingsModal || !settingsModalSubmitButton) {
+        return;
+    }
+
+    settingsModalSubmitButton.disabled = true;
+    renderSettingsEmpty(messages["savingsPlanningSettings.loading"] ?? "");
+    settingsModal.open({trigger});
+
+    try {
+        await loadSettingsAccounts();
+    } catch (error) {
+        renderSettingsEmpty(error.message);
+        showToastOnly(error.message, "error");
+    } finally {
+        settingsModalSubmitButton.disabled = false;
+    }
+}
+
+function openGeneratorModal(trigger) {
+    if (!generatorModal || !generatorModalForm || !generatorModalStartDateInput || !generatorModalSubmitButton) {
+        return;
+    }
+
+    generatorModalForm.reset();
+    generatorModalStartDateInput.value = todayIsoDate();
+    generatorModalDurationSlider.value = "1";
+    generatorModalSubmitButton.disabled = false;
+    syncGeneratorDurationAriaValueText();
+    syncGeneratorActiveRangeTick();
+    syncGeneratorWarningText();
+    generatorModal.open({trigger});
+    requestAnimationFrame(layoutGeneratorRangeTicks);
 }
 
 function setTableColumnMetrics(columnCount) {
@@ -160,11 +480,16 @@ function syncStickyHeaderLayout() {
 
 function renderEmptyState() {
     currentForecast = null;
+    clearActiveForecastWarning();
     tableWrap.hidden = true;
     stickyHeadWrap.hidden = true;
     summaryElement.hidden = true;
     emptyState.hidden = false;
     deleteButton.disabled = true;
+    generatedAtElement.textContent = "-";
+    periodElement.textContent = "-";
+    durationElement.textContent = "-";
+    accountCountElement.textContent = "0";
     resetTableHead();
     tableBody.replaceChildren();
 }
@@ -351,17 +676,49 @@ function renderForecastTable(forecast) {
 }
 
 async function loadLatestForecast() {
-    const response = await fetch("/api/savings-planning/forecasts/latest");
+    const response = await fetch("/api/savings-planning/forecasts/latest", {
+        cache: "no-store"
+    });
     if (response.status === 204) {
+        clearActiveForecastWarning();
         renderEmptyState();
         return;
     }
 
     if (!response.ok) {
+        clearActiveForecastWarning();
         throw new Error(messages["savingsPlanning.error.load"]);
     }
 
-    renderForecastTable(await response.json());
+    const forecast = await response.json();
+    if (forecast.forecastEndDate >= MoneySnapshotUi.localIsoDate()) {
+        currentActiveForecast = forecast;
+        syncGeneratorWarningText();
+    } else {
+        clearActiveForecastWarning();
+    }
+    renderForecastTable(forecast);
+}
+
+async function generateForecast(payload) {
+    const response = await fetch("/api/savings-planning/forecasts", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(messages["savingsPlanningGenerator.error.generate"]);
+    }
+}
+
+function handleGenerateButtonClick(event) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+    }
+
+    event.preventDefault();
+    openGeneratorModal(event.currentTarget);
 }
 
 async function deleteAllForecasts() {
@@ -385,13 +742,83 @@ function rerender() {
 refreshButton.addEventListener("click", () => {
     setMessage("");
     loadLatestForecast().catch((error) => {
-        setMessage(error.message, "error");
+        showToastOnly(error.message, "error");
     });
+});
+
+generateButtons.forEach((button) => {
+    button.addEventListener("click", handleGenerateButtonClick);
+});
+
+settingsButtons.forEach((button) => {
+    button.addEventListener("click", (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        event.preventDefault();
+        openSettingsModal(event.currentTarget);
+    });
+});
+
+generatorModalDurationSlider?.addEventListener("input", () => {
+    syncGeneratorDurationAriaValueText();
+    syncGeneratorActiveRangeTick();
+});
+
+generatorModalForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!generatorModalStartDateInput.value) {
+        setMessage(messages["savingsPlanningGenerator.form.required"], "error");
+        return;
+    }
+
+    generatorModalSubmitButton.disabled = true;
+    setMessage("");
+
+    try {
+        await generateForecast({
+            forecastStartDate: generatorModalStartDateInput.value,
+            durationMonths: selectedGeneratorDurationMonths()
+        });
+        generatorModal.close();
+        await loadLatestForecast();
+        showToastOnly(messages["savingsPlanningGenerator.form.success"], "success");
+    } catch (error) {
+        showToastOnly(error.message, "error");
+    } finally {
+        generatorModalSubmitButton.disabled = false;
+    }
+});
+
+settingsModalForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const payload = collectSettingsPayload();
+    if (!payload) {
+        setMessage(messages["savingsPlanningSettings.form.required"], "error");
+        return;
+    }
+
+    settingsModalSubmitButton.disabled = true;
+    setMessage("");
+
+    try {
+        await saveSettingsAccounts(payload);
+        settingsModal.close();
+        showToastOnly(messages["savingsPlanningSettings.form.success"], "success");
+    } catch (error) {
+        showToastOnly(error.message, "error");
+    } finally {
+        settingsModalSubmitButton.disabled = false;
+    }
 });
 
 tableWrap.addEventListener("scroll", syncStickyHeaderScroll, {passive: true});
 window.addEventListener("resize", () => {
     syncStickyHeaderLayout();
+    layoutGeneratorRangeTicks();
 });
 stickyHeadWrap.addEventListener("pointerover", (event) => {
     const tooltipTarget = event.target.closest(".has-app-tooltip");
@@ -413,11 +840,11 @@ deleteModal.confirmButton.addEventListener("click", async () => {
         await deleteAllForecasts();
         deleteModal.close();
         renderEmptyState();
-        setMessage(messages["savingsPlanning.delete.success"], "success");
+        showToastOnly(messages["savingsPlanning.delete.success"], "success");
     } catch (error) {
         deleteModal.close();
         deleteButton.disabled = currentForecast === null;
-        setMessage(error.message, "error");
+        showToastOnly(error.message, "error");
     } finally {
         deleteModal.confirmButton.disabled = false;
     }
@@ -429,6 +856,12 @@ MoneySnapshotI18n.init({
         currentLanguage = language;
         messages = nextMessages;
         document.title = `${messages["savingsPlanning.heading.title"]} | ${messages["app.name"]}`;
+        syncGeneratorDurationAriaValueText();
+        syncGeneratorActiveRangeTick();
+        syncGeneratorWarningText();
+        if (settingsAccountsLoaded) {
+            renderSettingsAccounts(settingsAccounts);
+        }
         rerender();
     }
 })
@@ -436,6 +869,14 @@ MoneySnapshotI18n.init({
         .then((settings) => {
             userSettings = settings;
             ensureTooltipMeasureElement();
+        })
+        .then(() => {
+            syncGeneratorDurationAriaValueText();
+            syncGeneratorActiveRangeTick();
+            requestAnimationFrame(layoutGeneratorRangeTicks);
+        })
+        .then(() => {
+            showPendingNotification();
         })
         .then(loadLatestForecast)
         .catch((error) => {

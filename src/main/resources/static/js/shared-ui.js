@@ -739,6 +739,7 @@ window.MoneySnapshotUi = (() => {
         createClearFiltersIcon,
         createEditIcon,
         createInfoIcon,
+        dismissTooltip: hideTooltip,
         safeReturnToPath,
         setTooltip,
         createTrashIcon,

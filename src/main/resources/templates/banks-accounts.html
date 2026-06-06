@@ -107,5 +107,307 @@
         </div>
     </div>
 </div>
+<div class="modal-backdrop" id="edit-bank-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="edit-bank-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="edit-bank-modal-title" data-i18n="banks.form.edit.title">Edytuj bank</h2>
+                <p data-i18n="banks.form.edit.subtitle">Zmień nazwę banku używaną przy kontach.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-edit-bank-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-message" id="edit-bank-form-message-container" data-type="error" hidden>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 8v5"></path>
+                    <path d="M12 16h.01"></path>
+                </svg>
+            </span>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-success" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8.5 12.5 2.3 2.3 4.7-5.3"></path>
+                </svg>
+            </span>
+            <p class="form-message" id="edit-bank-form-message" role="alert"></p>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="edit-bank-form">
+                <label class="field">
+                    <span data-i18n="banks.form.name">Nazwa banku</span>
+                    <input id="edit-bank-name" name="name" type="text" maxlength="120" autocomplete="organization" required>
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-edit-bank-modal-close
+                        data-i18n="banks.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="edit-bank-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="edit-bank-submit"
+                        data-i18n="banks.form.update">Zapisz zmiany</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop" id="new-bank-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="new-bank-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="new-bank-modal-title" data-i18n="banks.form.title">Nowy bank</h2>
+                <p data-i18n="banks.form.subtitle">Dodaj bank, aby można go było przypisywać do kont.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-new-bank-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-message" id="new-bank-form-message-container" data-type="error" hidden>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 8v5"></path>
+                    <path d="M12 16h.01"></path>
+                </svg>
+            </span>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-success" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8.5 12.5 2.3 2.3 4.7-5.3"></path>
+                </svg>
+            </span>
+            <p class="form-message" id="new-bank-form-message" role="alert"></p>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="new-bank-form">
+                <label class="field">
+                    <span data-i18n="banks.form.name">Nazwa banku</span>
+                    <input id="new-bank-name" name="name" type="text" maxlength="120" autocomplete="organization" required>
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-new-bank-modal-close
+                        data-i18n="banks.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="new-bank-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="new-bank-submit"
+                        data-i18n="banks.form.add">Dodaj bank</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop" id="edit-account-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="edit-account-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="edit-account-modal-title" data-i18n="accounts.form.edit.title">Edytuj konto</h2>
+                <p data-i18n="accounts.form.edit.subtitle">Zmień dane konta, bank, walutę, status i opis.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-edit-account-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-message" id="edit-account-form-message-container" data-type="error" hidden>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 8v5"></path>
+                    <path d="M12 16h.01"></path>
+                </svg>
+            </span>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-success" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8.5 12.5 2.3 2.3 4.7-5.3"></path>
+                </svg>
+            </span>
+            <p class="form-message" id="edit-account-form-message" role="alert"></p>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="edit-account-form">
+                <div class="form-grid">
+                    <label class="field">
+                        <span data-i18n="accounts.form.name">Nazwa konta</span>
+                        <input id="edit-account-name" name="accountName" type="text" maxlength="120" required>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.bank">Bank</span>
+                        <select id="edit-account-bank" name="bankName" required>
+                            <option value="" data-i18n="accounts.form.bankPlaceholder">Wybierz bank</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.accountType">Typ konta</span>
+                        <select id="edit-account-type" name="accountTypeCode" required>
+                            <option value="BANK_ACCOUNT" data-i18n="accounts.accountType.BANK_ACCOUNT">Konto bankowe</option>
+                            <option value="CASH" data-i18n="accounts.accountType.CASH">Gotówka</option>
+                            <option value="SAVINGS" data-i18n="accounts.accountType.SAVINGS">Oszczędnościowe</option>
+                            <option value="INVESTMENT" data-i18n="accounts.accountType.INVESTMENT">Inwestycyjne</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.currency">Waluta</span>
+                        <select id="edit-account-currency" name="currencyCode" required>
+                            <option value="PLN">PLN</option>
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.status">Status</span>
+                        <select id="edit-account-status" name="status" required>
+                            <option value="ACTIVE" data-i18n="accounts.status.ACTIVE">Aktywne</option>
+                            <option value="CLOSED" data-i18n="accounts.status.CLOSED">Zamknięte</option>
+                            <option value="SUSPENDED" data-i18n="accounts.status.SUSPENDED">Zawieszone</option>
+                        </select>
+                    </label>
+                </div>
+                <label class="field">
+                    <span data-i18n="accounts.form.description">Opis konta</span>
+                    <textarea id="edit-account-description" name="description" maxlength="500" rows="5"></textarea>
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-edit-account-modal-close
+                        data-i18n="accounts.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="edit-account-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="edit-account-submit"
+                        data-i18n="accounts.form.update">Zapisz zmiany</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop" id="new-account-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="new-account-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="new-account-modal-title" data-i18n="accounts.form.title">Nowe konto</h2>
+                <p data-i18n="accounts.form.subtitle">Uzupełnij dane konta, bank, walutę, status i opis.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-new-account-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-message" id="new-account-form-message-container" data-type="error" hidden>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 8v5"></path>
+                    <path d="M12 16h.01"></path>
+                </svg>
+            </span>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-success" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8.5 12.5 2.3 2.3 4.7-5.3"></path>
+                </svg>
+            </span>
+            <p class="form-message" id="new-account-form-message" role="alert"></p>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="new-account-form">
+                <div class="form-grid">
+                    <label class="field">
+                        <span data-i18n="accounts.form.name">Nazwa konta</span>
+                        <input id="new-account-name" name="accountName" type="text" maxlength="120" required>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.bank">Bank</span>
+                        <select id="new-account-bank" name="bankName" required>
+                            <option value="" data-i18n="accounts.form.bankPlaceholder">Wybierz bank</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.accountType">Typ konta</span>
+                        <select id="new-account-type" name="accountTypeCode" required>
+                            <option value="BANK_ACCOUNT" data-i18n="accounts.accountType.BANK_ACCOUNT">Konto bankowe</option>
+                            <option value="CASH" data-i18n="accounts.accountType.CASH">Gotówka</option>
+                            <option value="SAVINGS" data-i18n="accounts.accountType.SAVINGS">Oszczędnościowe</option>
+                            <option value="INVESTMENT" data-i18n="accounts.accountType.INVESTMENT">Inwestycyjne</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.currency">Waluta</span>
+                        <select id="new-account-currency" name="currencyCode" required>
+                            <option value="PLN">PLN</option>
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="accounts.form.status">Status</span>
+                        <select id="new-account-status" name="status" required>
+                            <option value="ACTIVE" data-i18n="accounts.status.ACTIVE">Aktywne</option>
+                            <option value="CLOSED" data-i18n="accounts.status.CLOSED">Zamknięte</option>
+                            <option value="SUSPENDED" data-i18n="accounts.status.SUSPENDED">Zawieszone</option>
+                        </select>
+                    </label>
+                </div>
+                <label class="field">
+                    <span data-i18n="accounts.form.description">Opis konta</span>
+                    <textarea id="new-account-description" name="description" maxlength="500" rows="5"></textarea>
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-new-account-modal-close
+                        data-i18n="accounts.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="new-account-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="new-account-submit"
+                        data-i18n="accounts.form.submit">Zarejestruj konto</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

@@ -40,6 +40,9 @@ const reportsNavPanel = document.querySelector(".reports-nav-panel");
 const reportFilterButtons = document.querySelectorAll(".report-filter-button");
 const reportPdfButtons = document.querySelectorAll(".report-pdf-button[data-report-section]");
 const reportsNavStickyMedia = window.matchMedia("(min-width: 861px)");
+const toastManager = MoneySnapshotUi.createToastManager({
+    durationMs: 5000
+});
 
 const periodOffsets = {
     "1m": {months: 1},
@@ -1707,8 +1710,10 @@ if (clearReportsCacheButton) {
             clearReportPdfData();
             markReportSectionsDirty();
             await refreshVisibleReports();
+            toastManager.show(messages["reports.cache.success"] ?? "", {type: "success"});
         } catch (error) {
             console.error(error);
+            toastManager.show(error.message || messages["reports.error.clearCache"] || "", {type: "error"});
         } finally {
             clearReportsCacheButton.disabled = false;
         }

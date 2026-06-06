@@ -1,6 +1,10 @@
 const tableBody = document.querySelector("#savings-planning-settings-table-body");
 const form = document.querySelector("#savings-planning-settings-form");
 const formMessage = document.querySelector("#savings-planning-settings-message");
+const SAVINGS_PLANNING_NOTIFICATION_KEY = "money-snapshot-savings-planning-notification";
+const toastManager = MoneySnapshotUi.createToastManager({
+    durationMs: 5000
+});
 
 let messages = {};
 let currentAccounts = [];
@@ -9,6 +13,24 @@ let accountsLoaded = false;
 function setMessage(text, type = "") {
     formMessage.textContent = text;
     formMessage.dataset.type = type;
+
+    if (!text) {
+        toastManager.clear();
+        return;
+    }
+
+    toastManager.show(text, {type});
+}
+
+function persistSavingsPlanningNotification(messageKey, type = "success") {
+    try {
+        window.sessionStorage.setItem(SAVINGS_PLANNING_NOTIFICATION_KEY, JSON.stringify({
+            messageKey,
+            type
+        }));
+    } catch (error) {
+        console.warn("Cannot save savings planning notification state", error);
+    }
 }
 
 function contributionPlaceholder() {
@@ -132,7 +154,8 @@ form.addEventListener("submit", async (event) => {
 
     try {
         await saveAccounts(payload);
-        setMessage(messages["savingsPlanningSettings.form.success"], "success");
+        persistSavingsPlanningNotification("savingsPlanningSettings.form.success", "success");
+        window.location.href = "/savings-planning.html";
     } catch (error) {
         setMessage(error.message, "error");
     } finally {
