@@ -21,6 +21,8 @@ public class MessageBundleService {
             "common.nav.language",
             "common.nav.menu.close",
             "common.nav.menu.open",
+            "common.nav.logout.confirm.message",
+            "common.nav.logout.confirm.title",
             "common.nav.logout",
             "common.nav.profile",
             "common.nav.reports",
@@ -598,6 +600,13 @@ public class MessageBundleService {
             "settings.heading.title"
     );
 
+    private static final Set<String> TOPBAR_MODAL_KEYS =
+            java.util.stream.Stream.concat(PROFILE_PAGE_KEYS.stream(), SETTINGS_PAGE_KEYS.stream())
+                    .collect(java.util.stream.Collectors.collectingAndThen(
+                            java.util.stream.Collectors.toSet(),
+                            Set::copyOf
+                    ));
+
     private final MessageSource messageSource;
 
     public MessageBundleService(MessageSource messageSource) {
@@ -642,6 +651,10 @@ public class MessageBundleService {
 
     public Map<String, String> settingsPageMessages(Locale locale) {
         return messages(SETTINGS_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> topbarModalMessages(Locale locale) {
+        return messages(TOPBAR_MODAL_KEYS, locale);
     }
 
     public Map<String, String> savingsPlanningPageMessages(Locale locale) {

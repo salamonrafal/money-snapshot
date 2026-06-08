@@ -39,7 +39,7 @@ public class AdminUserInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (email == null || email.isBlank() || password == null || password.isBlank() || userRepository.existsByEmailIgnoreCase(email)) {
+        if (email == null || email.isBlank() || password == null || password.isBlank() || userRepository.existsByNormalizedEmail(email)) {
             return;
         }
 

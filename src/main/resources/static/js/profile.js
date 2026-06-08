@@ -5,6 +5,7 @@ const lastNameInput = document.querySelector("#profile-last-name");
 const descriptionInput = document.querySelector("#profile-description");
 const passwordInput = document.querySelector("#profile-password");
 const formMessage = document.querySelector("#profile-form-message");
+const toastManager = MoneySnapshotUi.createToastManager({durationMs: 5000});
 
 let messages = {};
 
@@ -16,6 +17,15 @@ function handleLanguageChange(nextMessages) {
 function setMessage(text, type = "") {
     formMessage.textContent = text;
     formMessage.dataset.type = type;
+}
+
+function showToast(text, type = "") {
+    if (!text) {
+        return;
+    }
+
+    toastManager.clear();
+    toastManager.show(text, {type});
 }
 
 function fillForm(user) {
@@ -66,9 +76,9 @@ profileForm.addEventListener("submit", async (event) => {
     setMessage("");
     try {
         await updateProfile();
-        setMessage(messages["profile.form.success"], "success");
+        showToast(messages["profile.form.success"], "success");
     } catch (error) {
-        setMessage(error.message, "error");
+        showToast(error.message, "error");
     } finally {
         submitButton.disabled = false;
     }
@@ -83,4 +93,5 @@ MoneySnapshotI18n.init({
         .then(loadProfile)
         .catch((error) => {
             setMessage(error.message, "error");
+            showToast(error.message, "error");
         });

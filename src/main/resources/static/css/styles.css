@@ -208,7 +208,8 @@ input {
 }
 
 .topbar-actions,
-.main-nav {
+.main-nav,
+.topbar-account-actions {
     display: inline-flex;
     align-items: center;
     gap: 18px;
@@ -222,6 +223,117 @@ input {
 
 .main-nav a[aria-current="page"] {
     color: var(--accent-strong);
+}
+
+.main-nav a.topbar-icon-link {
+    display: inline-grid;
+    padding: 0;
+    background: var(--surface);
+}
+
+.topbar-icon-link[aria-current="page"] {
+    color: var(--accent-strong);
+    border-color: var(--accent-border);
+    background: var(--accent-wash-subtle);
+}
+
+.topbar-account-actions {
+    align-items: stretch;
+    gap: 0;
+    flex-wrap: nowrap;
+    border-radius: 8px;
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.topbar-account-actions > * + * {
+    box-shadow: inset 1px 0 0 var(--line);
+}
+
+.topbar-account-actions .topbar-icon-link,
+.topbar-account-actions .logout-form .button,
+.topbar-account-actions .topbar-language-switcher select {
+    border: 0;
+    border-radius: 0;
+    min-height: 40px;
+}
+
+.topbar-account-actions .topbar-icon-link {
+    width: 40px;
+    height: 40px;
+    transition: color 0.14s ease, background-color 0.14s ease, opacity 0.14s ease;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+}
+
+.topbar-account-actions .topbar-icon-link:hover,
+.topbar-account-actions .topbar-icon-link:focus,
+.topbar-account-actions .topbar-icon-link:focus-visible,
+.topbar-account-actions .topbar-icon-link:active {
+    border: 0;
+    outline: none;
+    box-shadow: none;
+}
+
+.topbar-account-actions .logout-form .button {
+    padding: 0 16px;
+    background: transparent;
+}
+
+.topbar-account-actions .logout-form .button:hover,
+.topbar-account-actions .logout-form .button:focus,
+.topbar-account-actions .logout-form .button:focus-visible,
+.topbar-account-actions .logout-form .button:active {
+    border: 0;
+    background: var(--accent-wash-subtle);
+    color: var(--accent-strong);
+    outline: none;
+    box-shadow: none;
+}
+
+.topbar-language-switcher {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    gap: 0;
+    min-height: 40px;
+    padding: 0 12px;
+    background: transparent;
+}
+
+.topbar-account-actions .topbar-language-switcher select {
+    display: block;
+    width: auto;
+    min-width: 64px;
+    min-height: 40px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    appearance: auto;
+    box-shadow: none;
+    color-scheme: light dark;
+}
+
+.topbar-account-actions .topbar-language-switcher select option {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.topbar-account-actions > :first-child,
+.topbar-account-actions > :first-child .topbar-icon-link {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.topbar-account-actions > :last-child,
+.topbar-account-actions > :last-child .button,
+.topbar-account-actions > :last-child select {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 .brand {
@@ -1376,6 +1488,22 @@ h1 {
     font-weight: 800;
 }
 
+.field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.required-mark {
+    color: var(--danger-strong);
+    font-weight: 900;
+    line-height: 1;
+}
+
+.required-mark[hidden] {
+    display: none;
+}
+
 .field input,
 .field select,
 .field textarea {
@@ -1403,6 +1531,19 @@ h1 {
 .field textarea:focus {
     border-color: var(--accent);
     outline: 3px solid var(--focus-ring);
+}
+
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+    border-color: var(--danger-strong);
+}
+
+.field input[aria-invalid="true"]:focus,
+.field select[aria-invalid="true"]:focus,
+.field textarea[aria-invalid="true"]:focus {
+    border-color: var(--danger-strong);
+    outline-color: var(--danger-focus);
 }
 
 .checkbox-field {
@@ -2889,6 +3030,13 @@ td:nth-child(5) {
     min-width: 0;
 }
 
+.topbar-modal-form.editor-panel {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
 .snapshot-form-modal .form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -3316,6 +3464,16 @@ td:nth-child(5) {
         gap: 10px;
     }
 
+    .topbar-account-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        flex-wrap: nowrap;
+        width: fit-content;
+        margin-inline: auto;
+    }
+
     .main-nav a {
         display: block;
         padding: 10px 12px;
@@ -3323,12 +3481,15 @@ td:nth-child(5) {
         background: var(--accent-wash-faint);
     }
 
-    .language-switcher {
-        justify-content: space-between;
+    .topbar-account-actions .logout-form,
+    .topbar-account-actions .logout-form .button,
+    .topbar-language-switcher,
+    .topbar-language-switcher select {
+        width: auto;
     }
 
-    .language-switcher,
-    .language-switcher select,
+    .language-switcher:not(.topbar-language-switcher),
+    .language-switcher:not(.topbar-language-switcher) select,
     .logout-form,
     .logout-form .button {
         width: 100%;

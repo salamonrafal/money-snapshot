@@ -92,6 +92,7 @@ const MoneySnapshotI18n = (() => {
     }
 
     return {
-        init
+        init,
+        applyMessages
     };
 })();

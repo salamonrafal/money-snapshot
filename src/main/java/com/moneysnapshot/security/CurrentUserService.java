@@ -20,7 +20,7 @@ public class CurrentUserService {
             throw new IllegalStateException("No authenticated user.");
         }
 
-        return userRepository.findByEmailIgnoreCase(authentication.getName())
+        return userRepository.findByNormalizedEmail(authentication.getName())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
     }
 

@@ -9,6 +9,7 @@ import com.moneysnapshot.security.web.UpdateUserRequest;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -66,22 +67,24 @@ public class UserManagementService {
     @Transactional
     public AppUser createUser(CreateUserRequest request) {
         String email = normalizeEmail(request.email());
-        if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with this email already exists.");
-        }
+        ensureEmailAvailable(email, null);
 
         Role role = roleRepository.findById(request.roleId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found."));
 
-        return userRepository.save(new AppUser(
-                email,
-                request.firstName().trim(),
-                request.lastName().trim(),
-                normalizeDescription(request.description()),
-                role,
-                request.status(),
-                passwordEncoder.encode(request.password())
-        ));
+        try {
+            return userRepository.saveAndFlush(new AppUser(
+                    email,
+                    request.firstName().trim(),
+                    request.lastName().trim(),
+                    normalizeDescription(request.description()),
+                    role,
+                    request.status(),
+                    passwordEncoder.encode(request.password())
+            ));
+        } catch (DataIntegrityViolationException exception) {
+            throw duplicateEmailConflict(exception);
+        }
     }
 
     @Transactional
@@ -89,11 +92,7 @@ public class UserManagementService {
         AppUser user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
         String email = normalizeEmail(request.email());
-        userRepository.findByEmailIgnoreCase(email)
-                .filter(existingUser -> !existingUser.getId().equals(id))
-                .ifPresent(existingUser -> {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "User with this email already exists.");
-                });
+        ensureEmailAvailable(email, id);
 
         Role role = roleRepository.findById(request.roleId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found."));
@@ -112,7 +111,11 @@ public class UserManagementService {
                 encodePassword(request.password())
         );
 
-        return userRepository.save(user);
+        try {
+            return userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException exception) {
+            throw duplicateEmailConflict(exception);
+        }
     }
 
     @Transactional
@@ -152,6 +155,14 @@ public class UserManagementService {
         return email.trim().toLowerCase();
     }
 
+    private void ensureEmailAvailable(String email, UUID excludedUserId) {
+        userRepository.findByNormalizedEmail(email)
+                .filter(existingUser -> excludedUserId == null || !existingUser.getId().equals(excludedUserId))
+                .ifPresent(existingUser -> {
+                    throw duplicateEmailConflict(null);
+                });
+    }
+
     private String normalizeDescription(String description) {
         if (description == null || description.isBlank()) {
             return null;
@@ -166,5 +177,9 @@ public class UserManagementService {
         }
 
         return passwordEncoder.encode(password);
+    }
+
+    private ResponseStatusException duplicateEmailConflict(Exception cause) {
+        return new ResponseStatusException(HttpStatus.CONFLICT, "User with this email already exists.", cause);
     }
 }

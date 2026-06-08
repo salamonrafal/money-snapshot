@@ -8,11 +8,21 @@ const descriptionInput = document.querySelector("#user-description");
 const roleSelect = document.querySelector("#user-role");
 const statusSelect = document.querySelector("#user-status");
 const passwordInput = document.querySelector("#user-password");
+const passwordRequiredMark = document.querySelector("#user-password-required-mark");
 const saveButton = document.querySelector("#save-user");
-const formMessage = document.querySelector("#user-form-message");
+const toastManager = MoneySnapshotUi.createToastManager({durationMs: 5000});
+const USERS_NOTIFICATION_KEY = "money-snapshot-users-notification";
 
 let messages = {};
 let roles = [];
+const formControls = [
+    emailInput,
+    firstNameInput,
+    lastNameInput,
+    roleSelect,
+    statusSelect,
+    passwordInput
+].filter(Boolean);
 
 function handleLanguageChange(nextMessages) {
     messages = nextMessages;
@@ -23,9 +33,24 @@ function handleLanguageChange(nextMessages) {
     renderRoles();
 }
 
-function setMessage(text, type = "") {
-    formMessage.textContent = text;
-    formMessage.dataset.type = type;
+function showToast(text, type = "") {
+    if (!text) {
+        return;
+    }
+
+    toastManager.clear();
+    toastManager.show(text, {type});
+}
+
+function persistUsersNotification(messageKey, type = "success") {
+    try {
+        window.sessionStorage.setItem(USERS_NOTIFICATION_KEY, JSON.stringify({
+            messageKey,
+            type
+        }));
+    } catch (error) {
+        console.warn("Cannot save users notification state", error);
+    }
 }
 
 function renderRoles() {
@@ -47,6 +72,54 @@ function fillForm(user) {
     passwordInput.value = "";
 }
 
+function clearFieldHighlights() {
+    formControls.forEach((input) => input.removeAttribute("aria-invalid"));
+}
+
+function highlightField(input) {
+    input?.setAttribute("aria-invalid", "true");
+}
+
+function focusFirstHighlightedField() {
+    formControls.find((input) => input.getAttribute("aria-invalid") === "true")?.focus();
+}
+
+function validateTrimmedFields() {
+    let isValid = true;
+
+    if (!emailInput.value.trim() || emailInput.validity.typeMismatch) {
+        highlightField(emailInput);
+        isValid = false;
+    }
+
+    if (!firstNameInput.value.trim()) {
+        highlightField(firstNameInput);
+        isValid = false;
+    }
+
+    if (!lastNameInput.value.trim()) {
+        highlightField(lastNameInput);
+        isValid = false;
+    }
+
+    if (!roleSelect.value) {
+        highlightField(roleSelect);
+        isValid = false;
+    }
+
+    if (!statusSelect.value) {
+        highlightField(statusSelect);
+        isValid = false;
+    }
+
+    if (!userId && !passwordInput.value) {
+        highlightField(passwordInput);
+        isValid = false;
+    }
+
+    return isValid;
+}
+
 async function loadRoles() {
     const response = await fetch("/api/roles");
     if (!response.ok) {
@@ -60,6 +133,9 @@ async function loadRoles() {
 async function loadUser() {
     if (!userId) {
         passwordInput.required = true;
+        if (passwordRequiredMark) {
+            passwordRequiredMark.hidden = false;
+        }
         statusSelect.value = "ACTIVE";
         return;
     }
@@ -87,17 +163,61 @@ function buildPayload() {
     };
 }
 
+async function readErrorPayload(response) {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+        return null;
+    }
+
+    try {
+        return await response.json();
+    } catch (error) {
+        return null;
+    }
+}
+
+function applyServerFieldHighlights(fieldErrors = {}) {
+    if (fieldErrors.email) {
+        highlightField(emailInput);
+    }
+    if (fieldErrors.firstName) {
+        highlightField(firstNameInput);
+    }
+    if (fieldErrors.lastName) {
+        highlightField(lastNameInput);
+    }
+    if (fieldErrors.roleId) {
+        highlightField(roleSelect);
+    }
+    if (fieldErrors.status) {
+        highlightField(statusSelect);
+    }
+    if (fieldErrors.password) {
+        highlightField(passwordInput);
+    }
+}
+
 async function saveUser(payload) {
     const response = await fetch(userId ? `/api/users/${encodeURIComponent(userId)}` : "/api/users", {
         method: userId ? "PUT" : "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload)
     });
+    const errorPayload = response.ok ? null : await readErrorPayload(response);
 
     if (response.status === 409) {
         throw new Error(messages["users.error.duplicate"]);
     }
     if (response.status === 400) {
+        if (errorPayload?.fieldErrors) {
+            const validationError = new Error(
+                errorPayload.fieldErrors.password && !userId
+                    ? messages["users.form.requiredPassword"]
+                    : messages["users.form.required"]
+            );
+            validationError.fieldErrors = errorPayload.fieldErrors;
+            throw validationError;
+        }
         throw new Error(messages["users.error.invalid"]);
     }
     if (!response.ok) {
@@ -107,24 +227,43 @@ async function saveUser(payload) {
 
 userForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!emailInput.value.trim() || !firstNameInput.value.trim() || !lastNameInput.value.trim() || !roleSelect.value) {
-        setMessage(messages["users.form.required"], "error");
-        return;
-    }
-    if (!userId && !passwordInput.value) {
-        setMessage(messages["users.form.requiredPassword"], "error");
+    clearFieldHighlights();
+    if (!userForm.reportValidity() || !validateTrimmedFields()) {
+        showToast(!passwordInput.value && !userId ? messages["users.form.requiredPassword"] : messages["users.form.required"], "error");
+        focusFirstHighlightedField();
         return;
     }
 
     saveButton.disabled = true;
-    setMessage("");
     try {
         await saveUser(buildPayload());
+        persistUsersNotification("users.form.success", "success");
         window.location.href = "/users.html";
     } catch (error) {
-        setMessage(error.message, "error");
+        if (error.fieldErrors) {
+            applyServerFieldHighlights(error.fieldErrors);
+            focusFirstHighlightedField();
+        } else if (error.message === messages["users.error.duplicate"]) {
+            highlightField(emailInput);
+            focusFirstHighlightedField();
+        }
+        showToast(error.message, "error");
         saveButton.disabled = false;
     }
+});
+
+[
+    emailInput,
+    firstNameInput,
+    lastNameInput,
+    roleSelect,
+    statusSelect,
+    passwordInput
+].filter(Boolean).forEach((input) => {
+    const eventName = input.tagName === "SELECT" ? "change" : "input";
+    input.addEventListener(eventName, () => {
+        input.removeAttribute("aria-invalid");
+    });
 });
 
 MoneySnapshotI18n.init({
@@ -136,5 +275,5 @@ MoneySnapshotI18n.init({
         .then(loadRoles)
         .then(loadUser)
         .catch((error) => {
-            setMessage(error.message, "error");
+            showToast(error.message, "error");
         });

@@ -49,6 +49,6 @@ docker compose exec -T postgres sh -c 'app_db_name="${APP_DB_NAME:-${DB_URL##*/}
   < "$dump_file"
 
 echo "Starting full application stack..."
-docker compose up -d
+docker compose up -d --force-recreate
 
 echo "Database restore completed."

@@ -112,6 +112,14 @@ public class HomeController {
         return messageBundleService.settingsPageMessages(resolveLocale(lang, acceptLanguage));
     }
 
+    @GetMapping("/topbar/messages")
+    public Map<String, String> topbarMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.topbarModalMessages(resolveLocale(lang, acceptLanguage));
+    }
+
     @GetMapping("/savings-planning/messages")
     public Map<String, String> savingsPlanningMessages(
             @RequestParam(required = false) String lang,

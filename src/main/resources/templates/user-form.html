@@ -14,15 +14,15 @@
     <section class="management-layout single-column" aria-label="Formularz użytkownika">
         <form class="editor-panel wide-panel" id="user-form">
             <label class="field">
-                <span data-i18n="users.form.email">E-mail</span>
+                <span class="field-label"><span data-i18n="users.form.email">E-mail</span><span class="required-mark" aria-hidden="true">*</span></span>
                 <input id="user-email" type="email" maxlength="180" autocomplete="email" required>
             </label>
             <label class="field">
-                <span data-i18n="users.form.firstName">Imię</span>
+                <span class="field-label"><span data-i18n="users.form.firstName">Imię</span><span class="required-mark" aria-hidden="true">*</span></span>
                 <input id="user-first-name" type="text" maxlength="120" autocomplete="given-name" required>
             </label>
             <label class="field">
-                <span data-i18n="users.form.lastName">Nazwisko</span>
+                <span class="field-label"><span data-i18n="users.form.lastName">Nazwisko</span><span class="required-mark" aria-hidden="true">*</span></span>
                 <input id="user-last-name" type="text" maxlength="120" autocomplete="family-name" required>
             </label>
             <label class="field">
@@ -30,25 +30,24 @@
                 <textarea id="user-description" maxlength="500" rows="4"></textarea>
             </label>
             <label class="field">
-                <span data-i18n="users.form.role">Rola</span>
+                <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
                 <select id="user-role" required></select>
             </label>
             <label class="field">
-                <span data-i18n="users.form.status">Status</span>
+                <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
                 <select id="user-status" required>
                     <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
                     <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
                 </select>
             </label>
             <label class="field">
-                <span data-i18n="users.form.password">Hasło</span>
+                <span class="field-label"><span data-i18n="users.form.password">Hasło</span><span class="required-mark" id="user-password-required-mark" aria-hidden="true" hidden>*</span></span>
                 <input id="user-password" type="password" minlength="8" maxlength="120" autocomplete="new-password">
             </label>
             <div class="form-actions">
                 <button type="submit" class="button primary" id="save-user" data-i18n="users.form.submit">Zapisz</button>
                 <a class="button secondary" href="/users.html" data-i18n="users.form.cancel">Anuluj</a>
             </div>
-            <p class="form-message" id="user-form-message" role="status"></p>
         </form>
     </section>
 </main>
