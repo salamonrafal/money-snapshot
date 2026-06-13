@@ -30,89 +30,139 @@
                 </div>
                 <div>
                     <dt data-i18n="home.summary.balance">Aktualne saldo</dt>
-                    <dd id="snapshot-panel-balance">-</dd>
+                    <dd id="snapshot-panel-balance" class="summary-value-positive">-</dd>
                 </div>
                 <div>
                     <dt data-i18n="home.summary.change">Zmiana miesięczna</dt>
-                    <dd id="snapshot-panel-change">-</dd>
+                    <dd id="snapshot-panel-change" class="summary-value-positive">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="home.summary.liabilities">Suma obciążeń</dt>
+                    <dd id="snapshot-panel-liabilities" class="summary-value-negative">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="home.summary.installments">Suma rat</dt>
+                    <dd id="snapshot-panel-installments" class="summary-value-negative">-</dd>
                 </div>
             </dl>
         </div>
     </section>
 
-    <section class="features" aria-label="Money Snapshot features">
-        <article>
-            <div class="feature-heading">
-                <span class="feature-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-                        <path d="M8 5l2-2h4l2 2"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                </span>
-                <h2 data-i18n="home.feature.snapshots.title">Migawki sald</h2>
+    <section class="feature-sections" aria-label="Money Snapshot features">
+        <section class="feature-section">
+            <div class="feature-section-heading">
+                <p class="eyebrow" data-i18n="home.section.common">Wspólne</p>
             </div>
-            <p data-i18n="home.feature.snapshots.description">Zapisuj salda według konta i daty, a następnie porównuj je w czasie.</p>
-            <div class="feature-actions">
-                <a href="/snapshots.html" class="button secondary feature-action" data-i18n="home.hero.snapshotsAction">Zarządzaj migawkami</a>
-                <a href="/snapshots/bulk.html"
-                   class="button secondary feature-action"
-                   id="open-bulk-snapshot-form-modal"
-                   data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
+            <div class="features">
+                <article>
+                    <div class="feature-heading">
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                                <path d="M8 5l2-2h4l2 2"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </span>
+                        <h2 data-i18n="home.feature.snapshots.title">Migawki sald</h2>
+                    </div>
+                    <p data-i18n="home.feature.snapshots.description">Zapisuj salda według konta i daty, a następnie porównuj je w czasie.</p>
+                    <div class="feature-actions">
+                        <a href="/snapshots.html" class="button secondary feature-action" data-i18n="home.hero.snapshotsAction">Zarządzaj migawkami</a>
+                        <a href="/snapshots/bulk.html"
+                           class="button secondary feature-action"
+                           id="open-bulk-snapshot-form-modal"
+                           data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
+                    </div>
+                </article>
+                <article>
+                    <div class="feature-heading">
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 10V8l7-4 7 4v2"></path>
+                                <rect x="3" y="10" width="18" height="10" rx="2"></rect>
+                                <path d="M6 10v8"></path>
+                                <path d="M10 10v8"></path>
+                                <path d="M14 10v8"></path>
+                                <path d="M18 10v8"></path>
+                                <path d="M7 6h10"></path>
+                            </svg>
+                        </span>
+                        <h2 data-i18n="home.feature.banksAccounts.title">Banki i Konta</h2>
+                    </div>
+                    <p data-i18n="home.feature.banksAccounts.description">Prowadź banki i przypisane do nich konta z jednego wspólnego widoku.</p>
+                    <div class="feature-actions">
+                        <a href="/banks-accounts.html" class="button secondary feature-action" data-i18n="home.hero.banksAccountsAction">Zarządzaj bankami i kontami</a>
+                    </div>
+                </article>
+                <article>
+                    <div class="feature-heading">
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19V5"></path>
+                                <path d="M4 19h16"></path>
+                                <path d="M7 15l4-4 3 3 5-6"></path>
+                            </svg>
+                        </span>
+                        <h2 data-i18n="home.feature.reports.title">Raporty zmian</h2>
+                    </div>
+                    <p data-i18n="home.feature.reports.description">Rozwijaj miesięczne i roczne podsumowania zmian na bazie uporządkowanych danych.</p>
+                    <div class="feature-actions">
+                        <a href="/reports.html" class="button secondary feature-action" data-i18n="common.nav.reports">Raporty</a>
+                    </div>
+                </article>
             </div>
-        </article>
-        <article>
-            <div class="feature-heading">
-                <span class="feature-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 10V8l7-4 7 4v2"></path>
-                        <rect x="3" y="10" width="18" height="10" rx="2"></rect>
-                        <path d="M6 10v8"></path>
-                        <path d="M10 10v8"></path>
-                        <path d="M14 10v8"></path>
-                        <path d="M18 10v8"></path>
-                        <path d="M7 6h10"></path>
-                    </svg>
-                </span>
-                <h2 data-i18n="home.feature.banksAccounts.title">Banki i Konta</h2>
+        </section>
+
+        <section class="feature-section">
+            <div class="feature-section-heading">
+                <p class="eyebrow" data-i18n="home.section.savings">Oszczędności</p>
             </div>
-            <p data-i18n="home.feature.banksAccounts.description">Prowadź banki i przypisane do nich konta z jednego wspólnego widoku.</p>
-            <div class="feature-actions">
-                <a href="/banks-accounts.html" class="button secondary feature-action" data-i18n="home.hero.banksAccountsAction">Zarządzaj bankami i kontami</a>
+            <div class="features">
+                <article>
+                    <div class="feature-heading">
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 20h16"></path>
+                                <path d="M6 16l4-4 3 3 5-7"></path>
+                                <path d="M16 8h2v2"></path>
+                            </svg>
+                        </span>
+                        <h2 data-i18n="home.feature.savingsPlanning.title">Planowanie oszczędności</h2>
+                    </div>
+                    <p data-i18n="home.feature.savingsPlanning.description">Buduj cele odkładania środków i przygotuj miejsce pod planowanie przyszłych oszczędności.</p>
+                    <div class="feature-actions">
+                        <a href="/savings-planning.html" class="button secondary feature-action" data-i18n="home.feature.savingsPlanning.action">Planowanie oszczędności</a>
+                    </div>
+                </article>
             </div>
-        </article>
-        <article>
-            <div class="feature-heading">
-                <span class="feature-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19V5"></path>
-                        <path d="M4 19h16"></path>
-                        <path d="M7 15l4-4 3 3 5-6"></path>
-                    </svg>
-                </span>
-                <h2 data-i18n="home.feature.reports.title">Raporty zmian</h2>
+        </section>
+
+        <section class="feature-section">
+            <div class="feature-section-heading">
+                <p class="eyebrow" data-i18n="home.section.liabilities">Obciążenia</p>
             </div>
-            <p data-i18n="home.feature.reports.description">Rozwijaj miesięczne i roczne podsumowania zmian na bazie uporządkowanych danych.</p>
-            <div class="feature-actions">
-                <a href="/reports.html" class="button secondary feature-action" data-i18n="common.nav.reports">Raporty</a>
+            <div class="features">
+                <article>
+                    <div class="feature-heading">
+                        <span class="feature-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 7h12"></path>
+                                <path d="M6 12h12"></path>
+                                <path d="M6 17h7"></path>
+                                <circle cx="17" cy="17" r="4"></circle>
+                                <path d="m18.5 15.5-2.5 2.5-1-1"></path>
+                            </svg>
+                        </span>
+                        <h2 data-i18n="home.feature.liabilities.title">Obciążenia</h2>
+                    </div>
+                    <p data-i18n="home.feature.liabilities.description">Zbierz raty, terminy spłat i szybki podgląd najbliższych obciążeń w jednym miejscu.</p>
+                    <div class="feature-actions">
+                        <a href="/liabilities.html" class="button secondary feature-action" data-i18n="home.feature.liabilities.manageAction">Zarządzanie obciążeniami</a>
+                        <a href="/liabilities/repayments/new.html" class="button secondary feature-action" data-i18n="home.feature.liabilities.registerAction">Zarejestruj spłatę</a>
+                    </div>
+                </article>
             </div>
-        </article>
-        <article>
-            <div class="feature-heading">
-                <span class="feature-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 20h16"></path>
-                        <path d="M6 16l4-4 3 3 5-7"></path>
-                        <path d="M16 8h2v2"></path>
-                    </svg>
-                </span>
-                <h2 data-i18n="home.feature.savingsPlanning.title">Planowanie oszczędności</h2>
-            </div>
-            <p data-i18n="home.feature.savingsPlanning.description">Buduj cele odkładania środków i przygotuj miejsce pod planowanie przyszłych oszczędności.</p>
-            <div class="feature-actions">
-                <a href="/savings-planning.html" class="button secondary feature-action" data-i18n="home.feature.savingsPlanning.action">Planowanie oszczędności</a>
-            </div>
-        </article>
+        </section>
     </section>
 </main>
 <div th:replace="~{fragments/snapshot-form :: snapshotFormModal('snapshot-form-modal', 'snapshot-form-modal-title', 'create')}"></div>

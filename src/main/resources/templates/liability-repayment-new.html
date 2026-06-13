@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Zarejestruj spłatę | Money Snapshot', 'liability-repayment.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('liabilities')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="liabilityRepayment.heading.eyebrow">Nowy wpis spłaty</p>
+        <h1 data-i18n="liabilityRepayment.heading.title">Zarejestruj spłatę</h1>
+        <p data-i18n="liabilityRepayment.heading.subtitle">Wybierz, czy podajesz kwotę spłaty czy aktualne saldo. Druga wartość zostanie obliczona automatycznie.</p>
+    </section>
+
+    <section class="editor-panel account-form-panel" aria-label="Rejestracja spłaty obciążenia">
+        <form id="liability-repayment-form" data-mode="create">
+            <h2 data-i18n="liabilityRepayment.form.title">Formularz spłaty</h2>
+            <div class="snapshot-form-modal-message inline-form-message-panel" id="liability-repayment-form-message-container" data-type="error" hidden>
+                <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 8v5"></path>
+                        <path d="M12 16h.01"></path>
+                    </svg>
+                </span>
+                <p class="form-message" id="liability-repayment-form-message" role="alert"></p>
+            </div>
+            <div class="form-grid">
+                <label class="field">
+                    <span class="field-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="liability-repayment-liability" required>
+                        <option value="" selected data-i18n="liabilityRepayment.form.liabilityPlaceholder">Wybierz obciążenie</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="liabilityRepayment.form.repaymentDate">Data spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="liability-repayment-date" type="date" value="" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="liability-repayment-source-type" required>
+                        <option value="REPAYMENT_AMOUNT" selected data-i18n="liabilityRepayment.form.sourceTypeRepaymentAmount">Kwota spłaty</option>
+                        <option value="CURRENT_AMOUNT" data-i18n="liabilityRepayment.form.sourceTypeCurrentAmount">Aktualne saldo</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span id="liability-repayment-source-label" data-i18n="liabilityRepayment.form.sourceAmountRepaymentAmount">Kwota spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input id="liability-repayment-source-amount" type="text" value="0" inputmode="decimal" min="0" step="0.0001" required>
+                </label>
+                <label class="field">
+                    <span data-i18n="liabilityRepayment.form.finalAmount">Ostateczna kwota obciążenia</span>
+                    <input id="liability-repayment-final-amount" type="text" value="-" readonly>
+                </label>
+            </div>
+            <label class="field">
+                <span data-i18n="liabilityRepayment.form.note">Notatka</span>
+                <textarea id="liability-repayment-note" rows="4" maxlength="500"></textarea>
+            </label>
+            <div class="form-actions split-actions">
+                <button type="submit" class="button primary" data-i18n="liabilityRepayment.form.submit">Zarejestruj spłatę</button>
+                <a href="/liabilities.html" class="button secondary" data-i18n="liabilityRepayment.form.cancel">Anuluj</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

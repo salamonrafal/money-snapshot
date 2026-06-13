@@ -57,6 +57,33 @@ public class PageController {
         return "reports";
     }
 
+    @GetMapping("/liabilities.html")
+    public String liabilities() {
+        return "liabilities";
+    }
+
+    @GetMapping("/liabilities/new.html")
+    public String newLiability() {
+        return "liability-new";
+    }
+
+    @GetMapping("/liabilities/{id}/edit.html")
+    public String editLiability(@PathVariable String id, Model model) {
+        model.addAttribute("liabilityId", id);
+        return "liability-edit";
+    }
+
+    @GetMapping("/liabilities/repayments/new.html")
+    public String newLiabilityRepayment() {
+        return "liability-repayment-new";
+    }
+
+    @GetMapping("/liabilities/repayments/{id}/edit.html")
+    public String editLiabilityRepayment(@PathVariable String id, Model model) {
+        model.addAttribute("repaymentId", id);
+        return "liability-repayment-edit";
+    }
+
     @GetMapping("/savings-planning.html")
     public String savingsPlanning() {
         return "savings-planning";

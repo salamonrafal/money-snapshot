@@ -112,6 +112,30 @@ public class HomeController {
         return messageBundleService.settingsPageMessages(resolveLocale(lang, acceptLanguage));
     }
 
+    @GetMapping("/liabilities/messages")
+    public Map<String, String> liabilitiesMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.liabilitiesPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/liability-form/messages")
+    public Map<String, String> liabilityFormMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.liabilityFormPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/liability-repayment/messages")
+    public Map<String, String> liabilityRepaymentMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.liabilityRepaymentPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
     @GetMapping("/topbar/messages")
     public Map<String, String> topbarMessages(
             @RequestParam(required = false) String lang,
