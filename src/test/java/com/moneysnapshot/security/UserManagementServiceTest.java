@@ -2,11 +2,15 @@ package com.moneysnapshot.security;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moneysnapshot.account.AccountRepository;
 import com.moneysnapshot.account.BankRepository;
+import com.moneysnapshot.liability.LiabilityRepository;
 import com.moneysnapshot.security.web.CreateUserRequest;
 import com.moneysnapshot.security.web.UpdateUserRequest;
 import com.moneysnapshot.snapshot.AccountSnapshotRepository;
@@ -17,6 +21,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
+import org.mockito.InOrder;
 
 class UserManagementServiceTest {
 
@@ -25,6 +30,7 @@ class UserManagementServiceTest {
     private final AccountSnapshotRepository snapshotRepository = mock(AccountSnapshotRepository.class);
     private final AccountRepository accountRepository = mock(AccountRepository.class);
     private final BankRepository bankRepository = mock(BankRepository.class);
+    private final LiabilityRepository liabilityRepository = mock(LiabilityRepository.class);
     private final UserSettingRepository settingRepository = mock(UserSettingRepository.class);
     private final CurrentUserService currentUserService = mock(CurrentUserService.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
@@ -34,6 +40,7 @@ class UserManagementServiceTest {
             snapshotRepository,
             accountRepository,
             bankRepository,
+            liabilityRepository,
             settingRepository,
             currentUserService,
             passwordEncoder
@@ -124,5 +131,49 @@ class UserManagementServiceTest {
                 .hasMessageContaining("User with this email already exists.")
                 .extracting(error -> ((ResponseStatusException) error).getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void deleteUserCleansOwnedDataBeforeDeletingUser() {
+        UUID deletedUserId = UUID.randomUUID();
+        AppUser currentUser = mock(AppUser.class);
+
+        when(currentUser.getId()).thenReturn(UUID.randomUUID());
+        when(currentUserService.currentUser()).thenReturn(currentUser);
+        when(userRepository.existsById(deletedUserId)).thenReturn(true);
+
+        service.deleteUser(deletedUserId);
+
+        InOrder inOrder = inOrder(
+                snapshotRepository,
+                accountRepository,
+                liabilityRepository,
+                bankRepository,
+                settingRepository,
+                userRepository
+        );
+        inOrder.verify(snapshotRepository).deleteByOwnerId(deletedUserId);
+        inOrder.verify(accountRepository).deleteByOwnerId(deletedUserId);
+        inOrder.verify(liabilityRepository).deleteByOwnerId(deletedUserId);
+        inOrder.verify(bankRepository).deleteByOwnerId(deletedUserId);
+        inOrder.verify(settingRepository).deleteByUserId(deletedUserId);
+        inOrder.verify(userRepository).deleteById(deletedUserId);
+    }
+
+    @Test
+    void deleteUserRejectsDeletingCurrentUserBeforeCleanup() {
+        UUID currentUserId = UUID.randomUUID();
+        AppUser currentUser = mock(AppUser.class);
+
+        when(currentUser.getId()).thenReturn(currentUserId);
+        when(currentUserService.currentUser()).thenReturn(currentUser);
+
+        assertThatThrownBy(() -> service.deleteUser(currentUserId))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(error -> ((ResponseStatusException) error).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(userRepository, never()).existsById(currentUserId);
+        verify(liabilityRepository, never()).deleteByOwnerId(currentUserId);
     }
 }

@@ -12,6 +12,7 @@ const tableHeadRow = document.querySelector("#savings-planning-table-head-row");
 const stickyHeadRow = document.querySelector("#savings-planning-sticky-head-row");
 const tableColgroup = document.querySelector("#savings-planning-table-colgroup");
 const stickyColgroup = document.querySelector("#savings-planning-sticky-colgroup");
+const topbarElement = document.querySelector(".topbar");
 const emptyState = document.querySelector("#savings-planning-empty-state");
 const summaryElement = document.querySelector("#savings-planning-summary");
 const generatedAtElement = document.querySelector("#savings-planning-generated-at");
@@ -111,6 +112,11 @@ function showToastOnly(text, type = "") {
 
 function contributionPlaceholder() {
     return currentLanguage === "en" ? "0.00" : "0,00";
+}
+
+function updateStickyHeaderTopOffset() {
+    const stickyTop = topbarElement ? topbarElement.getBoundingClientRect().height : 0;
+    document.documentElement.style.setProperty("--savings-planning-sticky-top", `${Math.round(stickyTop)}px`);
 }
 
 function normalizeContributionValue(rawValue) {
@@ -817,6 +823,7 @@ settingsModalForm?.addEventListener("submit", async (event) => {
 
 tableWrap.addEventListener("scroll", syncStickyHeaderScroll, {passive: true});
 window.addEventListener("resize", () => {
+    updateStickyHeaderTopOffset();
     syncStickyHeaderLayout();
     layoutGeneratorRangeTicks();
 });
@@ -869,6 +876,7 @@ MoneySnapshotI18n.init({
         .then((settings) => {
             userSettings = settings;
             ensureTooltipMeasureElement();
+            updateStickyHeaderTopOffset();
         })
         .then(() => {
             syncGeneratorDurationAriaValueText();

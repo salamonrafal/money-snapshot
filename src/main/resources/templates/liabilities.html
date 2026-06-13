@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Obciążenia | Money Snapshot', 'liabilities.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('liabilities')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="liabilities.heading.eyebrow">Raty i zobowiązania</p>
+        <h1 data-i18n="liabilities.heading.title">Zarządzanie obciążeniami</h1>
+        <p data-i18n="liabilities.heading.subtitle">Widok demonstracyjny nowego modułu z listą zobowiązań, terminami i podglądem kolejnych spłat.</p>
+    </section>
+
+    <section class="planning-summary" aria-labelledby="liabilities-summary-title">
+        <article class="planning-summary-card">
+            <p class="planning-summary-card-title" id="liabilities-summary-title" data-i18n="liabilities.summary.title">Podsumowanie</p>
+            <dl class="planning-summary-card-values">
+                <div>
+                    <dt data-i18n="liabilities.summary.activeCount">Aktywne obciążenia</dt>
+                    <dd id="liabilities-summary-active-count">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="liabilities.summary.monthlyDue">Łączna rata miesięczna</dt>
+                    <dd id="liabilities-summary-monthly-due">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="liabilities.summary.currentDebt">Sumaryczne obecne zadłużenie</dt>
+                    <dd id="liabilities-summary-current-debt">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="liabilities.summary.nextPayment">Najbliższa spłata</dt>
+                    <dd id="liabilities-summary-next-payment">-</dd>
+                </div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="table-panel wide-panel liabilities-main-panel" aria-label="Zarządzanie obciążeniami">
+            <div class="section-header">
+                <h2 data-i18n="liabilities.table.title">Lista obciążeń</h2>
+                <div class="section-actions savings-planning-tool-menu">
+                    <a href="/liabilities/new.html"
+                       class="icon-button secondary"
+                       id="new-liability-action"
+                       title="Zarejestruj obciążenie"
+                       data-i18n-title="liabilities.actions.registerLiability"
+                       data-i18n-aria-label="liabilities.actions.registerLiability"
+                       aria-label="Zarejestruj obciążenie">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 7h18"></path>
+                            <path d="M7 3v8"></path>
+                            <path d="M17 3v8"></path>
+                            <path d="M5 11h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"></path>
+                            <path d="M12 14v4"></path>
+                            <path d="M10 16h4"></path>
+                        </svg>
+                    </a>
+                    <a href="/liabilities/repayments/new.html"
+                       class="icon-button secondary"
+                       id="new-liability-repayment-action"
+                       title="Zarejestruj spłatę"
+                       data-i18n-title="liabilities.actions.registerRepayment"
+                       data-i18n-aria-label="liabilities.actions.registerRepayment"
+                       aria-label="Zarejestruj spłatę">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path>
+                            <path d="M14 3v6h6"></path>
+                            <path d="M8 13h8"></path>
+                            <path d="M8 17h5"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div class="table-wrap liabilities-table-wrap">
+                <table class="reports-table liabilities-table">
+                    <colgroup>
+                        <col class="liabilities-col-name">
+                        <col class="liabilities-col-original-amount">
+                        <col class="liabilities-col-repayment-amount">
+                        <col class="liabilities-col-current-amount">
+                        <col class="liabilities-col-end-date">
+                        <col class="liabilities-col-status">
+                        <col class="liabilities-col-actions">
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th data-i18n="liabilities.table.name">Nazwa</th>
+                        <th data-i18n="liabilities.table.originalAmount">Kwota początkowa</th>
+                        <th data-i18n="liabilities.table.repaymentAmount">Kwota spłaty</th>
+                        <th data-i18n="liabilities.table.currentAmount">Kwota aktualna</th>
+                        <th data-i18n="liabilities.table.endDate">Data zakończenia</th>
+                        <th data-i18n="liabilities.table.status">Status</th>
+                        <th data-i18n="liabilities.table.actions">Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody id="liabilities-table-body">
+                    <tr>
+                        <td colspan="7" data-i18n="liabilities.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="form-message" id="liabilities-list-message" role="status"></p>
+    </section>
+</main>
+
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-liability-modal',
+        'delete-liability-title',
+        'liabilities.delete.title',
+        'liabilities.delete.message',
+        'delete-liability-name',
+        'confirm-delete-liability',
+        'cancel-delete-liability')}"></div>
+
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-liability-repayment-modal',
+        'delete-liability-repayment-title',
+        'liabilities.repayments.delete.title',
+        'liabilities.repayments.delete.message',
+        'delete-liability-repayment-name',
+        'confirm-delete-liability-repayment',
+        'cancel-delete-liability-repayment')}"></div>
+
+<div class="modal-backdrop liabilities-credit-card-modal-backdrop"
+     id="update-liability-credit-card-modal"
+     hidden>
+    <div class="modal snapshot-form-modal liabilities-credit-card-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="update-liability-credit-card-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="update-liability-credit-card-title" data-i18n="liabilities.creditCardDebt.modal.title">Aktualizuj zadłużenie karty</h2>
+                <p data-i18n="liabilities.creditCardDebt.modal.subtitle">Szybka zmiana aktualnego zadłużenia bez otwierania pełnego formularza edycji.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-credit-card-debt-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form class="editor-panel wide-panel topbar-modal-form" id="liability-credit-card-debt-form">
+                <p class="liability-credit-card-modal-summary" id="liability-credit-card-debt-summary"></p>
+                <label class="field">
+                    <span data-i18n="liabilities.creditCardDebt.currentAmount">Aktualne zadłużenie</span>
+                    <input id="liability-credit-card-debt-current-amount" type="text" inputmode="decimal" value="0" required>
+                </label>
+                <p class="form-message" id="liability-credit-card-debt-form-message" role="status"></p>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-credit-card-debt-modal-close
+                        data-i18n="common.close">Zamknij</button>
+                <button type="submit"
+                        form="liability-credit-card-debt-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="liability-credit-card-debt-submit"
+                        data-i18n="liabilities.creditCardDebt.form.submit">Zaktualizuj zadłużenie</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

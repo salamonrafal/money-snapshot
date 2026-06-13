@@ -2,6 +2,7 @@ package com.moneysnapshot.security;
 
 import com.moneysnapshot.account.AccountRepository;
 import com.moneysnapshot.account.BankRepository;
+import com.moneysnapshot.liability.LiabilityRepository;
 import com.moneysnapshot.snapshot.AccountSnapshotRepository;
 import com.moneysnapshot.security.web.CreateUserRequest;
 import com.moneysnapshot.security.web.UpdateProfileRequest;
@@ -23,6 +24,7 @@ public class UserManagementService {
     private final AccountSnapshotRepository snapshotRepository;
     private final AccountRepository accountRepository;
     private final BankRepository bankRepository;
+    private final LiabilityRepository liabilityRepository;
     private final UserSettingRepository settingRepository;
     private final CurrentUserService currentUserService;
     private final PasswordEncoder passwordEncoder;
@@ -33,6 +35,7 @@ public class UserManagementService {
             AccountSnapshotRepository snapshotRepository,
             AccountRepository accountRepository,
             BankRepository bankRepository,
+            LiabilityRepository liabilityRepository,
             UserSettingRepository settingRepository,
             CurrentUserService currentUserService,
             PasswordEncoder passwordEncoder
@@ -42,6 +45,7 @@ public class UserManagementService {
         this.snapshotRepository = snapshotRepository;
         this.accountRepository = accountRepository;
         this.bankRepository = bankRepository;
+        this.liabilityRepository = liabilityRepository;
         this.settingRepository = settingRepository;
         this.currentUserService = currentUserService;
         this.passwordEncoder = passwordEncoder;
@@ -146,6 +150,7 @@ public class UserManagementService {
 
         snapshotRepository.deleteByOwnerId(id);
         accountRepository.deleteByOwnerId(id);
+        liabilityRepository.deleteByOwnerId(id);
         bankRepository.deleteByOwnerId(id);
         settingRepository.deleteByUserId(id);
         userRepository.deleteById(id);

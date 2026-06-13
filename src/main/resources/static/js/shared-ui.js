@@ -343,6 +343,7 @@ window.MoneySnapshotUi = (() => {
         let lastActiveElement = null;
         let inertedElements = [];
         let backdropPointerDown = false;
+        let modalScrollTop = 0;
         const focusableSelector = "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
         function focusableElements() {
@@ -398,6 +399,10 @@ window.MoneySnapshotUi = (() => {
             lastActiveElement = trigger instanceof HTMLElement ? trigger : null;
             hideTooltip(lastActiveElement);
             modal.hidden = false;
+            modalScrollTop = window.scrollY || window.pageYOffset || 0;
+            const modalScrollbarWidth = Math.max(window.innerWidth - document.documentElement.clientWidth, 0);
+            document.body.style.setProperty("--modal-scroll-top", `${modalScrollTop}px`);
+            document.body.style.setProperty("--modal-scrollbar-width", `${modalScrollbarWidth}px`);
             document.body.classList.add("modal-open");
             setPageInert(true);
             window.requestAnimationFrame(focusFirstElement);
@@ -407,6 +412,9 @@ window.MoneySnapshotUi = (() => {
             modal.hidden = true;
             setPageInert(false);
             document.body.classList.remove("modal-open");
+            document.body.style.removeProperty("--modal-scroll-top");
+            document.body.style.removeProperty("--modal-scrollbar-width");
+            window.scrollTo(0, modalScrollTop);
             const nextActiveElement = lastActiveElement;
             lastActiveElement = null;
             if (nextActiveElement?.isConnected) {

@@ -1,6 +1,8 @@
 const periodElement = document.querySelector("#snapshot-panel-period");
 const changePercentElement = document.querySelector("#snapshot-panel-change-percent");
 const accountsElement = document.querySelector("#snapshot-panel-accounts");
+const liabilitiesElement = document.querySelector("#snapshot-panel-liabilities");
+const installmentsElement = document.querySelector("#snapshot-panel-installments");
 const balanceElement = document.querySelector("#snapshot-panel-balance");
 const changeElement = document.querySelector("#snapshot-panel-change");
 const chartElement = document.querySelector("#snapshot-panel-chart");
@@ -76,6 +78,17 @@ function renderSnapshotPanel(panel) {
     accountsElement.textContent = panel.trackedAccounts;
     balanceElement.textContent = formatAmountList(panel.currentBalances);
     changeElement.textContent = formatAmountList(panel.monthlyChanges, true);
+}
+
+function renderLiabilitiesSummary(summary) {
+    if (liabilitiesElement) {
+        liabilitiesElement.textContent = summary ? MoneySnapshotUi.formatMoneyValue(Number(summary.currentDebtAmount ?? 0), userSettings) : "-";
+    }
+
+    if (installmentsElement) {
+        const numericValue = summary ? -Math.abs(Number(summary.monthlyDueAmount ?? 0)) : null;
+        installmentsElement.textContent = numericValue === null ? "-" : MoneySnapshotUi.formatMoneyValue(numericValue, userSettings);
+    }
 }
 
 function configuredPeriodEndDate(periodDate) {
@@ -160,6 +173,15 @@ function chartAmountLabel(point) {
     return `${sign}${MoneySnapshotUi.formatMoneyValue(point.amount, userSettings)}`;
 }
 
+function chartReferenceAmount(summary) {
+    if (!summary) {
+        return null;
+    }
+
+    const amount = Number(summary.monthlyDueAmount ?? 0);
+    return Number.isFinite(amount) ? Math.abs(amount) : null;
+}
+
 function chartPointClass(point) {
     if (point.type === "today") {
         return "chart-point chart-point-today";
@@ -233,7 +255,7 @@ function selectChartLabelPoints(points) {
     return selected.map(({labelIndex, ...point}) => ({...point, labelIndex})).sort((left, right) => left.labelIndex - right.labelIndex);
 }
 
-function renderSnapshotChart(chartPoints, periodDate) {
+function renderSnapshotChart(chartPoints, periodDate, liabilitiesSummary = null) {
     const chartPeriodDate = periodDate ?? new Date().toISOString().slice(0, 7) + "-01";
     const data = groupChartPoints(chartPoints);
     if (data.length === 0) {
@@ -254,23 +276,31 @@ function renderSnapshotChart(chartPoints, periodDate) {
     const timeRange = endTime - startTime || 1;
     const minAmount = Math.min(...data.map((point) => point.amount));
     const maxAmount = Math.max(...data.map((point) => point.amount));
-    const amountRange = maxAmount - minAmount || 1;
+    const referenceAmount = chartReferenceAmount(liabilitiesSummary);
+    const chartMinAmount = referenceAmount === null ? minAmount : Math.min(minAmount, referenceAmount);
+    const chartMaxAmount = referenceAmount === null ? maxAmount : Math.max(maxAmount, referenceAmount);
+    const amountRange = chartMaxAmount - chartMinAmount || 1;
 
     const renderedPoints = data.map((point) => ({
         ...point,
         x: leftPadding + ((new Date(`${point.date}T00:00:00Z`).getTime() - startTime) * (width - leftPadding - rightPadding)) / timeRange,
-        y: height - bottomPadding - ((point.amount - minAmount) * (height - topPadding - bottomPadding)) / amountRange
+        y: height - bottomPadding - ((point.amount - chartMinAmount) * (height - topPadding - bottomPadding)) / amountRange
     }));
     const visiblePoints = renderedPoints.filter((point) => ["baseline", "snapshot", "today", "snapshot-today"].includes(point.type));
     const labelPoints = selectChartLabelPoints(visiblePoints);
 
     const line = linePath(renderedPoints);
     const area = areaPath(renderedPoints, height, bottomPadding);
+    const referenceY = referenceAmount === null
+        ? null
+        : height - bottomPadding - ((referenceAmount - chartMinAmount) * (height - topPadding - bottomPadding)) / amountRange;
 
     chartElement.innerHTML = `
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Snapshot balance line chart">
             <path class="chart-area" d="${area}"></path>
             <path class="chart-line" d="${line}"></path>
+            ${referenceY === null ? "" : `<line class="chart-reference-line" x1="${leftPadding}" y1="${referenceY}" x2="${width - rightPadding}" y2="${referenceY}"></line>`}
+            ${referenceY === null ? "" : `<text class="chart-reference-label" x="${width - rightPadding}" y="${Math.max(18, referenceY - 8)}" text-anchor="end">${homeMessages["home.summary.installments"] ?? "Suma rat"}</text>`}
             ${visiblePoints.map((point) => `<circle class="${chartPointClass(point)}" cx="${point.x}" cy="${point.y}" r="4"></circle>`).join("")}
             ${labelPoints.map((point) => chartValueLabel(point, point.labelIndex, visiblePoints, height, bottomPadding)).join("")}
             <text class="chart-axis-label" x="${leftPadding}" y="${height - 8}">${chartDateLabel(startDateLabel)}</text>
@@ -290,9 +320,26 @@ async function loadSnapshotPanel() {
     return panel;
 }
 
+async function loadLiabilitiesSummary() {
+    const response = await fetch("/api/liabilities/summary");
+    if (!response.ok) {
+        throw new Error("Cannot load liabilities summary.");
+    }
+
+    return response.json();
+}
+
 async function loadHomeData() {
-    const panel = await loadSnapshotPanel();
-    renderSnapshotChart(panel.chartPoints ?? [], panel.periodDate);
+    const [panel, liabilitiesSummary] = await Promise.all([
+        loadSnapshotPanel(),
+        loadLiabilitiesSummary().catch((error) => {
+            console.error(error);
+            return null;
+        })
+    ]);
+
+    renderSnapshotChart(panel.chartPoints ?? [], panel.periodDate, liabilitiesSummary);
+    renderLiabilitiesSummary(liabilitiesSummary);
 }
 
 async function ensureSnapshotFormController() {
