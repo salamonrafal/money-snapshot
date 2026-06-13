@@ -524,10 +524,11 @@ public class LiabilityService {
         }
 
         if (request.liabilityTypeCode() == LiabilityTypeCode.OTHER) {
-            if (request.scheduleMode() == LiabilityScheduleMode.END_DATE && request.endDate() == null) {
+            LiabilityScheduleMode resolvedScheduleMode = resolveScheduleMode(request.liabilityTypeCode(), request.scheduleMode());
+            if (resolvedScheduleMode == LiabilityScheduleMode.END_DATE && request.endDate() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Required liability fields are missing.");
             }
-            if (request.scheduleMode() == LiabilityScheduleMode.INSTALLMENTS && !isPositive(request.installmentCount())) {
+            if (resolvedScheduleMode == LiabilityScheduleMode.INSTALLMENTS && !isPositive(request.installmentCount())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Required liability fields are missing.");
             }
         }

@@ -196,7 +196,7 @@ function baseCurrentAmountForSelection() {
             break;
         }
 
-        currentAmount = Number(repayment.currentAmount ?? currentAmount);
+        currentAmount -= Number(repayment.amount ?? 0);
     }
 
     return currentAmount;

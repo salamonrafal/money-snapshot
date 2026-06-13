@@ -350,6 +350,40 @@ class LiabilityServiceTest {
     }
 
     @Test
+    void createOtherLiabilityWithoutScheduleModeRejectsMissingEndDate() {
+        LiabilityService service = new LiabilityService(
+                liabilityRepository,
+                liabilityRepaymentRepository,
+                bankRepository,
+                normalizer,
+                currentUserService,
+                userSettingsService
+        );
+
+        CreateLiabilityRequest request = new CreateLiabilityRequest(
+                "Other liability",
+                "Bank",
+                LiabilityTypeCode.OTHER,
+                null,
+                new BigDecimal("1000"),
+                new BigDecimal("100"),
+                null,
+                null,
+                LocalDate.of(2026, 6, 1),
+                null,
+                null,
+                10,
+                null,
+                LiabilityStatus.ACTIVE
+        );
+
+        assertThatThrownBy(() -> service.createLiability(request))
+                .isInstanceOfSatisfying(ResponseStatusException.class, exception ->
+                        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+        verify(liabilityRepository, never()).save(org.mockito.Mockito.any());
+    }
+
+    @Test
     void registerBackdatedRepaymentReplaysExistingRepayments() {
         UUID ownerId = UUID.randomUUID();
         UUID liabilityId = UUID.randomUUID();
