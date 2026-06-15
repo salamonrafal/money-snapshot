@@ -38,9 +38,9 @@
     <section class="table-panel wide-panel liabilities-main-panel" aria-label="Zarządzanie obciążeniami">
             <div class="section-header">
                 <h2 data-i18n="liabilities.table.title">Lista obciążeń</h2>
-                <div class="section-actions savings-planning-tool-menu">
+                <div class="section-actions topbar-account-actions icon-toolbar" role="toolbar" aria-label="Akcje obciążeń">
                     <a href="/liabilities/new.html"
-                       class="icon-button secondary"
+                       class="icon-button secondary topbar-icon-link"
                        id="new-liability-action"
                        title="Zarejestruj obciążenie"
                        data-i18n-title="liabilities.actions.registerLiability"
@@ -56,7 +56,7 @@
                         </svg>
                     </a>
                     <a href="/liabilities/repayments/new.html"
-                       class="icon-button secondary"
+                       class="icon-button secondary topbar-icon-link"
                        id="new-liability-repayment-action"
                        title="Zarejestruj spłatę"
                        data-i18n-title="liabilities.actions.registerRepayment"
@@ -104,6 +104,317 @@
     </section>
 </main>
 
+<div class="modal-backdrop" id="new-liability-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="new-liability-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="new-liability-modal-title" data-i18n="liabilityForm.heading.title">Nowe obciążenie</h2>
+                <p data-i18n="liabilityForm.heading.subtitle">Uzupełnij dane zobowiązania, typ, saldo, harmonogram spłaty i status.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-new-liability-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="new-liability-form" class="snapshot-form">
+                <div class="snapshot-form-modal-message" id="new-liability-form-message-container" data-type="error" hidden>
+                    <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 8v5"></path>
+                            <path d="M12 16h.01"></path>
+                        </svg>
+                    </span>
+                    <p class="form-message" id="new-liability-form-message" role="alert"></p>
+                </div>
+
+                <div class="liability-form-sections">
+                    <fieldset class="liability-form-group">
+                        <legend data-i18n="liabilityForm.group.identity">Dane podstawowe</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.identity.copy">Zdefiniuj nazwę, bank i rodzaj zobowiązania widoczny w portfelu.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.name">Nazwa</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="name" id="new-liability-name" type="text" maxlength="120" required value="">
+                            </label>
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="bank" id="new-liability-bank" required>
+                                    <option value="" data-i18n="liabilityForm.form.bankPlaceholder">Wybierz bank</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="liabilityType" id="new-liability-type" required>
+                                    <option value="MORTGAGE" selected data-i18n="liabilityForm.form.typeMortgage">Hipoteka</option>
+                                    <option value="CONSUMER_LOAN" data-i18n="liabilityForm.form.typeConsumerLoan">Kredyt konsumpcyjny</option>
+                                    <option value="CREDIT_CARD" data-i18n="liabilityForm.form.typeCreditCard">Karta kredytowa</option>
+                                    <option value="LEASING" data-i18n="liabilityForm.form.typeLeasing">Leasing</option>
+                                    <option value="INSTALLMENTS" data-i18n="liabilityForm.form.typeInstallments">Raty</option>
+                                    <option value="OTHER" data-i18n="liabilityForm.form.typeOther">Inne</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="liability-form-group liability-form-group-amounts">
+                        <legend data-i18n="liabilityForm.group.amounts">Kwoty i limity</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.amounts.copy">Wprowadź bieżące obciążenie, ratę albo parametry karty kredytowej.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field" id="new-liability-current-amount-field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.currentAmount">Aktualna kwota</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="currentAmount" id="new-liability-current-amount" type="text" inputmode="decimal" value="0" required>
+                            </label>
+                            <label class="field" id="new-liability-installment-amount-field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.installmentAmount">Kwota pojedynczej spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="installmentAmount" id="new-liability-installment-amount" type="text" inputmode="decimal" value="0" required>
+                            </label>
+                            <label class="field" id="new-liability-credit-limit-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.creditCardLimit">Limit obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="creditCardLimit" id="new-liability-credit-limit" type="text" inputmode="decimal" value="0" disabled>
+                            </label>
+                            <label class="field" id="new-liability-credit-card-current-amount-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.creditCardCurrentAmount">Aktualne zadłużenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="creditCardCurrentAmount" id="new-liability-credit-card-current-amount" type="text" inputmode="decimal" value="0" disabled>
+                            </label>
+                            <label class="field" id="new-liability-credit-card-minimum-payment-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.creditCardMinimumPayment">Minimalna kwota spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="creditCardMinimumPayment" id="new-liability-credit-card-minimum-payment" type="text" inputmode="decimal" value="0" disabled>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="liability-form-group">
+                        <legend data-i18n="liabilityForm.group.dates">Daty i harmonogram</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.dates.copy">Ustal dzień wejścia do planu spłaty, termin i miesięczny dzień obsługi zobowiązania.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field">
+                                <span data-i18n="liabilityForm.form.repaymentStartDate">Data rozpoczęcia spłaty</span>
+                                <input name="repaymentStartDate" id="new-liability-repayment-start-date" type="date" value="">
+                            </label>
+                            <label class="field" id="new-liability-end-date-field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.endDate">Data zakończenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="endDate" id="new-liability-end-date" type="date" value="">
+                            </label>
+                            <label class="field" id="new-liability-installment-count-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.installmentCount">Liczba rat</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="installmentCount" id="new-liability-installment-count" type="number" min="1" step="1" value="">
+                            </label>
+                            <label class="field" id="new-liability-first-repayment-day-field" hidden>
+                                <span data-i18n="liabilityForm.form.firstRepaymentDay">Dzień spłaty</span>
+                                <input name="firstRepaymentDay" id="new-liability-first-repayment-day" type="number" min="1" max="31" step="1" value="">
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="liability-form-group">
+                        <legend data-i18n="liabilityForm.group.settings">Ustawienia i status</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.settings.copy">Skonfiguruj sposób domknięcia zobowiązania, status operacyjny i notatkę wewnętrzną.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field" id="new-liability-schedule-mode-field" hidden>
+                                <span data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
+                                <select name="scheduleMode" id="new-liability-schedule-mode">
+                                    <option value="END_DATE" selected data-i18n="liabilityForm.form.scheduleModeEndDate">Data zakończenia</option>
+                                    <option value="INSTALLMENTS" data-i18n="liabilityForm.form.scheduleModeInstallments">Liczba rat i dzień pierwszej spłaty</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="status" id="new-liability-status" required>
+                                    <option value="ACTIVE" selected data-i18n="liabilityForm.status.active">Aktywna</option>
+                                    <option value="COMPLETED" data-i18n="liabilityForm.status.completed">Zakończona</option>
+                                    <option value="SUSPENDED" data-i18n="liabilityForm.status.suspended">Zawieszona</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <label class="field liability-form-note-field">
+                            <span data-i18n="liabilityForm.form.note">Notatka</span>
+                            <textarea name="note" id="new-liability-note" maxlength="500" rows="5"></textarea>
+                        </label>
+                    </fieldset>
+                </div>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-new-liability-modal-close
+                        data-i18n="liabilityForm.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="new-liability-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="new-liability-submit"
+                        data-i18n="liabilityForm.form.submit">Zarejestruj obciążenie</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="edit-liability-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="edit-liability-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="edit-liability-modal-title" data-i18n="liabilityForm.heading.edit.title">Edytuj obciążenie</h2>
+                <p data-i18n="liabilityForm.heading.edit.subtitle">Zmień dane zobowiązania, typ, saldo, harmonogram spłaty i status.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-edit-liability-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="edit-liability-form" class="snapshot-form">
+                <div class="snapshot-form-modal-message" id="edit-liability-form-message-container" data-type="error" hidden>
+                    <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 8v5"></path>
+                            <path d="M12 16h.01"></path>
+                        </svg>
+                    </span>
+                    <p class="form-message" id="edit-liability-form-message" role="alert"></p>
+                </div>
+
+                <div class="liability-form-sections">
+                    <fieldset class="liability-form-group">
+                        <legend data-i18n="liabilityForm.group.identity">Dane podstawowe</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.identity.copy">Zdefiniuj nazwę, bank i rodzaj zobowiązania widoczny w portfelu.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.name">Nazwa</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="name" id="edit-liability-name" type="text" maxlength="120" required value="">
+                            </label>
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="bank" id="edit-liability-bank" required disabled>
+                                    <option value="" data-i18n="liabilityForm.form.bankPlaceholder">Wybierz bank</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="liabilityType" id="edit-liability-type" required disabled>
+                                    <option value="MORTGAGE" selected data-i18n="liabilityForm.form.typeMortgage">Hipoteka</option>
+                                    <option value="CONSUMER_LOAN" data-i18n="liabilityForm.form.typeConsumerLoan">Kredyt konsumpcyjny</option>
+                                    <option value="CREDIT_CARD" data-i18n="liabilityForm.form.typeCreditCard">Karta kredytowa</option>
+                                    <option value="LEASING" data-i18n="liabilityForm.form.typeLeasing">Leasing</option>
+                                    <option value="INSTALLMENTS" data-i18n="liabilityForm.form.typeInstallments">Raty</option>
+                                    <option value="OTHER" data-i18n="liabilityForm.form.typeOther">Inne</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="liability-form-group liability-form-group-amounts">
+                        <legend data-i18n="liabilityForm.group.amounts">Kwoty i limity</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.amounts.copy">Wprowadź bieżące obciążenie, ratę albo parametry karty kredytowej.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field" id="edit-liability-current-amount-field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.currentAmount">Aktualna kwota</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="currentAmount" id="edit-liability-current-amount" type="text" inputmode="decimal" value="0" required>
+                                <small class="field-hint" id="edit-liability-current-amount-hint" data-i18n="liabilityForm.form.currentAmountLockedHint" hidden>Aktualna kwota wynika z historii spłat i nie może być edytowana w tym formularzu.</small>
+                            </label>
+                            <label class="field" id="edit-liability-installment-amount-field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.installmentAmount">Kwota pojedynczej spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="installmentAmount" id="edit-liability-installment-amount" type="text" inputmode="decimal" value="0" required>
+                            </label>
+                            <label class="field" id="edit-liability-credit-limit-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.creditCardLimit">Limit obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="creditCardLimit" id="edit-liability-credit-limit" type="text" inputmode="decimal" value="0" disabled>
+                            </label>
+                            <label class="field" id="edit-liability-credit-card-current-amount-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.creditCardCurrentAmount">Aktualne zadłużenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="creditCardCurrentAmount" id="edit-liability-credit-card-current-amount" type="text" inputmode="decimal" value="0" disabled>
+                            </label>
+                            <label class="field" id="edit-liability-credit-card-minimum-payment-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.creditCardMinimumPayment">Minimalna kwota spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="creditCardMinimumPayment" id="edit-liability-credit-card-minimum-payment" type="text" inputmode="decimal" value="0" disabled>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="liability-form-group">
+                        <legend data-i18n="liabilityForm.group.dates">Daty i harmonogram</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.dates.copy">Ustal dzień wejścia do planu spłaty, termin i miesięczny dzień obsługi zobowiązania.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field">
+                                <span data-i18n="liabilityForm.form.repaymentStartDate">Data rozpoczęcia spłaty</span>
+                                <input name="repaymentStartDate" id="edit-liability-repayment-start-date" type="date" value="">
+                            </label>
+                            <label class="field" id="edit-liability-end-date-field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.endDate">Data zakończenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="endDate" id="edit-liability-end-date" type="date" value="">
+                            </label>
+                            <label class="field" id="edit-liability-installment-count-field" hidden>
+                                <span class="field-label"><span data-i18n="liabilityForm.form.installmentCount">Liczba rat</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <input name="installmentCount" id="edit-liability-installment-count" type="number" min="1" step="1" value="">
+                            </label>
+                            <label class="field" id="edit-liability-first-repayment-day-field" hidden>
+                                <span data-i18n="liabilityForm.form.firstRepaymentDay">Dzień spłaty</span>
+                                <input name="firstRepaymentDay" id="edit-liability-first-repayment-day" type="number" min="1" max="31" step="1" value="">
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="liability-form-group">
+                        <legend data-i18n="liabilityForm.group.settings">Ustawienia i status</legend>
+                        <p class="liability-form-group-copy" data-i18n="liabilityForm.group.settings.copy">Skonfiguruj sposób domknięcia zobowiązania, status operacyjny i notatkę wewnętrzną.</p>
+                        <div class="form-grid liability-form-grid">
+                            <label class="field" id="edit-liability-schedule-mode-field" hidden>
+                                <span data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
+                                <select name="scheduleMode" id="edit-liability-schedule-mode">
+                                    <option value="END_DATE" selected data-i18n="liabilityForm.form.scheduleModeEndDate">Data zakończenia</option>
+                                    <option value="INSTALLMENTS" data-i18n="liabilityForm.form.scheduleModeInstallments">Liczba rat i dzień pierwszej spłaty</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span class="field-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="status" id="edit-liability-status" required>
+                                    <option value="ACTIVE" selected data-i18n="liabilityForm.status.active">Aktywna</option>
+                                    <option value="COMPLETED" data-i18n="liabilityForm.status.completed">Zakończona</option>
+                                    <option value="SUSPENDED" data-i18n="liabilityForm.status.suspended">Zawieszona</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <label class="field liability-form-note-field">
+                            <span data-i18n="liabilityForm.form.note">Notatka</span>
+                            <textarea name="note" id="edit-liability-note" maxlength="500" rows="5"></textarea>
+                        </label>
+                    </fieldset>
+                </div>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-edit-liability-modal-close
+                        data-i18n="liabilityForm.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="edit-liability-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="edit-liability-submit"
+                        data-i18n="liabilityForm.form.update">Zapisz zmiany</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div th:replace="~{fragments/page :: confirmDeleteModal(
         'delete-liability-modal',
         'delete-liability-title',
@@ -112,6 +423,164 @@
         'delete-liability-name',
         'confirm-delete-liability',
         'cancel-delete-liability')}"></div>
+
+<div class="modal-backdrop" id="new-liability-repayment-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="new-liability-repayment-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="new-liability-repayment-modal-title" data-i18n="liabilityRepayment.heading.title">Zarejestruj spłatę</h2>
+                <p data-i18n="liabilityRepayment.heading.subtitle">Wybierz, czy podajesz kwotę spłaty czy aktualne saldo. Druga wartość zostanie obliczona automatycznie.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-new-liability-repayment-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="new-liability-repayment-form" class="snapshot-form">
+                <div class="snapshot-form-modal-message" id="new-liability-repayment-form-message-container" data-type="error" hidden>
+                    <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 8v5"></path>
+                            <path d="M12 16h.01"></path>
+                        </svg>
+                    </span>
+                    <p class="form-message" id="new-liability-repayment-form-message" role="alert"></p>
+                </div>
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-liability-repayment-liability" required>
+                            <option value="" selected data-i18n="liabilityRepayment.form.liabilityPlaceholder">Wybierz obciążenie</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="liabilityRepayment.form.repaymentDate">Data spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="new-liability-repayment-date" type="date" value="" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-liability-repayment-source-type" required>
+                            <option value="REPAYMENT_AMOUNT" selected data-i18n="liabilityRepayment.form.sourceTypeRepaymentAmount">Kwota spłaty</option>
+                            <option value="CURRENT_AMOUNT" data-i18n="liabilityRepayment.form.sourceTypeCurrentAmount">Aktualne saldo</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span id="new-liability-repayment-source-label" data-i18n="liabilityRepayment.form.sourceAmountRepaymentAmount">Kwota spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="new-liability-repayment-source-amount" type="text" value="0" inputmode="decimal" min="0" step="0.0001" required>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="liabilityRepayment.form.finalAmount">Ostateczna kwota obciążenia</span>
+                        <input id="new-liability-repayment-final-amount" type="text" value="-" readonly>
+                    </label>
+                </div>
+                <label class="field">
+                    <span data-i18n="liabilityRepayment.form.note">Notatka</span>
+                    <textarea id="new-liability-repayment-note" rows="4" maxlength="500"></textarea>
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-new-liability-repayment-modal-close
+                        data-i18n="liabilityRepayment.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="new-liability-repayment-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="new-liability-repayment-submit"
+                        data-i18n="liabilityRepayment.form.submit">Zarejestruj spłatę</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="edit-liability-repayment-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="edit-liability-repayment-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <h2 id="edit-liability-repayment-modal-title" data-i18n="liabilityRepayment.heading.edit.title">Edytuj spłatę</h2>
+                <p data-i18n="liabilityRepayment.heading.edit.subtitle">Zmień datę, sposób wprowadzenia i kwotę. Pozostałe spłaty zostaną przeliczone automatycznie.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-edit-liability-repayment-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form id="edit-liability-repayment-form" class="snapshot-form">
+                <div class="snapshot-form-modal-message" id="edit-liability-repayment-form-message-container" data-type="error" hidden>
+                    <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 8v5"></path>
+                            <path d="M12 16h.01"></path>
+                        </svg>
+                    </span>
+                    <p class="form-message" id="edit-liability-repayment-form-message" role="alert"></p>
+                </div>
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-liability-repayment-liability" required>
+                            <option value="" selected data-i18n="liabilityRepayment.form.liabilityPlaceholder">Wybierz obciążenie</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="liabilityRepayment.form.repaymentDate">Data spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="edit-liability-repayment-date" type="date" value="" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-liability-repayment-source-type" required>
+                            <option value="REPAYMENT_AMOUNT" selected data-i18n="liabilityRepayment.form.sourceTypeRepaymentAmount">Kwota spłaty</option>
+                            <option value="CURRENT_AMOUNT" data-i18n="liabilityRepayment.form.sourceTypeCurrentAmount">Aktualne saldo</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span id="edit-liability-repayment-source-label" data-i18n="liabilityRepayment.form.sourceAmountRepaymentAmount">Kwota spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="edit-liability-repayment-source-amount" type="text" value="0" inputmode="decimal" min="0" step="0.0001" required>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="liabilityRepayment.form.finalAmount">Ostateczna kwota obciążenia</span>
+                        <input id="edit-liability-repayment-final-amount" type="text" value="-" readonly>
+                    </label>
+                </div>
+                <label class="field">
+                    <span data-i18n="liabilityRepayment.form.note">Notatka</span>
+                    <textarea id="edit-liability-repayment-note" rows="4" maxlength="500"></textarea>
+                </label>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-edit-liability-repayment-modal-close
+                        data-i18n="liabilityRepayment.form.cancel">Anuluj</button>
+                <button type="submit"
+                        form="edit-liability-repayment-form"
+                        class="button primary snapshot-form-modal-action-button"
+                        id="edit-liability-repayment-submit"
+                        data-i18n="liabilityRepayment.form.update">Zapisz zmiany</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div th:replace="~{fragments/page :: confirmDeleteModal(
         'delete-liability-repayment-modal',

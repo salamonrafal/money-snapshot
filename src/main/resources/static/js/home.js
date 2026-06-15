@@ -10,6 +10,8 @@ const openSnapshotFormModalButton = document.querySelector("#open-snapshot-form-
 const snapshotFormModalElement = document.querySelector("#snapshot-form-modal");
 const openBulkSnapshotFormModalButton = document.querySelector("#open-bulk-snapshot-form-modal");
 const bulkSnapshotFormModalElement = document.querySelector("#bulk-snapshot-form-modal");
+const openHomeLiabilityRepaymentModalButton = document.querySelector("#open-home-liability-repayment-modal");
+const homeLiabilityRepaymentModalElement = document.querySelector("#home-liability-repayment-modal");
 const snapshotFormModal = snapshotFormModalElement
     ? MoneySnapshotUi.createModal({
         modalSelector: "#snapshot-form-modal",
@@ -22,16 +24,42 @@ const bulkSnapshotFormModal = bulkSnapshotFormModalElement
         closeSelectors: ["#bulk-snapshot-form-modal [data-bulk-snapshot-modal-close]"]
     })
     : null;
+const homeLiabilityRepaymentModal = homeLiabilityRepaymentModalElement
+    ? MoneySnapshotUi.createModal({
+        modalSelector: "#home-liability-repayment-modal",
+        closeSelectors: ["#home-liability-repayment-modal [data-home-liability-repayment-modal-close]"]
+    })
+    : null;
 const snapshotFormElement = snapshotFormModalElement?.querySelector("[data-snapshot-form]") ?? null;
 const bulkSnapshotFormElement = bulkSnapshotFormModalElement?.querySelector("[data-bulk-snapshot-form]") ?? null;
+const homeLiabilityRepaymentForm = document.getElementById("home-liability-repayment-form");
+const homeLiabilityRepaymentFormMessageContainer = document.getElementById("home-liability-repayment-form-message-container");
+const homeLiabilityRepaymentFormMessage = document.getElementById("home-liability-repayment-form-message");
+const homeLiabilityRepaymentSubmitButton = document.getElementById("home-liability-repayment-submit");
+const homeLiabilityRepaymentSelect = document.getElementById("home-liability-repayment-liability");
+const homeLiabilityRepaymentDateInput = document.getElementById("home-liability-repayment-date");
+const homeLiabilityRepaymentSourceTypeInput = document.getElementById("home-liability-repayment-source-type");
+const homeLiabilityRepaymentSourceAmountInput = document.getElementById("home-liability-repayment-source-amount");
+const homeLiabilityRepaymentFinalAmountInput = document.getElementById("home-liability-repayment-final-amount");
+const homeLiabilityRepaymentSourceLabel = document.getElementById("home-liability-repayment-source-label");
+const homeLiabilityRepaymentNoteInput = document.getElementById("home-liability-repayment-note");
+const homeLiabilityRepaymentFormControls = {
+    liabilityId: homeLiabilityRepaymentSelect,
+    repaymentDate: homeLiabilityRepaymentDateInput,
+    sourceType: homeLiabilityRepaymentSourceTypeInput,
+    sourceAmount: homeLiabilityRepaymentSourceAmountInput
+};
 
 let currentLanguage = "pl";
 let userSettings = null;
 let homeMessages = {};
+let liabilityRepaymentMessages = {};
 let snapshotFormController = null;
 let snapshotFormControllerPromise = null;
 let bulkSnapshotFormController = null;
 let bulkSnapshotFormControllerPromise = null;
+let cachedLiabilities = [];
+let selectedHomeRepaymentLiabilityId = "";
 const toastManager = MoneySnapshotUi.createToastManager({
     durationMs: 4200
 });
@@ -40,6 +68,33 @@ function formatCurrencyAmount({currencyCode, amount}, includeSign = false) {
     const numericAmount = Number(amount);
     const sign = includeSign && numericAmount > 0 ? "+" : "";
     return `${sign}${MoneySnapshotUi.formatMoneyValue(numericAmount, userSettings)}`;
+}
+
+function shouldOpenModalFromClick(event) {
+    return event.button === 0
+        && !event.defaultPrevented
+        && !event.metaKey
+        && !event.ctrlKey
+        && !event.shiftKey
+        && !event.altKey;
+}
+
+function todayIsoDate() {
+    return MoneySnapshotUi.localIsoDate();
+}
+
+function normalizeDecimalInput(rawValue) {
+    const trimmedValue = `${rawValue ?? ""}`.trim();
+    if (!trimmedValue) {
+        return null;
+    }
+
+    const normalizedValue = trimmedValue.replace(/\s+/g, "").replace(",", ".");
+    if (!/^\d+(\.\d{1,4})?$/.test(normalizedValue)) {
+        return null;
+    }
+
+    return normalizedValue;
 }
 
 function formatAmountList(amounts, includeSign = false) {
@@ -426,6 +481,382 @@ async function ensureBulkSnapshotFormController() {
     return bulkSnapshotFormControllerPromise;
 }
 
+function setHomeLiabilityRepaymentFormMessage(text, type = "") {
+    if (!homeLiabilityRepaymentFormMessage) {
+        return;
+    }
+
+    homeLiabilityRepaymentFormMessage.textContent = text;
+    homeLiabilityRepaymentFormMessage.dataset.type = type;
+    if (homeLiabilityRepaymentFormMessageContainer) {
+        homeLiabilityRepaymentFormMessageContainer.dataset.type = type || "error";
+        homeLiabilityRepaymentFormMessageContainer.hidden = !text;
+    }
+}
+
+function clearHomeLiabilityRepaymentFieldHighlights() {
+    Object.values(homeLiabilityRepaymentFormControls).forEach((input) => input?.removeAttribute("aria-invalid"));
+}
+
+function highlightHomeLiabilityRepaymentField(input) {
+    input?.setAttribute("aria-invalid", "true");
+}
+
+function applyHomeLiabilityRepaymentFieldHighlights(fieldErrors = {}) {
+    if (fieldErrors.liabilityId) {
+        highlightHomeLiabilityRepaymentField(homeLiabilityRepaymentSelect);
+    }
+    if (fieldErrors.repaymentDate) {
+        highlightHomeLiabilityRepaymentField(homeLiabilityRepaymentDateInput);
+    }
+    if (fieldErrors.sourceType) {
+        highlightHomeLiabilityRepaymentField(homeLiabilityRepaymentSourceTypeInput);
+    }
+    if (fieldErrors.sourceAmount) {
+        highlightHomeLiabilityRepaymentField(homeLiabilityRepaymentSourceAmountInput);
+    }
+}
+
+function focusFirstHomeLiabilityRepaymentHighlightedField() {
+    Object.values(homeLiabilityRepaymentFormControls).find((input) => input?.getAttribute("aria-invalid") === "true")?.focus();
+}
+
+async function readErrorPayload(response) {
+    try {
+        return await response.json();
+    } catch (error) {
+        return null;
+    }
+}
+
+function homeRepaymentSourceType() {
+    return homeLiabilityRepaymentSourceTypeInput?.value === "CURRENT_AMOUNT" ? "CURRENT_AMOUNT" : "REPAYMENT_AMOUNT";
+}
+
+function selectedHomeRepaymentLiability() {
+    return cachedLiabilities.find((liability) => liability.id === homeLiabilityRepaymentSelect?.value) ?? null;
+}
+
+function applyHomeRepaymentSourceFieldLabel() {
+    if (!homeLiabilityRepaymentSourceLabel) {
+        return;
+    }
+
+    homeLiabilityRepaymentSourceLabel.textContent = homeRepaymentSourceType() === "CURRENT_AMOUNT"
+        ? (liabilityRepaymentMessages["liabilityRepayment.form.sourceAmountCurrentAmount"] ?? "Aktualne saldo")
+        : (liabilityRepaymentMessages["liabilityRepayment.form.sourceAmountRepaymentAmount"] ?? "Kwota spłaty");
+}
+
+function updateHomeRepaymentFinalAmountPreview() {
+    if (!homeLiabilityRepaymentFinalAmountInput) {
+        return;
+    }
+
+    const rawValue = normalizeDecimalInput(homeLiabilityRepaymentSourceAmountInput?.value);
+    if (rawValue === null) {
+        homeLiabilityRepaymentFinalAmountInput.value = "-";
+        return;
+    }
+
+    const sourceValue = Number(rawValue);
+    const selectedLiability = selectedHomeRepaymentLiability();
+    if (!Number.isFinite(sourceValue) || !selectedLiability) {
+        homeLiabilityRepaymentFinalAmountInput.value = "-";
+        return;
+    }
+
+    if (homeRepaymentSourceType() === "CURRENT_AMOUNT") {
+        homeLiabilityRepaymentFinalAmountInput.value = MoneySnapshotUi.formatMoneyValue(sourceValue, userSettings);
+        return;
+    }
+
+    homeLiabilityRepaymentFinalAmountInput.value = MoneySnapshotUi.formatMoneyValue(
+        Number(selectedLiability.currentAmount ?? 0) - sourceValue,
+        userSettings
+    );
+}
+
+function syncHomeRepaymentSourceAmountFromSelection() {
+    if (!homeLiabilityRepaymentSourceAmountInput) {
+        return;
+    }
+
+    const currentAmount = Number(selectedHomeRepaymentLiability()?.currentAmount ?? 0);
+    homeLiabilityRepaymentSourceAmountInput.value = homeRepaymentSourceType() === "CURRENT_AMOUNT" ? `${currentAmount}` : "0";
+    updateHomeRepaymentFinalAmountPreview();
+}
+
+function setHomeRepaymentInputsEnabled(hasLiabilities) {
+    if (homeLiabilityRepaymentSourceTypeInput) {
+        homeLiabilityRepaymentSourceTypeInput.disabled = !hasLiabilities;
+    }
+    if (homeLiabilityRepaymentSourceAmountInput) {
+        homeLiabilityRepaymentSourceAmountInput.disabled = !hasLiabilities;
+    }
+    if (homeLiabilityRepaymentFinalAmountInput) {
+        homeLiabilityRepaymentFinalAmountInput.disabled = !hasLiabilities;
+    }
+}
+
+function renderHomeRepaymentLiabilityOptions() {
+    if (!homeLiabilityRepaymentSelect) {
+        return;
+    }
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = liabilityRepaymentMessages["liabilityRepayment.form.liabilityPlaceholder"] ?? "";
+
+    homeLiabilityRepaymentSelect.replaceChildren(
+        placeholder,
+        ...cachedLiabilities.map((liability) => {
+            const option = document.createElement("option");
+            option.value = liability.id;
+            option.textContent = `${liability.name} · ${liability.bankName} · ${MoneySnapshotUi.formatMoneyValue(Number(liability.currentAmount ?? 0), userSettings)}`;
+            return option;
+        })
+    );
+
+    if (selectedHomeRepaymentLiabilityId) {
+        homeLiabilityRepaymentSelect.value = selectedHomeRepaymentLiabilityId;
+    }
+
+    const hasLiabilities = cachedLiabilities.length > 0;
+    homeLiabilityRepaymentSelect.disabled = !hasLiabilities;
+    setHomeRepaymentInputsEnabled(hasLiabilities);
+    if (homeLiabilityRepaymentSubmitButton) {
+        homeLiabilityRepaymentSubmitButton.disabled = !hasLiabilities;
+    }
+
+    if (!hasLiabilities) {
+        setHomeLiabilityRepaymentFormMessage(liabilityRepaymentMessages["liabilityRepayment.error.noLiabilities"] ?? "", "error");
+    } else if (homeLiabilityRepaymentFormMessage?.dataset.type === "error") {
+        setHomeLiabilityRepaymentFormMessage("", "");
+    }
+
+    applyHomeRepaymentSourceFieldLabel();
+    syncHomeRepaymentSourceAmountFromSelection();
+}
+
+async function loadHomeLiabilityRepaymentMessages(language) {
+    const response = await fetch(`/api/liability-repayment/messages?lang=${encodeURIComponent(language)}`);
+    if (!response.ok) {
+        throw new Error("Cannot load liability repayment messages");
+    }
+
+    liabilityRepaymentMessages = await response.json();
+    if (homeLiabilityRepaymentModalElement) {
+        MoneySnapshotI18n.applyMessages(
+            liabilityRepaymentMessages,
+            language,
+            homeLiabilityRepaymentModalElement.querySelectorAll("[data-i18n], [data-i18n-title], [data-i18n-aria-label]")
+        );
+    }
+    renderHomeRepaymentLiabilityOptions();
+}
+
+async function loadHomeLiabilities() {
+    const response = await fetch("/api/liabilities");
+    if (!response.ok) {
+        throw new Error(liabilityRepaymentMessages["liabilityRepayment.error.loadLiabilities"] ?? "Cannot load liabilities.");
+    }
+
+    const dashboard = await response.json();
+    cachedLiabilities = dashboard.liabilities ?? [];
+    renderHomeRepaymentLiabilityOptions();
+}
+
+function initializeHomeRepaymentDateDefaults() {
+    if (homeLiabilityRepaymentDateInput && !homeLiabilityRepaymentDateInput.value) {
+        homeLiabilityRepaymentDateInput.value = todayIsoDate();
+    }
+}
+
+function homeRepaymentPayloadFromForm() {
+    return {
+        repaymentDate: homeLiabilityRepaymentDateInput?.value || null,
+        sourceType: homeRepaymentSourceType(),
+        sourceAmount: normalizeDecimalInput(homeLiabilityRepaymentSourceAmountInput?.value),
+        note: homeLiabilityRepaymentNoteInput?.value.trim() ?? ""
+    };
+}
+
+function validateHomeRepaymentPayload(payload) {
+    if (!homeLiabilityRepaymentSelect?.value || !payload.repaymentDate || !payload.sourceType || !payload.sourceAmount) {
+        return "required";
+    }
+
+    const selectedLiability = selectedHomeRepaymentLiability();
+    if (!selectedLiability) {
+        return "required";
+    }
+
+    const sourceValue = Number(payload.sourceAmount);
+    const baseValue = Number(selectedLiability.currentAmount ?? 0);
+    if (!Number.isFinite(sourceValue) || sourceValue < 0 || sourceValue > baseValue) {
+        return "exceedsBalance";
+    }
+
+    return "";
+}
+
+async function saveHomeRepayment(liabilityId, payload) {
+    const response = await fetch(`/api/liabilities/${encodeURIComponent(liabilityId)}/repayments`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+    const errorPayload = response.ok ? null : await readErrorPayload(response);
+
+    if (response.status === 404) {
+        throw new Error(liabilityRepaymentMessages["liabilityRepayment.error.repaymentNotFound"] ?? "Repayment not found.");
+    }
+
+    if (response.status === 400) {
+        if (errorPayload?.fieldErrors) {
+            const validationError = new Error(liabilityRepaymentMessages["liabilityRepayment.error.required"] ?? "Validation failed.");
+            validationError.fieldErrors = errorPayload.fieldErrors;
+            throw validationError;
+        }
+        if (errorPayload?.message === "Repayments can only be registered for active liabilities.") {
+            const inactiveLiabilityError = new Error(liabilityRepaymentMessages["liabilityRepayment.error.inactiveLiability"] ?? "Repayments can only be registered for active liabilities.");
+            inactiveLiabilityError.fieldErrors = {liabilityId: "inactive"};
+            throw inactiveLiabilityError;
+        }
+        if (errorPayload?.message === "Repayment amount cannot exceed current liability amount.") {
+            const amountError = new Error(liabilityRepaymentMessages["liabilityRepayment.error.amountExceedsBalance"] ?? "Validation failed.");
+            amountError.fieldErrors = {sourceAmount: "exceedsBalance"};
+            throw amountError;
+        }
+        throw new Error(errorPayload?.message ?? liabilityRepaymentMessages["liabilityRepayment.error.required"] ?? "Validation failed.");
+    }
+
+    if (!response.ok) {
+        throw new Error(liabilityRepaymentMessages["liabilityRepayment.error.create"] ?? "Cannot save repayment.");
+    }
+
+    return response.json();
+}
+
+function resetHomeLiabilityRepaymentForm() {
+    if (!homeLiabilityRepaymentForm) {
+        return;
+    }
+
+    homeLiabilityRepaymentForm.reset();
+    clearHomeLiabilityRepaymentFieldHighlights();
+    setHomeLiabilityRepaymentFormMessage("");
+    if (homeLiabilityRepaymentSourceTypeInput) {
+        homeLiabilityRepaymentSourceTypeInput.value = "REPAYMENT_AMOUNT";
+    }
+    initializeHomeRepaymentDateDefaults();
+    renderHomeRepaymentLiabilityOptions();
+    if (homeLiabilityRepaymentSubmitButton) {
+        homeLiabilityRepaymentSubmitButton.disabled = false;
+    }
+}
+
+async function openHomeLiabilityRepaymentModal(trigger) {
+    await loadHomeLiabilities();
+    resetHomeLiabilityRepaymentForm();
+    homeLiabilityRepaymentModal?.open({trigger});
+}
+
+function setupHomeLiabilityRepaymentModal() {
+    if (!homeLiabilityRepaymentForm || !openHomeLiabilityRepaymentModalButton) {
+        return;
+    }
+
+    initializeHomeRepaymentDateDefaults();
+    renderHomeRepaymentLiabilityOptions();
+
+    homeLiabilityRepaymentSelect?.addEventListener("change", () => {
+        selectedHomeRepaymentLiabilityId = homeLiabilityRepaymentSelect.value;
+        syncHomeRepaymentSourceAmountFromSelection();
+    });
+
+    homeLiabilityRepaymentSourceTypeInput?.addEventListener("change", () => {
+        applyHomeRepaymentSourceFieldLabel();
+        syncHomeRepaymentSourceAmountFromSelection();
+    });
+
+    homeLiabilityRepaymentSourceAmountInput?.addEventListener("input", updateHomeRepaymentFinalAmountPreview);
+    homeLiabilityRepaymentDateInput?.addEventListener("input", updateHomeRepaymentFinalAmountPreview);
+
+    Object.values(homeLiabilityRepaymentFormControls).forEach((input) => {
+        input?.addEventListener("input", () => input.removeAttribute("aria-invalid"));
+        input?.addEventListener("change", () => input.removeAttribute("aria-invalid"));
+    });
+
+    homeLiabilityRepaymentForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearHomeLiabilityRepaymentFieldHighlights();
+
+        const liabilityId = homeLiabilityRepaymentSelect?.value ?? "";
+        const payload = homeRepaymentPayloadFromForm();
+        const validationError = validateHomeRepaymentPayload(payload);
+        if (validationError === "required") {
+            applyHomeLiabilityRepaymentFieldHighlights({
+                liabilityId: !liabilityId,
+                repaymentDate: !payload.repaymentDate,
+                sourceType: !payload.sourceType,
+                sourceAmount: !payload.sourceAmount
+            });
+            setHomeLiabilityRepaymentFormMessage(liabilityRepaymentMessages["liabilityRepayment.error.required"] ?? "", "error");
+            focusFirstHomeLiabilityRepaymentHighlightedField();
+            return;
+        }
+        if (validationError === "exceedsBalance") {
+            highlightHomeLiabilityRepaymentField(homeLiabilityRepaymentSourceAmountInput);
+            setHomeLiabilityRepaymentFormMessage(liabilityRepaymentMessages["liabilityRepayment.error.amountExceedsBalance"] ?? "", "error");
+            focusFirstHomeLiabilityRepaymentHighlightedField();
+            return;
+        }
+
+        if (homeLiabilityRepaymentSubmitButton) {
+            homeLiabilityRepaymentSubmitButton.disabled = true;
+        }
+        setHomeLiabilityRepaymentFormMessage("");
+
+        try {
+            await saveHomeRepayment(liabilityId, payload);
+            homeLiabilityRepaymentModal?.close();
+            resetHomeLiabilityRepaymentForm();
+            await loadHomeData();
+            toastManager.clear();
+            toastManager.show(liabilityRepaymentMessages["liabilityRepayment.form.success"] ?? "", {type: "success"});
+        } catch (error) {
+            if (error.fieldErrors) {
+                applyHomeLiabilityRepaymentFieldHighlights(error.fieldErrors);
+                focusFirstHomeLiabilityRepaymentHighlightedField();
+            }
+            setHomeLiabilityRepaymentFormMessage(error.message, "error");
+            if (homeLiabilityRepaymentSubmitButton) {
+                homeLiabilityRepaymentSubmitButton.disabled = false;
+            }
+        }
+    });
+
+    openHomeLiabilityRepaymentModalButton.addEventListener("click", async (event) => {
+        if (!shouldOpenModalFromClick(event)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        try {
+            await openHomeLiabilityRepaymentModal(openHomeLiabilityRepaymentModalButton);
+        } catch (error) {
+            console.error(error);
+            toastManager.clear();
+            toastManager.show(error.message, {type: "error"});
+            window.location.href = openHomeLiabilityRepaymentModalButton.href;
+        }
+    });
+}
+
 MoneySnapshotI18n.init({
     endpoint: "/api/home/messages",
     onLanguageChange: ({language, messages}) => {
@@ -433,6 +864,9 @@ MoneySnapshotI18n.init({
         homeMessages = messages;
         snapshotFormController?.handleLanguageChange(messages);
         bulkSnapshotFormController?.handleLanguageChange(messages);
+        loadHomeLiabilityRepaymentMessages(language).catch((error) => {
+            console.error(error);
+        });
         loadHomeData().catch((error) => {
             console.error(error);
         });
@@ -443,6 +877,9 @@ MoneySnapshotI18n.init({
             userSettings = settings;
             snapshotFormController?.updateUserSettings(settings);
             bulkSnapshotFormController?.updateUserSettings(settings);
+        })
+        .then(() => {
+            setupHomeLiabilityRepaymentModal();
         })
         .then(loadHomeData)
         .catch((error) => {

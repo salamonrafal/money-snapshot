@@ -14,10 +14,21 @@
     <section class="table-panel table-panel-wide" aria-labelledby="savings-planning-controls-title">
         <div class="section-header">
             <h2 id="savings-planning-controls-title" data-i18n="savingsPlanning.table.title">Prognoza oszczędnościowa</h2>
-            <div class="section-actions savings-planning-tool-menu">
-                <a href="/savings-planning/forecasts/new.html" class="button primary compact savings-planning-generate-button" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
+            <div class="section-actions topbar-account-actions icon-toolbar" role="toolbar" aria-label="Akcje prognozy oszczędnościowej">
+                <a href="/savings-planning/forecasts/new.html"
+                   class="icon-button secondary topbar-icon-link savings-planning-generate-button"
+                   title="Generuj prognozy"
+                   data-i18n-title="savingsPlanning.actions.generate"
+                   data-i18n-aria-label="savingsPlanning.actions.generate"
+                   aria-label="Generuj prognozy">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 19h16"></path>
+                        <path d="M6 15l4-4 3 3 5-7"></path>
+                        <path d="M16 8h2v2"></path>
+                    </svg>
+                </a>
                 <a href="/savings-planning/settings.html"
-                   class="icon-button secondary savings-planning-settings-button"
+                   class="icon-button secondary topbar-icon-link savings-planning-settings-button"
                    title="Ustawienia oszczędności"
                    data-i18n-title="savingsPlanning.actions.settings"
                    data-i18n-aria-label="savingsPlanning.actions.settings"
@@ -35,7 +46,7 @@
                     </svg>
                 </a>
                 <button type="button"
-                        class="icon-button danger"
+                        class="icon-button danger topbar-icon-link"
                         id="delete-savings-planning-forecasts"
                         title="Wyczyść prognozy"
                         data-i18n-title="savingsPlanning.actions.clear"
@@ -51,7 +62,7 @@
                     </svg>
                 </button>
                 <button type="button"
-                        class="icon-button secondary"
+                        class="icon-button secondary topbar-icon-link"
                         id="refresh-savings-planning"
                         title="Odśwież"
                         data-i18n-title="savingsPlanning.actions.refresh"

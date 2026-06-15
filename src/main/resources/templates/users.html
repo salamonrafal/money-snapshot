@@ -14,9 +14,33 @@
     <section class="table-panel table-panel-wide" aria-labelledby="users-list-title">
             <div class="section-header">
                 <h2 id="users-list-title" data-i18n="users.table.title">Lista użytkowników</h2>
-                <div class="section-actions">
-                    <a class="button primary compact" id="new-user-action" href="/users/new.html" data-i18n="users.actions.add">Dodaj użytkownika</a>
-                    <button type="button" class="button secondary compact" id="refresh-users" data-i18n="users.actions.refresh">Odśwież</button>
+                <div class="section-actions topbar-account-actions icon-toolbar" role="toolbar" aria-label="Akcje użytkowników">
+                    <a href="/users/new.html"
+                       class="icon-button secondary topbar-icon-link"
+                       id="new-user-action"
+                       title="Dodaj użytkownika"
+                       data-i18n-title="users.actions.add"
+                       data-i18n-aria-label="users.actions.add"
+                       aria-label="Dodaj użytkownika">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M19 8v6"></path>
+                            <path d="M16 11h6"></path>
+                        </svg>
+                    </a>
+                    <button type="button"
+                            class="icon-button secondary topbar-icon-link"
+                            id="refresh-users"
+                            title="Odśwież"
+                            data-i18n-title="users.actions.refresh"
+                            data-i18n-aria-label="users.actions.refresh"
+                            aria-label="Odśwież">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                            <path d="M21 3v6h-6"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
             <p class="form-message" id="users-list-message" role="status"></p>
@@ -75,29 +99,33 @@
                     <span class="field-label"><span data-i18n="users.form.email">E-mail</span><span class="required-mark" aria-hidden="true">*</span></span>
                     <input id="new-user-email" type="email" maxlength="180" autocomplete="email" required>
                 </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.firstName">Imię</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <input id="new-user-first-name" type="text" maxlength="120" autocomplete="given-name" required>
-                </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.lastName">Nazwisko</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <input id="new-user-last-name" type="text" maxlength="120" autocomplete="family-name" required>
-                </label>
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.firstName">Imię</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="new-user-first-name" type="text" maxlength="120" autocomplete="given-name" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.lastName">Nazwisko</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="new-user-last-name" type="text" maxlength="120" autocomplete="family-name" required>
+                    </label>
+                </div>
                 <label class="field">
                     <span data-i18n="users.form.description">Krótki opis</span>
                     <textarea id="new-user-description" maxlength="500" rows="4"></textarea>
                 </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <select id="new-user-role" required></select>
-                </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <select id="new-user-status" required>
-                        <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
-                        <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
-                    </select>
-                </label>
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-user-role" required></select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-user-status" required>
+                            <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
+                            <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
+                        </select>
+                    </label>
+                </div>
                 <label class="field">
                     <span class="field-label"><span data-i18n="users.form.password">Hasło</span><span class="required-mark" aria-hidden="true">*</span></span>
                     <input id="new-user-password" type="password" minlength="8" maxlength="120" autocomplete="new-password" required>
@@ -144,29 +172,33 @@
                     <span class="field-label"><span data-i18n="users.form.email">E-mail</span><span class="required-mark" aria-hidden="true">*</span></span>
                     <input id="edit-user-email" type="email" maxlength="180" autocomplete="email" required>
                 </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.firstName">Imię</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <input id="edit-user-first-name" type="text" maxlength="120" autocomplete="given-name" required>
-                </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.lastName">Nazwisko</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <input id="edit-user-last-name" type="text" maxlength="120" autocomplete="family-name" required>
-                </label>
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.firstName">Imię</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="edit-user-first-name" type="text" maxlength="120" autocomplete="given-name" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.lastName">Nazwisko</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input id="edit-user-last-name" type="text" maxlength="120" autocomplete="family-name" required>
+                    </label>
+                </div>
                 <label class="field">
                     <span data-i18n="users.form.description">Krótki opis</span>
                     <textarea id="edit-user-description" maxlength="500" rows="4"></textarea>
                 </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <select id="edit-user-role" required></select>
-                </label>
-                <label class="field">
-                    <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <select id="edit-user-status" required>
-                        <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
-                        <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
-                    </select>
-                </label>
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-user-role" required></select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-user-status" required>
+                            <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
+                            <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
+                        </select>
+                    </label>
+                </div>
                 <label class="field">
                     <span data-i18n="users.form.password">Hasło</span>
                     <input id="edit-user-password" type="password" minlength="8" maxlength="120" autocomplete="new-password">
