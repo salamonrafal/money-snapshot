@@ -123,12 +123,45 @@ body {
     color: var(--text);
 }
 
+html.modal-scroll-locked,
+html.shortcuts-launcher-scroll-locked {
+    overflow-y: scroll;
+}
+
 body.modal-open {
     position: fixed;
     top: calc(var(--modal-scroll-top, 0px) * -1);
     left: 0;
-    width: calc(100% - var(--modal-scrollbar-width, 0px));
+    right: 0;
+    width: 100%;
+    padding-top: var(--topbar-lock-height, 0px);
     overflow: hidden;
+}
+
+body.modal-open .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+}
+
+body.shortcuts-launcher-open {
+    position: fixed;
+    top: calc(var(--shortcuts-launcher-scroll-top, 0px) * -1);
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding-top: var(--topbar-lock-height, 0px);
+    overflow: hidden;
+}
+
+body.shortcuts-launcher-open .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
 }
 
 .login-page {
@@ -834,6 +867,183 @@ h1 {
 
 .reports-main {
     min-width: 0;
+}
+
+.shortcuts-launcher-dock {
+    position: fixed;
+    right: 24px;
+    bottom: 0;
+    z-index: 35;
+    width: max-content;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+@media (max-width: 760px) {
+    .shortcuts-launcher-dock {
+        right: 16px;
+    }
+}
+
+.shortcuts-launcher-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 2px);
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: var(--surface);
+    color: var(--muted);
+    box-shadow: none;
+    cursor: pointer;
+    pointer-events: auto;
+    transform: translateY(calc(-100% + 1px));
+    opacity: 1;
+    transition: opacity 0.16s ease;
+}
+
+.shortcuts-launcher-button:hover,
+.shortcuts-launcher-button:focus-visible {
+    background: var(--surface);
+    color: var(--muted);
+}
+
+body.shortcuts-launcher-open .shortcuts-launcher-button {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.shortcuts-launcher-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.shortcuts-launcher-button span {
+    font-weight: 800;
+    font-size: 0.84rem;
+}
+
+.shortcuts-launcher-panel {
+    position: fixed;
+    inset: var(--shortcuts-launcher-top, 0px) 0 0;
+    z-index: 34;
+    overflow: hidden;
+    padding: 8px var(--page-padding) 0;
+    background: var(--background);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+
+.shortcuts-launcher-panel.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.shortcuts-launcher-surface {
+    position: relative;
+    display: grid;
+    gap: 0;
+    width: min(1380px, 100%);
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 0 16px;
+    overflow: hidden;
+    transform: translateY(56px);
+    opacity: 0;
+    transition: transform 0.26s ease, opacity 0.22s ease;
+}
+
+.shortcuts-launcher-panel.is-open .shortcuts-launcher-surface {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.shortcuts-launcher-header {
+    position: absolute;
+    top: 12px;
+    right: 0;
+    z-index: 1;
+}
+
+.shortcuts-launcher-close {
+    flex: 0 0 auto;
+}
+
+.shortcuts-launcher-close.icon-button.secondary,
+.shortcuts-launcher-close.icon-button.secondary:hover,
+.shortcuts-launcher-close.icon-button.secondary:focus,
+.shortcuts-launcher-close.icon-button.secondary:focus-visible,
+.shortcuts-launcher-close.icon-button.secondary:active {
+    background: var(--surface);
+    opacity: 1;
+}
+
+.shortcuts-launcher-sections {
+    margin: 0;
+    padding: 28px 0 0;
+    gap: 18px;
+}
+
+.shortcuts-launcher-sections.feature-sections {
+    margin: 0;
+    padding-top: 28px;
+}
+
+.shortcuts-launcher-sections .feature-section {
+    gap: 10px;
+}
+
+.shortcuts-launcher-features {
+    gap: 12px;
+}
+
+.shortcuts-launcher-features article {
+    min-height: 100%;
+    padding: 16px 14px 12px;
+}
+
+.shortcuts-launcher-features .feature-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+}
+
+.shortcuts-launcher-features .feature-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.shortcuts-launcher-features h2 {
+    font-size: 0.96rem;
+}
+
+.shortcuts-launcher-features p {
+    margin-top: 8px;
+    font-size: 0.86rem;
+    line-height: 1.45;
+}
+
+.shortcuts-launcher-features .feature-actions {
+    margin-top: 12px;
+    gap: 6px;
+}
+
+.shortcuts-launcher-features .feature-action {
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 0.76rem;
+}
+
+@media (max-width: 1024px) {
+    .shortcuts-launcher-surface {
+        overflow-y: auto;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    }
 }
 
 .reports-toolbar {
@@ -4082,7 +4292,8 @@ td:nth-child(5) {
     }
 
     .topbar {
-        position: relative;
+        position: sticky;
+        top: 0;
         align-items: center;
         gap: 16px;
     }

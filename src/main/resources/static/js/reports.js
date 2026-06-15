@@ -37,7 +37,6 @@ const historyTableBody = document.querySelector("#history-table-body");
 const reportsNavElement = document.querySelector(".reports-nav");
 const reportsNavLinks = document.querySelectorAll(".reports-nav a[data-target]");
 const reportsNavPanel = document.querySelector(".reports-nav-panel");
-const topbarElement = document.querySelector(".topbar");
 const reportFilterButtons = document.querySelectorAll(".report-filter-button");
 const reportPdfButtons = document.querySelectorAll(".report-pdf-button[data-report-section]");
 const reportsNavStickyMedia = window.matchMedia("(min-width: 861px)");
@@ -457,12 +456,14 @@ function updateReportsNavPanelStickyState() {
         return;
     }
 
+    const topbarElement = document.querySelector(".topbar");
     const stickyTop = topbarElement ? topbarElement.getBoundingClientRect().height + 12 : 0;
     const rect = reportsNavPanel.getBoundingClientRect();
     reportsNavPanel.classList.toggle("is-stuck", reportsNavStickyEnabled && rect.top <= stickyTop);
 }
 
 function updateReportsNavStickyOffset() {
+    const topbarElement = document.querySelector(".topbar");
     const stickyTop = topbarElement ? topbarElement.getBoundingClientRect().height : 0;
     document.documentElement.style.setProperty("--reports-nav-sticky-top", `${Math.round(stickyTop)}px`);
 }

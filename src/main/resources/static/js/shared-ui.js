@@ -395,14 +395,50 @@ window.MoneySnapshotUi = (() => {
             inertedElements = [];
         }
 
+        function lockTargets() {
+            document.querySelectorAll("[data-modal-lock-on-open]").forEach((element) => {
+                if (!(element instanceof HTMLElement)) {
+                    return;
+                }
+
+                const rect = element.getBoundingClientRect();
+                element.dataset.modalLocked = "true";
+                element.style.position = "fixed";
+                element.style.top = `${Math.round(rect.top)}px`;
+                element.style.left = `${Math.round(rect.left)}px`;
+                element.style.width = `${Math.round(rect.width)}px`;
+                element.style.marginTop = "0";
+            });
+        }
+
+        function unlockTargets() {
+            document.querySelectorAll("[data-modal-lock-on-open][data-modal-locked='true']").forEach((element) => {
+                if (!(element instanceof HTMLElement)) {
+                    return;
+                }
+
+                delete element.dataset.modalLocked;
+                element.style.removeProperty("position");
+                element.style.removeProperty("top");
+                element.style.removeProperty("left");
+                element.style.removeProperty("width");
+                element.style.removeProperty("margin-top");
+            });
+        }
+
         function open({trigger = document.activeElement} = {}) {
             lastActiveElement = trigger instanceof HTMLElement ? trigger : null;
             hideTooltip(lastActiveElement);
             modal.hidden = false;
             modalScrollTop = window.scrollY || window.pageYOffset || 0;
-            const modalScrollbarWidth = Math.max(window.innerWidth - document.documentElement.clientWidth, 0);
+            const topbarElement = document.querySelector(".topbar");
+            const topbarHeight = topbarElement instanceof HTMLElement
+                ? Math.round(topbarElement.getBoundingClientRect().height)
+                : 0;
+            lockTargets();
             document.body.style.setProperty("--modal-scroll-top", `${modalScrollTop}px`);
-            document.body.style.setProperty("--modal-scrollbar-width", `${modalScrollbarWidth}px`);
+            document.body.style.setProperty("--topbar-lock-height", `${topbarHeight}px`);
+            document.documentElement.classList.add("modal-scroll-locked");
             document.body.classList.add("modal-open");
             setPageInert(true);
             window.requestAnimationFrame(focusFirstElement);
@@ -412,9 +448,11 @@ window.MoneySnapshotUi = (() => {
             modal.hidden = true;
             setPageInert(false);
             document.body.classList.remove("modal-open");
+            document.documentElement.classList.remove("modal-scroll-locked");
             document.body.style.removeProperty("--modal-scroll-top");
-            document.body.style.removeProperty("--modal-scrollbar-width");
+            document.body.style.removeProperty("--topbar-lock-height");
             window.scrollTo(0, modalScrollTop);
+            unlockTargets();
             const nextActiveElement = lastActiveElement;
             lastActiveElement = null;
             if (nextActiveElement?.isConnected) {

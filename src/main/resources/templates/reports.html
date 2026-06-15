@@ -264,7 +264,7 @@
     </section>
         </div>
 
-        <aside class="table-panel reports-nav-panel" aria-labelledby="reports-nav-title">
+        <aside class="table-panel reports-nav-panel" aria-labelledby="reports-nav-title" data-shortcuts-lock-on-open data-modal-lock-on-open>
             <div class="reports-toolbar" role="toolbar" aria-labelledby="reports-toolbar-title">
                 <span class="visually-hidden" id="reports-toolbar-title" data-i18n="reports.cache.title">Narzędzia cache</span>
                 <div class="reports-toolbar-actions">
@@ -284,5 +284,6 @@
         </aside>
     </div>
 </main>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcher}"></th:block>
 </body>
 </html>
