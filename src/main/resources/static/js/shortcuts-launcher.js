@@ -61,10 +61,51 @@
         }
 
         let lastTrigger = null;
+        let inertedElements = [];
         let scrollTop = 0;
+        const focusableSelector = "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
         function isOpen() {
             return !panel.hidden && panel.classList.contains("is-open");
+        }
+
+        function focusableElements() {
+            return [...panel.querySelectorAll(focusableSelector)]
+                .filter((element) => element instanceof HTMLElement && !element.hidden && element.offsetParent !== null);
+        }
+
+        function focusFirstElement() {
+            const focusTarget = focusableElements()[0];
+            if (focusTarget instanceof HTMLElement) {
+                focusTarget.focus();
+                return;
+            }
+
+            panel.focus();
+        }
+
+        function setPageInert(isInert) {
+            if (isInert) {
+                inertedElements = [...document.body.children]
+                    .filter((element) => element instanceof HTMLElement
+                        && element !== root
+                        && !element.contains(root))
+                    .map((element) => ({
+                        element,
+                        wasInert: element.inert
+                    }));
+                inertedElements.forEach(({element}) => {
+                    element.inert = true;
+                });
+                return;
+            }
+
+            inertedElements.forEach(({element, wasInert}) => {
+                if (element.isConnected) {
+                    element.inert = wasInert;
+                }
+            });
+            inertedElements = [];
         }
 
         function open(trigger = button) {
@@ -83,18 +124,22 @@
             button.setAttribute("aria-expanded", "true");
             lastTrigger = trigger instanceof HTMLElement ? trigger : button;
             button.blur();
+            setPageInert(true);
             window.requestAnimationFrame(() => {
                 panel.classList.add("is-open");
                 if (closeButton instanceof HTMLElement) {
                     closeButton.dataset.suppressTooltipOnFocusOnce = "true";
                     closeButton.focus();
+                    return;
                 }
+                focusFirstElement();
             });
         }
 
         function close() {
             MoneySnapshotUi.dismissTooltip();
             panel.classList.remove("is-open");
+            setPageInert(false);
             button.setAttribute("aria-expanded", "false");
             document.body.classList.remove("shortcuts-launcher-open");
             document.documentElement.classList.remove("shortcuts-launcher-scroll-locked");
@@ -111,14 +156,15 @@
 
             panel.addEventListener("transitionend", finalizeClose, {once: true});
 
-            if (lastTrigger instanceof HTMLElement) {
+            const focusTarget = lastTrigger;
+            lastTrigger = null;
+            if (focusTarget instanceof HTMLElement) {
                 window.requestAnimationFrame(() => {
                     MoneySnapshotUi.dismissTooltip();
-                    lastTrigger.dataset.suppressTooltipOnFocusOnce = "true";
-                    lastTrigger.focus();
+                    focusTarget.dataset.suppressTooltipOnFocusOnce = "true";
+                    focusTarget.focus();
                 });
             }
-            lastTrigger = null;
         }
 
         button.addEventListener("click", () => {
@@ -159,6 +205,26 @@
 
             if (event.key === "Escape") {
                 close();
+                return;
+            }
+
+            if (event.key === "Tab") {
+                const focusable = focusableElements();
+                if (focusable.length === 0) {
+                    event.preventDefault();
+                    panel.focus();
+                    return;
+                }
+
+                const firstElement = focusable[0];
+                const lastElement = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === firstElement) {
+                    event.preventDefault();
+                    lastElement.focus();
+                } else if (!event.shiftKey && document.activeElement === lastElement) {
+                    event.preventDefault();
+                    firstElement.focus();
+                }
                 return;
             }
 

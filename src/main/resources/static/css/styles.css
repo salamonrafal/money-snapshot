@@ -952,7 +952,8 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
     height: 100%;
     margin: 0 auto;
     padding: 0 0 16px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     transform: translateY(56px);
     opacity: 0;
     transition: transform 0.26s ease, opacity 0.22s ease;
@@ -1041,7 +1042,6 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 
 @media (max-width: 1024px) {
     .shortcuts-launcher-surface {
-        overflow-y: auto;
         padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     }
 }
