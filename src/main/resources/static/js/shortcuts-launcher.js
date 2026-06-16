@@ -51,6 +51,22 @@
         return Boolean(scrollableElement && scrollableElement.scrollHeight > scrollableElement.clientHeight);
     }
 
+    function focusedControlUsesKey(target, key) {
+        if (!(target instanceof Element)) {
+            return false;
+        }
+
+        if (target.closest("input, textarea, select, [contenteditable='true']")) {
+            return true;
+        }
+
+        if (key === " " && target.closest("button, [role='button']")) {
+            return true;
+        }
+
+        return false;
+    }
+
     roots.forEach((root) => {
         const button = root.querySelector("[data-shortcuts-launcher-button]");
         const panel = root.querySelector("[data-shortcuts-launcher-panel]");
@@ -229,7 +245,9 @@
             }
 
             const scrollKeys = new Set([" ", "PageDown", "PageUp", "End", "Home", "ArrowDown", "ArrowUp"]);
-            if (scrollKeys.has(event.key) && !isScrollableWithinLauncher(document.activeElement)) {
+            if (scrollKeys.has(event.key)
+                && !focusedControlUsesKey(document.activeElement, event.key)
+                && !isScrollableWithinLauncher(document.activeElement)) {
                 event.preventDefault();
             }
         });
