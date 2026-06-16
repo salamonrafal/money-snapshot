@@ -903,7 +903,8 @@ h1 {
     pointer-events: auto;
     transform: translateY(calc(-100% + 1px));
     opacity: 1;
-    transition: opacity 0.16s ease;
+    visibility: visible;
+    transition: opacity 0.16s ease, visibility 0s linear 0s;
 }
 
 .shortcuts-launcher-button:hover,
@@ -914,7 +915,9 @@ h1 {
 
 body.shortcuts-launcher-open .shortcuts-launcher-button {
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
+    transition-delay: 0s, 0.16s;
 }
 
 .shortcuts-launcher-button svg {

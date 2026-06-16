@@ -127,8 +127,8 @@
         function open(trigger = button) {
             MoneySnapshotUi.dismissTooltip();
             updateLauncherOffset();
-            lockTargets();
             scrollTop = window.scrollY || window.pageYOffset || 0;
+            lockTargets();
             const topbarHeight = topbarElement instanceof HTMLElement
                 ? Math.round(topbarElement.getBoundingClientRect().height)
                 : 0;
