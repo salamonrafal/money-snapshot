@@ -87,7 +87,7 @@
             <p data-i18n="savingsPlanning.empty.description">Wygeneruj pierwszy zestaw prognoz, aby zobaczyć przewidywane salda dla wszystkich kont.</p>
             <a href="/savings-planning/forecasts/new.html" class="button primary savings-planning-generate-button" data-i18n="savingsPlanning.actions.generate">Generuj prognozy</a>
         </div>
-        <div class="savings-forecast-sticky-head-wrap" id="savings-planning-sticky-head-wrap" hidden>
+        <div class="savings-forecast-sticky-head-wrap" id="savings-planning-sticky-head-wrap" data-shortcuts-lock-on-open hidden>
             <table class="savings-forecast-table savings-forecast-sticky-head-table" id="savings-planning-sticky-head-table" aria-hidden="true">
                 <colgroup id="savings-planning-sticky-colgroup">
                     <col class="savings-forecast-date-col">
@@ -118,6 +118,7 @@
         </div>
     </section>
 </main>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
 <div th:replace="~{fragments/page :: confirmDeleteModal(
         'delete-savings-forecasts-modal',
         'delete-savings-forecasts-title',

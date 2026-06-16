@@ -880,19 +880,90 @@ h1 {
     pointer-events: none;
 }
 
+.shortcuts-launcher-dock-bar {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    transform: none;
+}
+
 @media (max-width: 760px) {
     .shortcuts-launcher-dock {
         right: 16px;
     }
+
+    .shortcuts-launcher-dock-bar {
+        left: 0;
+        right: 0;
+    }
+}
+
+.shortcuts-launcher-bar {
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 52px;
+    padding: 0 var(--page-padding);
+    transform: translateY(calc(-100% + 1px));
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.16s ease, visibility 0s linear 0s;
+}
+
+.shortcuts-launcher-bar::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100% + 1px);
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    pointer-events: none;
+}
+
+.shortcuts-launcher-bar-button.icon-button {
+    position: relative;
+    z-index: 1;
+    width: 56px;
+    height: 100%;
+    place-items: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+    pointer-events: auto;
+}
+
+.shortcuts-launcher-bar-button.icon-button.secondary {
+    border: 0;
+    background: transparent;
+}
+
+.shortcuts-launcher-bar-button.icon-button:hover,
+.shortcuts-launcher-bar-button.icon-button:focus-visible,
+.shortcuts-launcher-bar-button.icon-button.secondary:hover,
+.shortcuts-launcher-bar-button.icon-button.secondary:focus-visible {
+    color: var(--accent-strong);
+    border: 0;
+    background: color-mix(in srgb, var(--surface) 82%, var(--accent-wash-subtle));
 }
 
 .shortcuts-launcher-button {
+    box-sizing: border-box;
     position: relative;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    min-height: 40px;
-    padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 2px);
+    min-height: calc(40px + env(safe-area-inset-bottom, 0px));
+    padding: env(safe-area-inset-bottom, 0px) 14px env(safe-area-inset-bottom, 0px);
     border: 1px solid var(--line);
     border-bottom: 0;
     border-radius: 8px 8px 0 0;
@@ -920,7 +991,16 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
     transition-delay: 0s, 0.16s;
 }
 
+body.shortcuts-launcher-open .shortcuts-launcher-bar {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.16s ease, visibility 0s linear 0.16s;
+}
+
 .shortcuts-launcher-button svg {
+    display: block;
+    flex: 0 0 auto;
     width: 16px;
     height: 16px;
 }
@@ -928,6 +1008,7 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 .shortcuts-launcher-button span {
     font-weight: 800;
     font-size: 0.84rem;
+    line-height: 1;
 }
 
 .shortcuts-launcher-panel {
@@ -956,7 +1037,7 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
     width: min(1380px, 100%);
     height: 100%;
     margin: 0 auto;
-    padding: 52px 52px 16px 0;
+    padding: 12px 52px 16px 0;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-gutter: stable;
@@ -971,10 +1052,10 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 }
 
 .shortcuts-launcher-header {
-    position: absolute;
-    top: 12px;
-    right: 0;
     z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
 }
 
 .shortcuts-launcher-close {
@@ -1060,7 +1141,7 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 
 @media (max-width: 1024px) {
     .shortcuts-launcher-header {
-        right: 16px;
+        padding-right: 16px;
     }
 
     .shortcuts-launcher-surface {
@@ -1835,8 +1916,17 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 
 .banks-accounts-nested-table th:nth-child(5),
 .banks-accounts-nested-table td:nth-child(5) {
-    width: 14%;
+    width: 124px;
     text-align: center;
+    white-space: nowrap;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.banks-accounts-nested-table .row-actions {
+    gap: 4px;
+    width: max-content;
+    margin-inline: auto;
 }
 
 .bank-account-highlight > td {
@@ -2130,7 +2220,7 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 
 .report-controls.icon-toolbar > :first-child,
 .report-controls.icon-toolbar > :last-child {
-    overflow: hidden;
+    overflow: visible;
 }
 
 .report-controls.icon-toolbar > :first-child {
@@ -2456,9 +2546,9 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 }
 
 .reports-table.liabilities-table {
-    width: max(100%, 860px);
-    min-width: 860px;
-    table-layout: fixed;
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
 }
 
 .reports-table.liabilities-table col.liabilities-col-name {
@@ -2480,7 +2570,7 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 }
 
 .reports-table.liabilities-table col.liabilities-col-actions {
-    width: 12%;
+    width: 1%;
 }
 
 .reports-table.liabilities-table th:nth-child(1),
@@ -2522,7 +2612,9 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 }
 
 .reports-table.liabilities-table td:nth-child(7) {
-    white-space: normal;
+    white-space: nowrap;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 .liability-summary-row:not(:first-of-type) td {
@@ -2584,6 +2676,9 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
 .liability-row-actions {
     flex-wrap: nowrap;
     justify-content: center;
+    gap: 4px;
+    width: max-content;
+    margin-inline: auto;
 }
 
 .liability-toggle[aria-expanded="true"] .liability-toggle-chevron {
@@ -2684,7 +2779,7 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
     .reports-table.liabilities-table col.liabilities-col-original-amount,
     .reports-table.liabilities-table col.liabilities-col-repayment-amount,
     .reports-table.liabilities-table col.liabilities-col-current-amount {
-        width: 15%;
+        width: 14%;
     }
 
     .reports-table.liabilities-table col.liabilities-col-end-date,
@@ -2693,16 +2788,12 @@ body.shortcuts-launcher-open .shortcuts-launcher-button {
     }
 
     .reports-table.liabilities-table col.liabilities-col-actions {
-        width: 12%;
+        width: 1%;
     }
 
     .reports-table.liabilities-table th,
     .reports-table.liabilities-table td {
         padding: 9px 6px;
-    }
-
-    .liability-row-actions {
-        gap: 6px;
     }
 }
 
@@ -3816,9 +3907,9 @@ td:nth-child(5) {
 }
 
 .snapshot-form-modal-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     gap: 16px;
     padding: clamp(18px, 3vw, 28px) clamp(18px, 3vw, 28px) 0;
 }
@@ -4235,12 +4326,25 @@ td:nth-child(5) {
     }
 
     .banks-accounts-panels .section-header {
-        align-items: stretch;
-        flex-direction: column;
+        align-items: center;
+        flex-direction: row;
+        justify-content: flex-start;
+        width: 100%;
+        margin-right: 0;
+    }
+
+    .banks-accounts-panels .section-header > h2 {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin-right: 12px;
     }
 
     .banks-accounts-panels .section-actions {
-        justify-content: flex-start;
+        justify-content: flex-end;
+        margin-left: auto;
+        padding-right: 0;
+        flex-shrink: 0;
+        align-self: center;
     }
 
     .banks-accounts-table {
@@ -4248,7 +4352,60 @@ td:nth-child(5) {
     }
 
     .banks-accounts-nested-table {
-        min-width: 520px;
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+        font-size: 0.78rem;
+    }
+
+    .banks-accounts-nested-wrap {
+        overflow-x: clip;
+    }
+
+    .banks-accounts-nested-table th,
+    .banks-accounts-nested-table td {
+        padding: 8px 6px;
+    }
+
+    .banks-accounts-nested-table th:nth-child(1),
+    .banks-accounts-nested-table td:nth-child(1) {
+        width: 32%;
+    }
+
+    .banks-accounts-nested-table th:nth-child(2),
+    .banks-accounts-nested-table td:nth-child(2) {
+        width: 18%;
+    }
+
+    .banks-accounts-nested-table th:nth-child(3),
+    .banks-accounts-nested-table td:nth-child(3),
+    .banks-accounts-nested-table th:nth-child(4),
+    .banks-accounts-nested-table td:nth-child(4) {
+        width: 12%;
+    }
+
+    .banks-accounts-nested-table th:nth-child(5),
+    .banks-accounts-nested-table td:nth-child(5) {
+        width: 106px;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+    .banks-accounts-nested-table .row-actions {
+        gap: 2px;
+    }
+
+    .banks-accounts-nested-table .row-actions > .icon-button,
+    .banks-accounts-nested-table .row-actions > a.icon-button,
+    .banks-accounts-nested-table .row-actions > button.icon-button {
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .banks-accounts-nested-table .icon-button svg {
+        width: 16px;
+        height: 16px;
     }
 
     .snapshots-table {
@@ -4459,13 +4616,12 @@ td:nth-child(5) {
     }
 
     .snapshot-form-modal-header {
-        flex-direction: column;
-        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
     }
 
     .snapshot-form-modal-close {
-        align-self: flex-end;
-        margin: 0;
+        align-self: start;
     }
 
     .snapshot-form-modal .form-grid {
