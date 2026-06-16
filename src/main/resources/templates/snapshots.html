@@ -111,6 +111,7 @@
         </div>
     </section>
 </main>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
 <div th:replace="~{fragments/snapshot-form :: snapshotFormModal('snapshot-form-modal', 'snapshot-form-modal-title', 'create')}"></div>
 <div th:replace="~{fragments/snapshot-form :: snapshotFormModal('edit-snapshot-form-modal', 'edit-snapshot-form-modal-title', 'edit')}"></div>
 <div th:replace="~{fragments/snapshot-bulk-form :: snapshotBulkFormModal('bulk-snapshot-form-modal', 'bulk-snapshot-form-modal-title')}"></div>
