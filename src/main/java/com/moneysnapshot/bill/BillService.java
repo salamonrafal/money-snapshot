@@ -10,10 +10,12 @@ import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.shared.normalization.NameNormalizationService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,9 @@ public class BillService {
     private final NameNormalizationService normalizer;
     private final CurrentUserService currentUserService;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
+    @Autowired
     public BillService(
             BillRepository billRepository,
             BillScheduleEntryRepository billScheduleEntryRepository,
@@ -39,6 +43,28 @@ public class BillService {
             CurrentUserService currentUserService,
             ApplicationEventPublisher eventPublisher
     ) {
+        this(
+                billRepository,
+                billScheduleEntryRepository,
+                accountRepository,
+                counterpartyRepository,
+                normalizer,
+                currentUserService,
+                eventPublisher,
+                Clock.systemDefaultZone()
+        );
+    }
+
+    BillService(
+            BillRepository billRepository,
+            BillScheduleEntryRepository billScheduleEntryRepository,
+            AccountRepository accountRepository,
+            CounterpartyRepository counterpartyRepository,
+            NameNormalizationService normalizer,
+            CurrentUserService currentUserService,
+            ApplicationEventPublisher eventPublisher,
+            Clock clock
+    ) {
         this.billRepository = billRepository;
         this.billScheduleEntryRepository = billScheduleEntryRepository;
         this.accountRepository = accountRepository;
@@ -46,6 +72,7 @@ public class BillService {
         this.normalizer = normalizer;
         this.currentUserService = currentUserService;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
     public List<Bill> listBills() {
@@ -89,7 +116,9 @@ public class BillService {
 
         Bill saved = billRepository.save(bill);
         billRepository.flush();
-        eventPublisher.publishEvent(new BillScheduleRegenerationRequestedEvent(saved.getId(), false));
+        if (saved.getStatus() != BillStatus.COMPLETED) {
+            eventPublisher.publishEvent(new BillScheduleRegenerationRequestedEvent(saved.getId(), false));
+        }
         return saved;
     }
 
@@ -109,7 +138,7 @@ public class BillService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found."));
         Counterparty counterparty = counterpartyRepository.findByIdAndOwnerId(request.counterpartyId(), ownerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Counterparty not found."));
-        boolean scheduleRegenerationRequired = scheduleRegenerationRequired(bill, request, account);
+        boolean scheduleStructureChanged = scheduleStructureChanged(bill, request, account);
 
         bill.updateDetails(
                 counterparty,
@@ -128,7 +157,7 @@ public class BillService {
 
         Bill saved = billRepository.save(bill);
         billRepository.flush();
-        if (scheduleRegenerationRequired) {
+        if (scheduleStructureChanged && saved.getStatus() != BillStatus.COMPLETED) {
             eventPublisher.publishEvent(new BillScheduleRegenerationRequestedEvent(saved.getId(), true));
         }
         return saved;
@@ -183,7 +212,7 @@ public class BillService {
         return amount.stripTrailingZeros().scale() < 0 ? amount.setScale(0) : amount;
     }
 
-    private boolean scheduleRegenerationRequired(Bill bill, CreateBillRequest request, Account account) {
+    private boolean scheduleStructureChanged(Bill bill, CreateBillRequest request, Account account) {
         BigDecimal normalizedAmount = normalizeAmount(request.amount());
         LocalDate nextEndDate = request.durationType() == BillDurationType.UNTIL_DATE ? request.endDate() : null;
         Integer nextInstallmentCount = request.durationType() == BillDurationType.INSTALLMENTS ? request.installmentCount() : null;
@@ -194,8 +223,7 @@ public class BillService {
                 || !Objects.equals(bill.getInstallmentCount(), nextInstallmentCount)
                 || !Objects.equals(bill.getRepaymentDay(), request.repaymentDay())
                 || !Objects.equals(bill.getStartFrom(), request.startFrom())
-                || !Objects.equals(bill.getCurrencyCode(), account.getCurrencyCode())
-                || requiresScheduleStatusRefresh(bill.getStatus(), request.status());
+                || !Objects.equals(bill.getCurrencyCode(), account.getCurrencyCode());
     }
 
     private boolean differsNumerically(BigDecimal currentValue, BigDecimal nextValue) {
@@ -205,12 +233,6 @@ public class BillService {
 
         return currentValue.compareTo(nextValue) != 0;
     }
-
-    private boolean requiresScheduleStatusRefresh(BillStatus currentStatus, BillStatus nextStatus) {
-        return currentStatus != nextStatus
-                && (currentStatus == BillStatus.COMPLETED || nextStatus == BillStatus.COMPLETED);
-    }
-
     private boolean exceedsFixedDateGenerationWindow(LocalDate startFrom, LocalDate endDate, Integer repaymentDay) {
         if (startFrom == null || endDate == null || repaymentDay == null) {
             return false;

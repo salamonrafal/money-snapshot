@@ -210,6 +210,68 @@ class BillScheduleServiceTest {
     }
 
     @Test
+    void listScheduleDoesNotAppendEntriesForCompletedOpenEndedBill() {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        Account account = new Account(bank, owner, "Personal PLN", "personal-pln", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+
+        com.moneysnapshot.counterparty.Counterparty counterparty = new com.moneysnapshot.counterparty.Counterparty(
+                owner,
+                "Orange Polska",
+                "orange-polska",
+                "12121212121212121212121212",
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(counterparty, "id", UUID.randomUUID());
+
+        Bill bill = new Bill(
+                owner,
+                counterparty,
+                account,
+                "Internet domowy",
+                "internet-domowy",
+                "PLN",
+                new BigDecimal("189.99"),
+                BillDurationType.OPEN_ENDED,
+                null,
+                null,
+                5,
+                LocalDate.of(2026, 1, 1),
+                BillStatus.COMPLETED
+        );
+        ReflectionTestUtils.setField(bill, "id", billId);
+
+        BillScheduleService service = new BillScheduleService(
+                billRepository,
+                billScheduleEntryRepository,
+                currentUserService,
+                Clock.fixed(Instant.parse("2026-06-22T09:00:00Z"), ZoneId.of("Europe/Warsaw"))
+        );
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
+        when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(0L);
+        when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
+                billId,
+                ownerId,
+                LocalDate.of(2026, 6, 22),
+                PageRequest.of(0, 12)
+        ))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        service.listSchedule(billId, PageRequest.of(0, 12));
+
+        verify(billScheduleEntryRepository, never()).saveAll(any());
+        verify(billRepository, never()).findByIdAndOwnerIdForUpdate(billId, ownerId);
+    }
+
+    @Test
     void listScheduleDoesNotExpandOpenEndedEntriesWhenTheFirstPageIsLarger() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();

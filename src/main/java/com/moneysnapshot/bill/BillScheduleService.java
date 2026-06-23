@@ -165,6 +165,9 @@ public class BillScheduleService {
     }
 
     private void appendOpenEndedScheduleEntries(Bill bill, UUID ownerId, LocalDate today, int entriesToGenerate, boolean bootstrap) {
+        if (bill.getStatus() == BillStatus.COMPLETED) {
+            return;
+        }
         BillScheduleEntry lastEntry = billScheduleEntryRepository
                 .findFirstByBillIdAndOwnerIdOrderByDueDateDescInstallmentNumberDesc(bill.getId(), ownerId)
                 .orElse(null);
