@@ -88,6 +88,38 @@ public class HomeController {
         return messageBundleService.reportPageMessages(resolveLocale(lang, acceptLanguage));
     }
 
+    @GetMapping("/counterparties/messages")
+    public Map<String, String> counterpartyMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.counterpartyPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/counterparty-form/messages")
+    public Map<String, String> counterpartyFormMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.counterpartyFormPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/bills/messages")
+    public Map<String, String> billsMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.billsPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/bill-schedule/messages")
+    public Map<String, String> billScheduleMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.billSchedulePageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
     @GetMapping("/users/messages")
     public Map<String, String> userMessages(
             @RequestParam(required = false) String lang,

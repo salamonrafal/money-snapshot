@@ -15,6 +15,37 @@ window.MoneySnapshotUi = (() => {
             billingMonthStartDay: "1"
         }
     };
+    const polishBankCodeToName = Object.freeze({
+        "1010": "Narodowy Bank Polski",
+        "1020": "PKO Bank Polski",
+        "1030": "Citi Handlowy",
+        "1050": "ING Bank Slaski",
+        "1090": "Santander Bank Polska",
+        "1130": "Bank Gospodarstwa Krajowego",
+        "1140": "mBank",
+        "1160": "Bank Millennium",
+        "1240": "Bank Pekao",
+        "1320": "Bank Pocztowy",
+        "1540": "BOS Bank",
+        "1600": "BNP Paribas Bank Polska",
+        "1610": "SGB-Bank",
+        "1680": "Plus Bank",
+        "1750": "Raiffeisen Digital Bank",
+        "1840": "Societe Generale",
+        "1870": "Nest Bank",
+        "1910": "Deutsche Bank Polska",
+        "1930": "Bank Polskiej Spoldzielczosci",
+        "1940": "Credit Agricole Bank Polska",
+        "1950": "Idea Bank",
+        "2030": "BNP Paribas Bank Polska",
+        "2120": "Santander Consumer Bank",
+        "2130": "Volkswagen Bank",
+        "2140": "Fiat Bank",
+        "2160": "Toyota Bank",
+        "2190": "DNB Bank Polska",
+        "2480": "VeloBank",
+        "2490": "Alior Bank"
+    });
     let settingsPromise = null;
     let tooltipElement = null;
     let activeTooltipTarget = null;
@@ -140,6 +171,50 @@ window.MoneySnapshotUi = (() => {
             tooltipElement.hidden = true;
             tooltipElement.textContent = "";
         }
+    }
+
+    function shouldReserveScrollbarSpace() {
+        const root = document.documentElement;
+        return root.scrollHeight > root.clientHeight;
+    }
+
+    function normalizeBankAccountNumber(value) {
+        return typeof value === "string" ? value.replace(/\s+/g, "").toUpperCase() : "";
+    }
+
+    function formatBankAccountNumber(value) {
+        const normalized = normalizeBankAccountNumber(value);
+        if (!normalized) {
+            return "-";
+        }
+
+        if (/^\d{26}$/.test(normalized)) {
+            return normalized.replace(/^(\d{2})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})$/, "$1 $2 $3 $4 $5 $6 $7");
+        }
+
+        if (/^PL\d{26}$/.test(normalized)) {
+            return normalized.replace(/^([A-Z]{2}\d{2})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})$/, "$1 $2 $3 $4 $5 $6 $7");
+        }
+
+        return normalized.replace(/(.{4})/g, "$1 ").trim();
+    }
+
+    function extractPolishBankCodeFromAccountNumber(value) {
+        const normalized = normalizeBankAccountNumber(value);
+        if (/^\d{26}$/.test(normalized)) {
+            return normalized.slice(2, 6);
+        }
+
+        if (/^PL\d{26}$/.test(normalized)) {
+            return normalized.slice(4, 8);
+        }
+
+        return "";
+    }
+
+    function resolvePolishBankNameFromAccountNumber(value) {
+        const bankCode = extractPolishBankCodeFromAccountNumber(value);
+        return bankCode ? polishBankCodeToName[bankCode] ?? "" : "";
     }
 
     function storedTheme() {
@@ -270,6 +345,79 @@ window.MoneySnapshotUi = (() => {
             "M12 16v-4",
             "M12 8h.01",
             "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"
+        ].forEach((value) => {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", value);
+            icon.append(path);
+        });
+
+        return icon;
+    }
+
+    function createCalendarIcon() {
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "2");
+        icon.setAttribute("stroke-linecap", "round");
+        icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
+
+        [
+            "M8 2v4",
+            "M16 2v4",
+            "M3 10h18",
+            "M7 14h.01",
+            "M12 14h.01",
+            "M17 14h.01",
+            "M7 18h.01",
+            "M12 18h.01",
+            "M17 18h.01",
+            "M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+        ].forEach((value) => {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", value);
+            icon.append(path);
+        });
+
+        return icon;
+    }
+
+    function createCheckIcon() {
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "2");
+        icon.setAttribute("stroke-linecap", "round");
+        icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
+
+        [
+            "M20 6 9 17l-5-5"
+        ].forEach((value) => {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", value);
+            icon.append(path);
+        });
+
+        return icon;
+    }
+
+    function createUndoIcon() {
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "2");
+        icon.setAttribute("stroke-linecap", "round");
+        icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
+
+        [
+            "M9 14 4 9l5-5",
+            "M4 9h9a7 7 0 1 1 0 14h-1"
         ].forEach((value) => {
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             path.setAttribute("d", value);
@@ -438,7 +586,9 @@ window.MoneySnapshotUi = (() => {
             lockTargets();
             document.body.style.setProperty("--modal-scroll-top", `${modalScrollTop}px`);
             document.body.style.setProperty("--topbar-lock-height", `${topbarHeight}px`);
-            document.documentElement.classList.add("modal-scroll-locked");
+            if (shouldReserveScrollbarSpace()) {
+                document.documentElement.classList.add("modal-scroll-locked");
+            }
             document.body.classList.add("modal-open");
             setPageInert(true);
             window.requestAnimationFrame(focusFirstElement);
@@ -791,8 +941,11 @@ window.MoneySnapshotUi = (() => {
         createToastManager,
         createConfirmModal,
         createClearFiltersIcon,
+        createCalendarIcon,
+        createCheckIcon,
         createEditIcon,
         createInfoIcon,
+        createUndoIcon,
         dismissTooltip: hideTooltip,
         safeReturnToPath,
         setTooltip,
@@ -800,11 +953,16 @@ window.MoneySnapshotUi = (() => {
         initializeMobileNavigation,
         formatDate,
         formatDateValue,
+        formatBankAccountNumber,
         formatDateTime,
         formatDateTimeValue,
         formatMoney,
         formatMoneyValue,
+        extractPolishBankCodeFromAccountNumber,
         localIsoDate,
-        loadUserSettings
+        loadUserSettings,
+        normalizeBankAccountNumber,
+        resolvePolishBankNameFromAccountNumber,
+        shouldReserveScrollbarSpace
     };
 })();

@@ -837,6 +837,10 @@ h1 {
     padding: 0 var(--page-padding);
 }
 
+.workspace-with-sticky-launcher {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+
 .page-heading {
     max-width: 720px;
 }
@@ -2009,6 +2013,14 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     line-height: 1.5;
 }
 
+.field-hint-reserved {
+    min-height: 1.5em;
+}
+
+.field-hint-reserved.is-empty {
+    visibility: hidden;
+}
+
 .field input[aria-invalid="true"],
 .field select[aria-invalid="true"],
 .field textarea[aria-invalid="true"] {
@@ -2484,6 +2496,20 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     margin-top: 28px;
 }
 
+.bill-form-panel {
+    overflow: hidden;
+}
+
+.form-grid.bill-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+}
+
+.form-grid.bill-form-grid .field {
+    min-width: 0;
+}
+
 .liability-form-header {
     display: flex;
     align-items: flex-start;
@@ -2538,6 +2564,14 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
 }
 
 .liabilities-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.bills-table-wrap {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -2769,6 +2803,106 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
 .liability-status-muted {
     background: var(--surface-muted);
     color: var(--text-muted);
+}
+
+.reports-table.bills-table {
+    min-width: 820px;
+}
+
+.reports-table.bills-table th:nth-child(1),
+.reports-table.bills-table td:nth-child(1) {
+    width: 30%;
+    text-align: left;
+    white-space: normal;
+}
+
+.reports-table.bills-table th:nth-child(2),
+.reports-table.bills-table td:nth-child(2) {
+    width: 16%;
+    text-align: right;
+}
+
+.reports-table.bills-table th:nth-child(3),
+.reports-table.bills-table td:nth-child(3) {
+    width: 16%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bills-table th:nth-child(4),
+.reports-table.bills-table td:nth-child(4) {
+    width: 22%;
+    text-align: left;
+    white-space: normal;
+}
+
+.reports-table.bills-table th:nth-child(5),
+.reports-table.bills-table td:nth-child(5) {
+    width: 14%;
+    text-align: center;
+}
+
+.reports-table.bills-table th:nth-child(6),
+.reports-table.bills-table td:nth-child(6) {
+    width: 180px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.bills-amount-cell {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.bill-schedule-summary-note {
+    margin: 14px 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.reports-table.bill-schedule-table {
+    min-width: 860px;
+}
+
+.reports-table.bill-schedule-table th:nth-child(1),
+.reports-table.bill-schedule-table td:nth-child(1) {
+    width: 12%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(2),
+.reports-table.bill-schedule-table td:nth-child(2) {
+    width: 18%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(3),
+.reports-table.bill-schedule-table td:nth-child(3) {
+    width: 18%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(4),
+.reports-table.bill-schedule-table td:nth-child(4) {
+    width: 14%;
+    text-align: center;
+}
+
+.reports-table.bill-schedule-table th:nth-child(5),
+.reports-table.bill-schedule-table td:nth-child(5) {
+    width: 18%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(6),
+.reports-table.bill-schedule-table td:nth-child(6) {
+    width: 20%;
+    text-align: center;
+    white-space: nowrap;
 }
 
 @media (max-width: 1280px) {
@@ -3670,6 +3804,46 @@ td:nth-child(5) {
     overflow-x: auto;
 }
 
+.counterparties-table-wrap {
+    overflow-x: auto;
+}
+
+.counterparties-table {
+    min-width: 980px;
+}
+
+.counterparties-table th:nth-child(1),
+.counterparties-table td:nth-child(1) {
+    width: 28%;
+}
+
+.counterparties-table th:nth-child(2),
+.counterparties-table td:nth-child(2) {
+    width: 24%;
+}
+
+.counterparties-table th:nth-child(3),
+.counterparties-table td:nth-child(3) {
+    width: 22%;
+}
+
+.counterparties-table th:nth-child(4),
+.counterparties-table td:nth-child(4) {
+    width: 150px;
+    white-space: nowrap;
+}
+
+.counterparties-table th:nth-child(5),
+.counterparties-table td:nth-child(5) {
+    width: 132px;
+    text-align: center;
+}
+
+.counterparty-bank-account {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    white-space: nowrap;
+}
+
 .users-table {
     min-width: 820px;
 }
@@ -3723,8 +3897,23 @@ td:nth-child(5) {
     gap: 8px;
 }
 
-.row-actions > .icon-button {
+.row-actions > .icon-button,
+.row-actions > a.icon-button,
+.row-actions > button.icon-button {
     flex: 0 0 36px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.row-actions > .icon-button:hover,
+.row-actions > .icon-button:focus-visible,
+.row-actions > a.icon-button:hover,
+.row-actions > a.icon-button:focus-visible,
+.row-actions > button.icon-button:hover,
+.row-actions > button.icon-button:focus-visible {
+    color: var(--accent-strong);
+    border-color: var(--accent-border);
+    background: var(--accent-wash-subtle);
 }
 
 .icon-button {
@@ -4090,6 +4279,14 @@ td:nth-child(5) {
     overflow-wrap: anywhere;
 }
 
+.info-list-helper {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
 @media (max-width: 860px) {
     .hero,
     .features,
@@ -4118,6 +4315,10 @@ td:nth-child(5) {
 
     .liability-form-group {
         padding: 18px 16px 20px;
+    }
+
+    .bill-form-grid {
+        grid-template-columns: 1fr;
     }
 
     .summary-grid {

@@ -57,6 +57,38 @@ public class PageController {
         return "reports";
     }
 
+    @GetMapping("/counterparties.html")
+    public String counterparties() {
+        return "counterparties";
+    }
+
+    @GetMapping("/counterparties/new.html")
+    public String newCounterparty() {
+        return "counterparty-form";
+    }
+
+    @GetMapping("/counterparties/{id}/edit.html")
+    public String editCounterparty(@PathVariable String id, Model model) {
+        model.addAttribute("counterpartyId", id);
+        return "counterparty-form";
+    }
+
+    @GetMapping("/bills.html")
+    public String bills() {
+        return "bills";
+    }
+
+    @GetMapping("/bills/new.html")
+    public String newBill() {
+        return "bill-form";
+    }
+
+    @GetMapping("/bills/{id}/schedule.html")
+    public String billSchedule(@PathVariable String id, Model model) {
+        model.addAttribute("billId", id);
+        return "bill-schedule";
+    }
+
     @GetMapping("/liabilities.html")
     public String liabilities() {
         return "liabilities";
