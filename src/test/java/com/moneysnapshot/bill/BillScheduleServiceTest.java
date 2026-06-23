@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -211,7 +210,7 @@ class BillScheduleServiceTest {
     }
 
     @Test
-    void listScheduleDoesNotExpandOpenEndedEntriesWhenOnlyPageSizeChangesOnFirstPage() {
+    void listScheduleDoesNotExpandOpenEndedEntriesWhenTheFirstPageIsLarger() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);
@@ -262,11 +261,11 @@ class BillScheduleServiceTest {
                 billId,
                 ownerId,
                 LocalDate.of(2026, 6, 22),
-                PageRequest.of(0, 24)
+                PageRequest.of(0, 50)
         ))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        service.listSchedule(billId, PageRequest.of(0, 24));
+        service.listSchedule(billId, PageRequest.of(0, 50));
 
         verify(billScheduleEntryRepository, never()).saveAll(any());
     }
@@ -565,7 +564,7 @@ class BillScheduleServiceTest {
     }
 
     @Test
-    void listScheduleRollsOpenEndedScheduleForwardWhenNoUpcomingEntriesRemain() {
+    void listScheduleDoesNotExpandOpenEndedScheduleOnFirstPageWhenRowsRemain() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);
@@ -612,20 +611,6 @@ class BillScheduleServiceTest {
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(12L);
-        when(billScheduleEntryRepository.countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(billId, ownerId, LocalDate.of(2026, 6, 22)))
-                .thenReturn(0L);
-        BillScheduleEntry lastHistoricalEntry = new BillScheduleEntry(
-                owner,
-                bill,
-                12,
-                LocalDate.of(2026, 6, 10),
-                new BigDecimal("189.99"),
-                "PLN"
-        );
-        lastHistoricalEntry.setPaid(true);
-        ReflectionTestUtils.setField(lastHistoricalEntry, "paidAt", OffsetDateTime.of(2026, 6, 10, 12, 0, 0, 0, ZoneOffset.UTC));
-        when(billScheduleEntryRepository.findFirstByBillIdAndOwnerIdOrderByDueDateDescInstallmentNumberDesc(billId, ownerId))
-                .thenReturn(Optional.of(lastHistoricalEntry));
         when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
                 billId,
                 ownerId,
@@ -636,15 +621,8 @@ class BillScheduleServiceTest {
 
         service.listSchedule(billId, PageRequest.of(0, 12));
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<BillScheduleEntry>> entriesCaptor = ArgumentCaptor.forClass(List.class);
-        verify(billScheduleEntryRepository).saveAll(entriesCaptor.capture());
         verify(billScheduleEntryRepository, never()).deleteByBillId(billId);
-
-        List<BillScheduleEntry> entries = entriesCaptor.getValue();
-        assertThat(entries).hasSize(12);
-        assertThat(entries.get(0).getInstallmentNumber()).isEqualTo(13);
-        assertThat(entries.get(0).getDueDate()).isEqualTo(LocalDate.of(2026, 7, 10));
+        verify(billScheduleEntryRepository, never()).saveAll(any());
     }
 
     @Test
@@ -730,7 +708,7 @@ class BillScheduleServiceTest {
     }
 
     @Test
-    void listScheduleExpandsOpenEndedScheduleWhenOnlyFewUpcomingEntriesRemain() {
+    void listScheduleDoesNotExpandOpenEndedScheduleOnFirstPageWhenOnlyFewUpcomingEntriesRemain() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);
@@ -777,18 +755,6 @@ class BillScheduleServiceTest {
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(12L);
-        when(billScheduleEntryRepository.countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(billId, ownerId, LocalDate.of(2026, 6, 22)))
-                .thenReturn(2L);
-        BillScheduleEntry lastEntry = new BillScheduleEntry(
-                owner,
-                bill,
-                12,
-                LocalDate.of(2027, 6, 10),
-                new BigDecimal("189.99"),
-                "PLN"
-        );
-        when(billScheduleEntryRepository.findFirstByBillIdAndOwnerIdOrderByDueDateDescInstallmentNumberDesc(billId, ownerId))
-                .thenReturn(Optional.of(lastEntry));
         when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
                 billId,
                 ownerId,
@@ -798,10 +764,7 @@ class BillScheduleServiceTest {
 
         service.listSchedule(billId, PageRequest.of(0, 12));
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<BillScheduleEntry>> entriesCaptor = ArgumentCaptor.forClass(List.class);
-        verify(billScheduleEntryRepository).saveAll(entriesCaptor.capture());
-        assertThat(entriesCaptor.getValue()).hasSize(12);
+        verify(billScheduleEntryRepository, never()).saveAll(any());
     }
 
     @Test

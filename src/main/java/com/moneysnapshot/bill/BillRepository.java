@@ -3,8 +3,10 @@ package com.moneysnapshot.bill;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.query.Param;
 
 public interface BillRepository extends JpaRepository<Bill, UUID> {
@@ -27,6 +29,14 @@ public interface BillRepository extends JpaRepository<Bill, UUID> {
             where bill.id = :id and bill.owner.id = :ownerId
             """)
     Optional<Bill> findByIdAndOwnerId(@Param("id") UUID id, @Param("ownerId") UUID ownerId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select bill
+            from Bill bill
+            where bill.id = :id and bill.owner.id = :ownerId
+            """)
+    Optional<Bill> findByIdAndOwnerIdForUpdate(@Param("id") UUID id, @Param("ownerId") UUID ownerId);
 
     @Query("""
             select bill

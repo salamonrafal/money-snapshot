@@ -75,17 +75,14 @@ public class BillScheduleService {
 
         if (existingEntriesCount == 0) {
             if (bill.getDurationType() == BillDurationType.OPEN_ENDED) {
-                int entriesToGenerate = pageable.getOffset() == 0
-                        ? OPEN_ENDED_SCHEDULE_LENGTH
-                        : requiredOpenEndedExpansionCount(pageable, 0);
-                appendOpenEndedScheduleEntries(bill, ownerId, today, entriesToGenerate);
+                appendOpenEndedScheduleEntries(bill, ownerId, today, OPEN_ENDED_SCHEDULE_LENGTH, true);
             } else {
                 regenerateSchedule(bill, false);
             }
         } else if (bill.getDurationType() == BillDurationType.OPEN_ENDED
                 && requiresOpenEndedScheduleExpansion(billId, ownerId, today, pageable)) {
             long upcomingEntriesCount = billScheduleEntryRepository.countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(billId, ownerId, today);
-            appendOpenEndedScheduleEntries(bill, ownerId, today, requiredOpenEndedExpansionCount(pageable, upcomingEntriesCount));
+            appendOpenEndedScheduleEntries(bill, ownerId, today, requiredOpenEndedExpansionCount(pageable, upcomingEntriesCount), false);
         }
 
         Page<BillScheduleEntryResponse> page = billScheduleEntryRepository
@@ -153,7 +150,7 @@ public class BillScheduleService {
             LocalDate today,
             Pageable pageable
     ) {
-        if (pageable.getOffset() == 0 && pageable.getPageSize() > OPEN_ENDED_SCHEDULE_LENGTH) {
+        if (pageable.getOffset() == 0) {
             return false;
         }
         long upcomingEntriesCount = billScheduleEntryRepository.countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(billId, ownerId, today);
@@ -167,10 +164,17 @@ public class BillScheduleService {
         return (int) Math.max(OPEN_ENDED_SCHEDULE_LENGTH, missingEntries);
     }
 
-    private void appendOpenEndedScheduleEntries(Bill bill, UUID ownerId, LocalDate today, int entriesToGenerate) {
+    private void appendOpenEndedScheduleEntries(Bill bill, UUID ownerId, LocalDate today, int entriesToGenerate, boolean bootstrap) {
         BillScheduleEntry lastEntry = billScheduleEntryRepository
                 .findFirstByBillIdAndOwnerIdOrderByDueDateDescInstallmentNumberDesc(bill.getId(), ownerId)
                 .orElse(null);
+        if (bootstrap) {
+            billRepository.findByIdAndOwnerIdForUpdate(bill.getId(), ownerId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bill not found."));
+            if (billScheduleEntryRepository.countByBillId(bill.getId()) > 0) {
+                return;
+            }
+        }
         int nextInstallmentNumber = lastEntry == null ? 1 : lastEntry.getInstallmentNumber() + 1;
         LocalDate referenceDate = lastEntry == null
                 ? regenerationReferenceDate(bill, today)
