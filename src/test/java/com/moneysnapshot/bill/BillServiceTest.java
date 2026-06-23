@@ -381,7 +381,7 @@ class BillServiceTest {
     }
 
     @Test
-    void updateBillToCompletedDoesNotTouchScheduleWhenStructureIsUnchanged() {
+    void statusOnlyChangePreservesFutureScheduleEntriesAndDoesNotRegenerate() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();
@@ -437,7 +437,7 @@ class BillServiceTest {
     }
 
     @Test
-    void updateBillFromCompletedToActiveDoesNotRegenerateScheduleWhenStructureIsUnchanged() {
+    void reactivationWithoutScheduleStructureChangeDoesNotRegenerateSchedule() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();
         UUID accountId = UUID.randomUUID();

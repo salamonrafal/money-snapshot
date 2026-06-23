@@ -770,7 +770,7 @@ class BillScheduleServiceTest {
     }
 
     @Test
-    void listScheduleDoesNotExpandOpenEndedScheduleOnFirstPageWhenOnlyFewUpcomingEntriesRemain() {
+    void openEndedFirstPageKeepsInitialTwelveRowWindowEvenWhenSomeRowsAgeOut() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);
@@ -824,6 +824,8 @@ class BillScheduleServiceTest {
                 PageRequest.of(0, 12)
         )).thenReturn(new PageImpl<>(List.of()));
 
+        // Current product decision: page 0 keeps the originally generated
+        // 12-row window and does not auto-top-up as older rows become past-due.
         service.listSchedule(billId, PageRequest.of(0, 12));
 
         verify(billScheduleEntryRepository, never()).saveAll(any());

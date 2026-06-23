@@ -150,6 +150,9 @@ public class BillScheduleService {
             LocalDate today,
             Pageable pageable
     ) {
+        // Current business rule: open-ended bills bootstrap only the initial 12
+        // upcoming rows. We do not top up the first page as entries age out.
+        // A later cleanup/refresh feature can change this behavior explicitly.
         if (pageable.getOffset() == 0) {
             return false;
         }

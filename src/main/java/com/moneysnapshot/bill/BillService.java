@@ -157,6 +157,8 @@ public class BillService {
 
         Bill saved = billRepository.save(bill);
         billRepository.flush();
+        // Status-only transitions are intentionally non-destructive. Regenerate
+        // the schedule only when the schedule structure changes.
         if (scheduleStructureChanged && saved.getStatus() != BillStatus.COMPLETED) {
             eventPublisher.publishEvent(new BillScheduleRegenerationRequestedEvent(saved.getId(), true));
         }
