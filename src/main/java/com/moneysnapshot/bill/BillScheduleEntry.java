@@ -145,4 +145,8 @@ public class BillScheduleEntry {
         this.paid = paid;
         this.paidAt = paid ? OffsetDateTime.now(ZoneOffset.UTC) : null;
     }
+
+    public void updateCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
+    }
 }

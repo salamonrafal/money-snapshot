@@ -219,4 +219,8 @@ public class Bill {
         this.startFrom = startFrom;
         this.status = status;
     }
+
+    public void updateCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
+    }
 }

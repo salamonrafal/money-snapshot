@@ -40,4 +40,8 @@ public interface BillRepository extends JpaRepository<Bill, UUID> {
     Optional<Bill> findByOwnerIdAndNormalizedName(UUID ownerId, String normalizedName);
 
     boolean existsByCounterpartyIdAndOwnerId(UUID counterpartyId, UUID ownerId);
+
+    boolean existsByAccountIdAndOwnerId(UUID accountId, UUID ownerId);
+
+    List<Bill> findAllByAccountId(UUID accountId);
 }

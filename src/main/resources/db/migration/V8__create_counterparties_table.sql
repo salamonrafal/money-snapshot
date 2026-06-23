@@ -18,7 +18,7 @@ create table bills (
     id uuid primary key,
     owner_id uuid not null references app_users (id) on delete cascade,
     counterparty_id uuid not null references counterparties (id),
-    account_id uuid not null references accounts (id) on delete cascade,
+    account_id uuid not null references accounts (id),
     name varchar(120) not null,
     normalized_name varchar(120) not null,
     currency_code char(3) not null references currencies (code),
