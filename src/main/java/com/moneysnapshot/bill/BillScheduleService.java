@@ -74,7 +74,14 @@ public class BillScheduleService {
         long existingEntriesCount = billScheduleEntryRepository.countByBillId(billId);
 
         if (existingEntriesCount == 0) {
-            regenerateSchedule(bill, false);
+            if (bill.getDurationType() == BillDurationType.OPEN_ENDED) {
+                int entriesToGenerate = pageable.getOffset() == 0
+                        ? OPEN_ENDED_SCHEDULE_LENGTH
+                        : requiredOpenEndedExpansionCount(pageable, 0);
+                appendOpenEndedScheduleEntries(bill, ownerId, today, entriesToGenerate);
+            } else {
+                regenerateSchedule(bill, false);
+            }
         } else if (bill.getDurationType() == BillDurationType.OPEN_ENDED
                 && requiresOpenEndedScheduleExpansion(billId, ownerId, today, pageable)) {
             long upcomingEntriesCount = billScheduleEntryRepository.countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(billId, ownerId, today);
@@ -146,6 +153,9 @@ public class BillScheduleService {
             LocalDate today,
             Pageable pageable
     ) {
+        if (pageable.getOffset() == 0 && pageable.getPageSize() > OPEN_ENDED_SCHEDULE_LENGTH) {
+            return false;
+        }
         long upcomingEntriesCount = billScheduleEntryRepository.countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(billId, ownerId, today);
         long requiredEntriesCount = pageable.getOffset() + pageable.getPageSize();
         return upcomingEntriesCount < requiredEntriesCount;
