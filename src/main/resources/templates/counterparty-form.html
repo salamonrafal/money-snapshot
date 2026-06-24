@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Nowy kontrahent | Money Snapshot', 'counterparty-form.js')}"></head>
+<body th:attr="data-counterparty-id=${counterpartyId}">
+<header th:replace="~{fragments/page :: header('counterparties')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="counterpartyForm.heading.eyebrow">Płatności cykliczne</p>
+        <h1 id="counterparty-form-page-title" data-i18n="counterpartyForm.heading.title">Nowy kontrahent</h1>
+        <p id="counterparty-form-page-subtitle" data-i18n="counterpartyForm.heading.subtitle">Dodaj firmę, instytucję albo bank powiązany z płatnościami cyklicznymi.</p>
+    </section>
+
+    <section class="management-layout single-column"
+             data-i18n-aria-label="counterpartyForm.aria.form"
+             aria-label="Formularz kontrahenta">
+        <form class="editor-panel wide-panel" id="counterparty-form">
+            <div class="snapshot-form-modal-message inline-form-message-panel"
+                 id="counterparty-form-message-container"
+                 data-type="error"
+                 hidden>
+                <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 8v5"></path>
+                        <path d="M12 16h.01"></path>
+                    </svg>
+                </span>
+                <p class="form-message" id="counterparty-form-message" role="alert"></p>
+            </div>
+            <label class="field">
+                <span class="field-label"><span data-i18n="counterpartyForm.form.name">Nazwa</span><span class="required-mark" aria-hidden="true">*</span></span>
+                <input id="counterparty-name" type="text" maxlength="180" autocomplete="organization" required>
+            </label>
+            <label class="field">
+                <span class="field-label"><span data-i18n="counterpartyForm.form.bankAccountNumber">Numer rachunku bankowego</span><span class="required-mark" aria-hidden="true">*</span></span>
+                <input id="counterparty-bank-account-number" type="text" maxlength="64" inputmode="numeric" autocomplete="off" required>
+                <small class="field-hint field-hint-reserved is-empty"
+                       id="counterparty-bank-account-bank-info"
+                       role="status"
+                       aria-live="polite"></small>
+            </label>
+            <label class="field">
+                <span data-i18n="counterpartyForm.form.address">Dane adresowe</span>
+                <textarea id="counterparty-address" maxlength="500" rows="4" autocomplete="street-address"></textarea>
+            </label>
+            <label class="field">
+                <span data-i18n="counterpartyForm.form.note">Notatka</span>
+                <textarea id="counterparty-note" maxlength="500" rows="4"></textarea>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="button primary" id="save-counterparty" data-i18n="counterpartyForm.form.submit">Zapisz kontrahenta</button>
+                <a class="button secondary" href="/counterparties.html" data-i18n="counterpartyForm.form.cancel">Anuluj</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

@@ -39,6 +39,9 @@ public class MessageBundleService {
             "home.feature.snapshots.description",
             "home.feature.banksAccounts.title",
             "home.feature.banksAccounts.description",
+            "home.feature.counterparties.title",
+            "home.feature.counterparties.description",
+            "home.feature.counterparties.action",
             "home.feature.reports.title",
             "home.feature.reports.description",
             "home.feature.savingsPlanning.title",
@@ -46,7 +49,10 @@ public class MessageBundleService {
             "home.feature.savingsPlanning.action",
             "home.feature.liabilities.title",
             "home.feature.liabilities.description",
-            "home.feature.liabilities.manageAction"
+            "home.feature.liabilities.manageAction",
+            "home.feature.bills.title",
+            "home.feature.bills.description",
+            "home.feature.bills.action"
     );
 
     private static final Set<String> HOME_PAGE_KEYS =
@@ -69,6 +75,9 @@ public class MessageBundleService {
                             "home.feature.snapshots.description",
                             "home.feature.banksAccounts.title",
                             "home.feature.banksAccounts.description",
+                            "home.feature.counterparties.title",
+                            "home.feature.counterparties.description",
+                            "home.feature.counterparties.action",
                             "home.feature.reports.title",
                             "home.feature.reports.description",
                             "home.feature.savingsPlanning.title",
@@ -78,6 +87,9 @@ public class MessageBundleService {
                             "home.feature.liabilities.description",
                             "home.feature.liabilities.manageAction",
                             "home.feature.liabilities.registerAction",
+                            "home.feature.bills.title",
+                            "home.feature.bills.description",
+                            "home.feature.bills.action",
                             "snapshots.actions.addBulk",
                             "snapshots.error.accountNotFound",
                             "snapshots.error.create",
@@ -461,6 +473,9 @@ public class MessageBundleService {
             "common.nav.reports",
             "home.feature.banksAccounts.description",
             "home.feature.banksAccounts.title",
+            "home.feature.counterparties.action",
+            "home.feature.counterparties.description",
+            "home.feature.counterparties.title",
             "home.feature.liabilities.description",
             "home.feature.liabilities.manageAction",
             "home.feature.liabilities.registerAction",
@@ -565,6 +580,139 @@ public class MessageBundleService {
             "reports.table.start",
             "reports.table.title",
             "reports.total.name"
+    );
+
+    private static final Set<String> COUNTERPARTY_PAGE_KEYS = Set.of(
+            "counterparties.heading.eyebrow",
+            "counterparties.heading.title",
+            "counterparties.heading.subtitle",
+            "counterparties.aria.toolbar",
+            "counterparties.table.title",
+            "counterparties.table.name",
+            "counterparties.table.bankAccountNumber",
+            "counterparties.table.normalizedName",
+            "counterparties.table.updatedAt",
+            "counterparties.table.actions",
+            "counterparties.loading",
+            "counterparties.empty",
+            "counterparties.actions.add",
+            "counterparties.actions.info",
+            "counterparties.actions.edit",
+            "counterparties.actions.delete",
+            "counterparties.actions.refresh",
+            "counterparties.info.title",
+            "counterparties.info.close",
+            "counterparties.info.notAvailable",
+            "counterparties.info.createdAt",
+            "counterparties.info.updatedAt",
+            "counterparties.delete.title",
+            "counterparties.delete.message",
+            "counterparties.delete.success",
+            "counterpartyForm.form.address",
+            "counterpartyForm.form.bankNameHint",
+            "counterpartyForm.form.bankNameUnknown",
+            "counterpartyForm.form.note",
+            "counterparties.form.success",
+            "counterparties.error.load",
+            "counterparties.error.delete",
+            "counterparties.error.inUse",
+            "counterparties.error.notFound"
+    );
+
+    private static final Set<String> COUNTERPARTY_FORM_PAGE_KEYS = Set.of(
+            "counterpartyForm.heading.eyebrow",
+            "counterpartyForm.heading.title",
+            "counterpartyForm.heading.subtitle",
+            "counterpartyForm.heading.edit.title",
+            "counterpartyForm.heading.edit.subtitle",
+            "counterpartyForm.aria.form",
+            "counterpartyForm.form.name",
+            "counterpartyForm.form.bankAccountNumber",
+            "counterpartyForm.form.bankNameHint",
+            "counterpartyForm.form.bankNameUnknown",
+            "counterpartyForm.form.address",
+            "counterpartyForm.form.note",
+            "counterpartyForm.form.submit",
+            "counterpartyForm.form.cancel",
+            "counterpartyForm.form.success",
+            "counterpartyForm.form.required",
+            "counterpartyForm.form.invalidBankAccountNumber",
+            "counterpartyForm.error.create",
+            "counterpartyForm.error.update",
+            "counterpartyForm.error.duplicate",
+            "counterpartyForm.error.notFound",
+            "counterpartyForm.error.loadCounterparty"
+    );
+
+    private static final Set<String> BILLS_PAGE_KEYS = Set.of(
+            "bills.aria.toolbar",
+            "bills.actions.add",
+            "bills.actions.info",
+            "bills.actions.schedule",
+            "bills.actions.edit",
+            "bills.actions.delete",
+            "bills.heading.eyebrow",
+            "bills.heading.title",
+            "bills.heading.subtitle",
+            "bills.form.aria",
+            "bills.form.eyebrow",
+            "bills.form.title",
+            "bills.form.subtitle",
+            "bills.form.name",
+            "bills.form.amount",
+            "bills.form.durationMode",
+            "bills.form.durationModeUntilDate",
+            "bills.form.durationModeInstallments",
+            "bills.form.durationModeOpenEnded",
+            "bills.form.endDate",
+            "bills.form.installments",
+            "bills.form.repaymentDay",
+            "bills.form.startFrom",
+            "bills.form.counterparty",
+            "bills.form.normalizedName",
+            "bills.form.fromAccount",
+            "bills.form.status",
+            "bills.form.cancel",
+            "bills.form.submit",
+            "bills.form.error.required",
+            "bills.form.error.endDateBeforeStartDate",
+            "bills.summary.title",
+            "bills.summary.activeCount",
+            "bills.summary.monthlyAmount",
+            "bills.summary.nextDue",
+            "bills.summary.openEndedCount",
+            "bills.table.title",
+            "bills.table.aria",
+            "bills.table.name",
+            "bills.table.amount",
+            "bills.table.duration",
+            "bills.table.repaymentDay",
+            "bills.table.startFrom",
+            "bills.table.counterparty",
+            "bills.table.fromAccount",
+            "bills.table.status",
+            "bills.table.actions",
+            "bills.table.details",
+            "bills.table.empty",
+            "bills.info.title",
+            "bills.info.close",
+            "bills.info.notAvailable",
+            "bills.info.createdAt",
+            "bills.info.updatedAt",
+            "bills.delete.title",
+            "bills.delete.message",
+            "bills.scheduleOverwrite.title",
+            "bills.scheduleOverwrite.message",
+            "bills.delete.success",
+            "bills.error.delete",
+            "bills.duration.untilDate",
+            "bills.duration.installments",
+            "bills.duration.openEnded",
+            "bills.repaymentDay.value",
+            "bills.status.ACTIVE",
+            "bills.status.SUSPENDED",
+            "bills.status.COMPLETED",
+            "bills.form.error.duplicate"
     );
 
     private static final Set<String> USER_PAGE_KEYS = Set.of(
@@ -808,6 +956,58 @@ public class MessageBundleService {
             "liabilityRepayment.form.success"
     );
 
+    private static final Set<String> BILL_SCHEDULE_PAGE_KEYS = Set.of(
+            "bills.heading.title",
+            "bills.table.name",
+            "bills.table.amount",
+            "bills.table.duration",
+            "bills.table.repaymentDay",
+            "bills.table.startFrom",
+            "bills.table.counterparty",
+            "bills.table.fromAccount",
+            "bills.table.status",
+            "bills.duration.untilDate",
+            "bills.duration.installments",
+            "bills.duration.openEnded",
+            "bills.status.ACTIVE",
+            "bills.status.SUSPENDED",
+            "bills.status.COMPLETED",
+            "billSchedule.heading.eyebrow",
+            "billSchedule.heading.title",
+            "billSchedule.heading.subtitle",
+            "billSchedule.summary.title",
+            "billSchedule.summary.counterparty",
+            "billSchedule.summary.account",
+            "billSchedule.summary.period",
+            "billSchedule.summary.status",
+            "billSchedule.summary.nextPageHint",
+            "billSchedule.table.title",
+            "billSchedule.table.aria",
+            "billSchedule.table.installment",
+            "billSchedule.table.dueDate",
+            "billSchedule.table.amount",
+            "billSchedule.table.status",
+            "billSchedule.table.paidAt",
+            "billSchedule.table.actions",
+            "billSchedule.table.empty",
+            "billSchedule.pagination.previous",
+            "billSchedule.pagination.next",
+            "billSchedule.pagination.size",
+            "billSchedule.pagination.info",
+            "billSchedule.pagination.aria",
+            "billSchedule.actions.back",
+            "billSchedule.actions.refresh",
+            "billSchedule.actions.markPaid",
+            "billSchedule.actions.markUnpaid",
+            "billSchedule.status.pending",
+            "billSchedule.status.paid",
+            "billSchedule.paidAt.empty",
+            "billSchedule.error.load",
+            "billSchedule.error.update",
+            "billSchedule.error.notFound",
+            "billSchedule.update.success"
+    );
+
     private static final Set<String> TOPBAR_MODAL_KEYS =
             java.util.stream.Stream.concat(PROFILE_PAGE_KEYS.stream(), SETTINGS_PAGE_KEYS.stream())
                     .collect(java.util.stream.Collectors.collectingAndThen(
@@ -847,6 +1047,22 @@ public class MessageBundleService {
 
     public Map<String, String> reportPageMessages(Locale locale) {
         return messages(REPORT_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> counterpartyPageMessages(Locale locale) {
+        return messages(COUNTERPARTY_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> counterpartyFormPageMessages(Locale locale) {
+        return messages(COUNTERPARTY_FORM_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> billsPageMessages(Locale locale) {
+        return messages(BILLS_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> billSchedulePageMessages(Locale locale) {
+        return messages(BILL_SCHEDULE_PAGE_KEYS, locale);
     }
 
     public Map<String, String> userPageMessages(Locale locale) {

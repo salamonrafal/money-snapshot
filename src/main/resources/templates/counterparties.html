@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Kontrahenci | Money Snapshot', 'counterparties.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('counterparties')}"></header>
+
+<main class="workspace workspace-with-sticky-launcher">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="counterparties.heading.eyebrow">Płatności cykliczne</p>
+        <h1 data-i18n="counterparties.heading.title">Kontrahenci</h1>
+        <p data-i18n="counterparties.heading.subtitle">Zapisuj firmy, instytucje i banki powiązane z płatnościami cyklicznymi użytkownika.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide" aria-labelledby="counterparties-list-title">
+        <div class="section-header">
+            <h2 id="counterparties-list-title" data-i18n="counterparties.table.title">Lista kontrahentów</h2>
+            <div class="section-actions topbar-account-actions icon-toolbar"
+                 role="toolbar"
+                 data-i18n-aria-label="counterparties.aria.toolbar"
+                 aria-label="Akcje kontrahentów">
+                <a href="/counterparties/new.html"
+                   class="icon-button secondary topbar-icon-link"
+                   id="new-counterparty-action"
+                   data-i18n-title="counterparties.actions.add"
+                   data-i18n-aria-label="counterparties.actions.add"
+                   aria-label="Dodaj kontrahenta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14"></path>
+                        <path d="M5 12h14"></path>
+                    </svg>
+                </a>
+                <button type="button"
+                        class="icon-button secondary topbar-icon-link"
+                        id="refresh-counterparties"
+                        data-i18n-title="counterparties.actions.refresh"
+                        data-i18n-aria-label="counterparties.actions.refresh"
+                        aria-label="Odśwież">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                        <path d="M21 3v6h-6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <p class="form-message" id="counterparties-list-message" role="status"></p>
+        <div class="table-wrap counterparties-table-wrap">
+            <table class="reports-table counterparties-table">
+                <thead>
+                <tr>
+                    <th data-i18n="counterparties.table.name">Nazwa</th>
+                    <th data-i18n="counterparties.table.bankAccountNumber">Numer rachunku bankowego</th>
+                    <th data-i18n="counterparties.table.normalizedName">Nazwa zunifikowana</th>
+                    <th data-i18n="counterparties.table.updatedAt">Edytowano</th>
+                    <th data-i18n="counterparties.table.actions">Akcje</th>
+                </tr>
+                </thead>
+                <tbody id="counterparties-table-body">
+                <tr>
+                    <td colspan="5" data-i18n="counterparties.loading">Ładowanie...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-counterparty-modal',
+        'delete-counterparty-title',
+        'counterparties.delete.title',
+        'counterparties.delete.message',
+        'delete-counterparty-name',
+        'confirm-delete-counterparty',
+        'cancel-delete-counterparty')}"></div>
+<div class="modal-backdrop" id="counterparty-info-modal" hidden>
+    <div class="modal info-modal" role="dialog" aria-modal="true" aria-labelledby="counterparty-info-title">
+        <h2 id="counterparty-info-title" data-i18n="counterparties.info.title">Szczegóły kontrahenta</h2>
+        <dl class="info-list" id="counterparty-info-list"></dl>
+        <div class="modal-actions">
+            <button type="button"
+                    class="button secondary"
+                    id="counterparty-info-close"
+                    data-i18n="counterparties.info.close">Zamknij</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

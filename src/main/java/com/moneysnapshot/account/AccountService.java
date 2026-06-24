@@ -2,6 +2,7 @@ package com.moneysnapshot.account;
 
 import com.moneysnapshot.account.web.CreateAccountRequest;
 import com.moneysnapshot.account.web.SavingsContributionSettingRequest;
+import com.moneysnapshot.bill.BillRepository;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.shared.normalization.NameNormalizationService;
@@ -19,6 +20,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final BankRepository bankRepository;
+    private final BillRepository billRepository;
     private final NameNormalizationService normalizer;
     private final ApplicationEventPublisher eventPublisher;
     private final CurrentUserService currentUserService;
@@ -26,12 +28,14 @@ public class AccountService {
     public AccountService(
             AccountRepository accountRepository,
             BankRepository bankRepository,
+            BillRepository billRepository,
             NameNormalizationService normalizer,
             ApplicationEventPublisher eventPublisher,
             CurrentUserService currentUserService
     ) {
         this.accountRepository = accountRepository;
         this.bankRepository = bankRepository;
+        this.billRepository = billRepository;
         this.normalizer = normalizer;
         this.eventPublisher = eventPublisher;
         this.currentUserService = currentUserService;
@@ -94,19 +98,24 @@ public class AccountService {
         BigDecimal forecastedMonthlyContribution = request.forecastedMonthlyContribution() == null
                 ? account.getForecastedMonthlyContribution()
                 : normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution());
+        String nextCurrencyCode = request.currencyCode().trim().toUpperCase();
+        boolean currencyChanged = !account.getCurrencyCode().equals(nextCurrencyCode);
 
         account.updateDetails(
                 bank,
                 request.accountName().trim(),
                 normalizedAccountName,
                 normalizeAccountTypeCode(request.accountTypeCode()),
-                request.currencyCode().trim().toUpperCase(),
+                nextCurrencyCode,
                 normalizeDescription(request.description()),
                 forecastedMonthlyContribution,
                 status
         );
 
         Account savedAccount = accountRepository.save(account);
+        if (currencyChanged) {
+            eventPublisher.publishEvent(new AccountCurrencyChangedEvent(savedAccount.getId(), nextCurrencyCode));
+        }
         eventPublisher.publishEvent(new AccountChangedEvent(owner.getId()));
         return savedAccount;
     }
@@ -114,6 +123,9 @@ public class AccountService {
     @Transactional
     public void deleteAccount(UUID id) {
         Account account = getAccount(id);
+        if (billRepository.existsByAccountIdAndOwnerId(id, account.getOwner().getId())) {
+            throw new AccountInUseException(id);
+        }
 
         eventPublisher.publishEvent(new AccountDeletionRequestedEvent(id));
         eventPublisher.publishEvent(new AccountChangedEvent(account.getOwner().getId()));

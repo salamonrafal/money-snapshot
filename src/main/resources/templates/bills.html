@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Rachunki | Money Snapshot', 'bills.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('liabilities')}"></header>
+
+<main class="workspace workspace-with-sticky-launcher">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="bills.heading.eyebrow">Stałe opłaty</p>
+        <h1 data-i18n="bills.heading.title">Rachunki</h1>
+        <p data-i18n="bills.heading.subtitle">Przeglądaj zapisane rachunki z terminami spłat, kontem źródłowym i statusem obsługi.</p>
+    </section>
+
+    <section class="planning-summary" aria-labelledby="bills-summary-title">
+        <article class="planning-summary-card">
+            <p class="planning-summary-card-title" id="bills-summary-title" data-i18n="bills.summary.title">Podsumowanie</p>
+            <dl class="planning-summary-card-values">
+                <div>
+                    <dt data-i18n="bills.summary.activeCount">Aktywne rachunki</dt>
+                    <dd id="bills-summary-active-count">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="bills.summary.monthlyAmount">Łączna kwota aktywnych</dt>
+                    <dd id="bills-summary-monthly-amount">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="bills.summary.nextDue">Najbliższa płatność</dt>
+                    <dd id="bills-summary-next-due">-</dd>
+                </div>
+                <div>
+                    <dt data-i18n="bills.summary.openEndedCount">Bezterminowe</dt>
+                    <dd id="bills-summary-open-ended-count">-</dd>
+                </div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="table-panel wide-panel" aria-labelledby="bills-list-title">
+        <div class="section-header">
+            <h2 id="bills-list-title" data-i18n="bills.table.title">Lista rachunków</h2>
+            <div class="section-actions topbar-account-actions icon-toolbar"
+                 role="toolbar"
+                 data-i18n-aria-label="bills.aria.toolbar"
+                 aria-label="Akcje rachunków">
+                <a href="/bills/new.html"
+                   class="icon-button secondary topbar-icon-link"
+                   id="open-bill-form-modal"
+                   data-i18n-title="bills.actions.add"
+                   data-i18n-aria-label="bills.actions.add"
+                   aria-label="Zarejestruj nowy rachunek">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14"></path>
+                        <path d="M5 12h14"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <div class="table-wrap bills-table-wrap">
+            <table class="reports-table bills-table"
+                   data-i18n-aria-label="bills.table.aria"
+                   aria-label="Lista zarejestrowanych rachunków">
+                <thead>
+                <tr>
+                    <th data-i18n="bills.table.name">Nazwa rachunku</th>
+                    <th data-i18n="bills.table.amount">Kwota</th>
+                    <th data-i18n="bills.table.startFrom">Rozpoczęcie od</th>
+                    <th data-i18n="bills.table.counterparty">Kontrahent</th>
+                    <th data-i18n="bills.table.status">Status</th>
+                    <th data-i18n="bills.table.actions">Akcje</th>
+                </tr>
+                </thead>
+                <tbody id="bills-table-body">
+                <tr>
+                    <td colspan="6" data-i18n="bills.table.empty">Brak rachunków do wyświetlenia.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+<div class="modal-backdrop" id="bill-info-modal" hidden>
+    <div class="modal info-modal" role="dialog" aria-modal="true" aria-labelledby="bill-info-title">
+        <h2 id="bill-info-title" data-i18n="bills.info.title">Szczegóły rachunku</h2>
+        <dl class="info-list" id="bill-info-list"></dl>
+        <div class="modal-actions">
+            <button type="button" class="button secondary" id="bill-info-close" data-i18n="bills.info.close">Zamknij</button>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-bill-modal',
+        'delete-bill-title',
+        'bills.delete.title',
+        'bills.delete.message',
+        'delete-bill-name',
+        'confirm-delete-bill',
+        'cancel-delete-bill')}"></div>
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'bill-schedule-overwrite-modal',
+        'bill-schedule-overwrite-title',
+        'bills.scheduleOverwrite.title',
+        'bills.scheduleOverwrite.message',
+        'bill-schedule-overwrite-name',
+        'confirm-bill-schedule-overwrite',
+        'cancel-bill-schedule-overwrite')}"></div>
+
+<div class="modal-backdrop" id="bill-form-modal" hidden>
+    <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="bill-form-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <p class="eyebrow" data-i18n="bills.form.eyebrow">Nowy wpis</p>
+                <h2 id="bill-form-modal-title" data-i18n="bills.form.title">Zarejestruj nowy rachunek</h2>
+                <p data-i18n="bills.form.subtitle">Uzupełnij podstawowe dane rachunku i zapisz wpis na swojej liście rachunków.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-bill-form-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-message"
+             id="bill-form-message-container"
+             data-type="error"
+             hidden>
+            <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 8v5"></path>
+                    <path d="M12 16h.01"></path>
+                </svg>
+            </span>
+            <p class="form-message" id="bill-form-message" role="alert"></p>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form class="snapshot-form" id="bill-form" novalidate data-i18n-aria-label="bills.form.aria" aria-label="Formularz rachunku">
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.name">Nazwa rachunku</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="text" name="name" maxlength="120" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.amount">Kwota</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="text" name="amount" inputmode="decimal" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="status" required>
+                            <option value="ACTIVE" selected data-i18n="bills.status.ACTIVE">Aktywny</option>
+                            <option value="SUSPENDED" data-i18n="bills.status.SUSPENDED">Zawieszony</option>
+                            <option value="COMPLETED" data-i18n="bills.status.COMPLETED">Zakończony</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.durationMode">Okres trwania</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="durationType" id="bill-duration-type" required>
+                            <option value="UNTIL_DATE" selected data-i18n="bills.form.durationModeUntilDate">Do określonej daty</option>
+                            <option value="INSTALLMENTS" data-i18n="bills.form.durationModeInstallments">Określona liczba rat</option>
+                            <option value="OPEN_ENDED" data-i18n="bills.form.durationModeOpenEnded">Bezterminowo</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.repaymentDay">Dzień spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="number" name="repaymentDay" min="1" max="31" step="1" required>
+                    </label>
+                    <label class="field" id="bill-end-date-field">
+                        <span class="field-label"><span data-i18n="bills.form.endDate">Do daty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="date" name="endDate" required>
+                    </label>
+                    <label class="field" id="bill-installments-field" hidden>
+                        <span class="field-label"><span data-i18n="bills.form.installments">Liczba rat</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="number" name="installments" min="1" step="1" disabled>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.startFrom">Rozpoczęcie od</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="date" name="startFrom" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.counterparty">Kontrahent</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="counterpartyId" id="bill-counterparty" required>
+                            <option value=""></option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="bills.form.fromAccount">Z konta</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="accountId" id="bill-account" required>
+                            <option value=""></option>
+                        </select>
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-bill-form-modal-close
+                        data-i18n="bills.form.cancel">Anuluj</button>
+                <button type="submit"
+                        class="button primary snapshot-form-modal-action-button"
+                        form="bill-form"
+                        data-i18n="bills.form.submit">Zarejestruj rachunek</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

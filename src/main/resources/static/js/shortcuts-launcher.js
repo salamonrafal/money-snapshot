@@ -134,7 +134,9 @@
                 : 0;
             document.body.style.setProperty("--shortcuts-launcher-scroll-top", `${scrollTop}px`);
             document.body.style.setProperty("--topbar-lock-height", `${topbarHeight}px`);
-            document.documentElement.classList.add("shortcuts-launcher-scroll-locked");
+            if (MoneySnapshotUi.shouldReserveScrollbarSpace()) {
+                document.documentElement.classList.add("shortcuts-launcher-scroll-locked");
+            }
             panel.hidden = false;
             document.body.classList.add("shortcuts-launcher-open");
             button.setAttribute("aria-expanded", "true");

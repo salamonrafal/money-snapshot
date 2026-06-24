@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Nowy rachunek | Money Snapshot', 'bill-form.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('liabilities')}"></header>
+
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="bills.form.eyebrow">Nowy wpis</p>
+        <h1 data-i18n="bills.form.title">Zarejestruj nowy rachunek</h1>
+        <p data-i18n="bills.form.subtitle">Uzupełnij podstawowe dane rachunku i zapisz wpis na swojej liście rachunków.</p>
+    </section>
+
+    <section class="management-layout single-column"
+             data-i18n-aria-label="bills.form.aria"
+             aria-label="Formularz rachunku">
+        <form class="editor-panel wide-panel account-form-panel bill-form-panel" id="bill-form" novalidate>
+            <div class="snapshot-form-modal-message inline-form-message-panel"
+                 id="bill-form-message-container"
+                 data-type="error"
+                 hidden>
+                <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 8v5"></path>
+                        <path d="M12 16h.01"></path>
+                    </svg>
+                </span>
+                <p class="form-message" id="bill-form-message" role="alert"></p>
+            </div>
+
+            <div class="form-grid bill-form-grid">
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.name">Nazwa rachunku</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input type="text" name="name" maxlength="120" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.amount">Kwota</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input type="text" name="amount" inputmode="decimal" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select name="status" required>
+                        <option value="ACTIVE" selected data-i18n="bills.status.ACTIVE">Aktywny</option>
+                        <option value="SUSPENDED" data-i18n="bills.status.SUSPENDED">Zawieszony</option>
+                        <option value="COMPLETED" data-i18n="bills.status.COMPLETED">Zakończony</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.durationMode">Okres trwania</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select name="durationType" id="bill-duration-type" required>
+                        <option value="UNTIL_DATE" selected data-i18n="bills.form.durationModeUntilDate">Do określonej daty</option>
+                        <option value="INSTALLMENTS" data-i18n="bills.form.durationModeInstallments">Określona liczba rat</option>
+                        <option value="OPEN_ENDED" data-i18n="bills.form.durationModeOpenEnded">Bezterminowo</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.repaymentDay">Dzień spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input type="number" name="repaymentDay" min="1" max="31" step="1" required>
+                </label>
+                <label class="field" id="bill-end-date-field">
+                    <span class="field-label"><span data-i18n="bills.form.endDate">Do daty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input type="date" name="endDate" required>
+                </label>
+                <label class="field" id="bill-installments-field" hidden>
+                    <span class="field-label"><span data-i18n="bills.form.installments">Liczba rat</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input type="number" name="installments" min="1" step="1" disabled>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.startFrom">Rozpoczęcie od</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <input type="date" name="startFrom" required>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.counterparty">Kontrahent</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select name="counterpartyId" id="bill-counterparty" required>
+                        <option value=""></option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label"><span data-i18n="bills.form.fromAccount">Z konta</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select name="accountId" id="bill-account" required>
+                        <option value=""></option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button primary" data-i18n="bills.form.submit">Zarejestruj rachunek</button>
+                <a class="button secondary" href="/bills.html" data-i18n="bills.form.cancel">Anuluj</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>
