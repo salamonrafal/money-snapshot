@@ -196,7 +196,7 @@ class BillScheduleServiceTest {
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(0L);
-        when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
+        when(billScheduleEntryRepository.findVisiblePageByBillIdAndOwnerId(
                 billId,
                 ownerId,
                 LocalDate.of(2026, 6, 22),
@@ -257,7 +257,7 @@ class BillScheduleServiceTest {
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(0L);
-        when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
+        when(billScheduleEntryRepository.findVisiblePageByBillIdAndOwnerId(
                 billId,
                 ownerId,
                 LocalDate.of(2026, 6, 22),
@@ -269,6 +269,88 @@ class BillScheduleServiceTest {
 
         verify(billScheduleEntryRepository, never()).saveAll(any());
         verify(billRepository, never()).findByIdAndOwnerIdForUpdate(billId, ownerId);
+    }
+
+    @Test
+    void overdueUnpaidInstallmentsRemainVisibleInScheduleResults() {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        Account account = new Account(bank, owner, "Personal PLN", "personal-pln", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+
+        com.moneysnapshot.counterparty.Counterparty counterparty = new com.moneysnapshot.counterparty.Counterparty(
+                owner,
+                "Orange Polska",
+                "orange-polska",
+                "12121212121212121212121212",
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(counterparty, "id", UUID.randomUUID());
+
+        Bill bill = new Bill(
+                owner,
+                counterparty,
+                account,
+                "Internet domowy",
+                "internet-domowy",
+                "PLN",
+                new BigDecimal("189.99"),
+                BillDurationType.INSTALLMENTS,
+                null,
+                12,
+                10,
+                LocalDate.of(2026, 1, 1),
+                BillStatus.ACTIVE
+        );
+        ReflectionTestUtils.setField(bill, "id", billId);
+
+        BillScheduleEntry overdueUnpaidEntry = new BillScheduleEntry(
+                owner,
+                bill,
+                1,
+                LocalDate.of(2026, 6, 10),
+                new BigDecimal("189.99"),
+                "PLN"
+        );
+        BillScheduleEntry upcomingEntry = new BillScheduleEntry(
+                owner,
+                bill,
+                2,
+                LocalDate.of(2026, 7, 10),
+                new BigDecimal("189.99"),
+                "PLN"
+        );
+
+        BillScheduleService service = new BillScheduleService(
+                billRepository,
+                billScheduleEntryRepository,
+                currentUserService,
+                Clock.fixed(Instant.parse("2026-06-22T09:00:00Z"), ZoneId.of("Europe/Warsaw"))
+        );
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
+        when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(2L);
+        when(billScheduleEntryRepository.findVisiblePageByBillIdAndOwnerId(
+                billId,
+                ownerId,
+                LocalDate.of(2026, 6, 22),
+                PageRequest.of(0, 12)
+        ))
+                .thenReturn(new PageImpl<>(List.of(overdueUnpaidEntry, upcomingEntry), PageRequest.of(0, 12), 2));
+
+        var result = service.listSchedule(billId, PageRequest.of(0, 12));
+
+        assertThat(result.content()).hasSize(2);
+        assertThat(result.content().get(0).installmentNumber()).isEqualTo(1);
+        assertThat(result.content().get(0).dueDate()).isEqualTo(LocalDate.of(2026, 6, 10));
+        assertThat(result.content().get(0).paid()).isFalse();
+        assertThat(result.content().get(1).installmentNumber()).isEqualTo(2);
     }
 
     @Test
@@ -319,7 +401,7 @@ class BillScheduleServiceTest {
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(12L);
-        when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
+        when(billScheduleEntryRepository.findVisiblePageByBillIdAndOwnerId(
                 billId,
                 ownerId,
                 LocalDate.of(2026, 6, 22),
@@ -673,7 +755,7 @@ class BillScheduleServiceTest {
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(12L);
-        when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
+        when(billScheduleEntryRepository.findVisiblePageByBillIdAndOwnerId(
                 billId,
                 ownerId,
                 LocalDate.of(2026, 6, 22),
@@ -747,7 +829,7 @@ class BillScheduleServiceTest {
         );
         when(billScheduleEntryRepository.findFirstByBillIdAndOwnerIdOrderByDueDateDescInstallmentNumberDesc(billId, ownerId))
                 .thenReturn(Optional.of(lastEntry));
-        when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
+        when(billScheduleEntryRepository.findVisiblePageByBillIdAndOwnerId(
                 billId,
                 ownerId,
                 LocalDate.of(2026, 6, 22),
@@ -817,7 +899,7 @@ class BillScheduleServiceTest {
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(12L);
-        when(billScheduleEntryRepository.findUpcomingPageByBillIdAndOwnerId(
+        when(billScheduleEntryRepository.findVisiblePageByBillIdAndOwnerId(
                 billId,
                 ownerId,
                 LocalDate.of(2026, 6, 22),

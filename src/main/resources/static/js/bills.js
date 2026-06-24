@@ -657,7 +657,11 @@ async function saveBill(payload) {
     }
 
     if (response.status === 409) {
-        const duplicateError = new Error(errorPayload?.message ?? "Bill with the same name already exists.");
+        const duplicateError = new Error(
+            billsMessages["bills.form.error.duplicate"]
+            ?? errorPayload?.message
+            ?? "Bill with the same name already exists."
+        );
         duplicateError.fieldErrors = {name: true};
         throw duplicateError;
     }

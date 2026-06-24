@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -171,6 +172,61 @@ class BillServiceTest {
         assertThatThrownBy(() -> service.createBill(request))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("409 CONFLICT");
+    }
+
+    @Test
+    void createBillTranslatesDuplicateNameRaceOnFlushToConflict() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        UUID counterpartyId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+        when(owner.getId()).thenReturn(ownerId);
+
+        BillService service = new BillService(
+                billRepository,
+                billScheduleEntryRepository,
+                accountRepository,
+                counterpartyRepository,
+                normalizer,
+                currentUserService,
+                eventPublisher
+        );
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+        Account account = new Account(bank, owner, "Personal PLN", "personal-pln", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", accountId);
+        Counterparty counterparty = new Counterparty(owner, "Orange Polska", "orange-polska", "12121212121212121212121212", null, null);
+        ReflectionTestUtils.setField(counterparty, "id", counterpartyId);
+
+        CreateBillRequest request = new CreateBillRequest(
+                "Internet domowy",
+                new BigDecimal("189.99"),
+                BillDurationType.OPEN_ENDED,
+                null,
+                null,
+                5,
+                LocalDate.of(2025, 2, 1),
+                counterpartyId,
+                accountId,
+                BillStatus.ACTIVE
+        );
+
+        when(currentUserService.currentUser()).thenReturn(owner);
+        when(normalizer.normalize("Internet domowy")).thenReturn("internet-domowy");
+        when(billRepository.findByOwnerIdAndNormalizedName(ownerId, "internet-domowy")).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndOwnerIdWithBank(accountId, ownerId)).thenReturn(Optional.of(account));
+        when(counterpartyRepository.findByIdAndOwnerId(counterpartyId, ownerId)).thenReturn(Optional.of(counterparty));
+        when(billRepository.save(any(Bill.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        org.mockito.Mockito.doThrow(new DataIntegrityViolationException("duplicate key"))
+                .when(billRepository).flush();
+
+        assertThatThrownBy(() -> service.createBill(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409 CONFLICT")
+                .hasMessageContaining("Bill with the same name already exists.");
+
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -324,6 +380,64 @@ class BillServiceTest {
         verify(eventPublisher).publishEvent(argThat((Object event) -> event instanceof BillScheduleRegenerationRequestedEvent changedEvent
                 && changedEvent.regenerateFromCurrentDate()));
         verify(billRepository).flush();
+    }
+
+    @Test
+    void updateBillTranslatesDuplicateNameRaceOnFlushToConflict() {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        UUID counterpartyId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+
+        BillService service = new BillService(
+                billRepository,
+                billScheduleEntryRepository,
+                accountRepository,
+                counterpartyRepository,
+                normalizer,
+                currentUserService,
+                eventPublisher
+        );
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+        Account account = new Account(bank, owner, "Home account", "home-account", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", accountId);
+        Counterparty counterparty = new Counterparty(owner, "PGE", "pge", "12121212121212121212121212", null, null);
+        ReflectionTestUtils.setField(counterparty, "id", counterpartyId);
+        Bill existingBill = new Bill(owner, counterparty, account, "Old bill", "old-bill", "PLN", new BigDecimal("10.00"), BillDurationType.OPEN_ENDED, null, null, 3, LocalDate.of(2025, 1, 1), BillStatus.ACTIVE);
+        ReflectionTestUtils.setField(existingBill, "id", billId);
+
+        CreateBillRequest request = new CreateBillRequest(
+                "Energia",
+                new BigDecimal("74.50"),
+                BillDurationType.INSTALLMENTS,
+                null,
+                12,
+                12,
+                LocalDate.of(2026, 1, 12),
+                counterpartyId,
+                accountId,
+                BillStatus.SUSPENDED
+        );
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(normalizer.normalize("Energia")).thenReturn("energia");
+        when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(existingBill));
+        when(billRepository.findByOwnerIdAndNormalizedName(ownerId, "energia")).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndOwnerIdWithBank(accountId, ownerId)).thenReturn(Optional.of(account));
+        when(counterpartyRepository.findByIdAndOwnerId(counterpartyId, ownerId)).thenReturn(Optional.of(counterparty));
+        when(billRepository.save(existingBill)).thenReturn(existingBill);
+        org.mockito.Mockito.doThrow(new DataIntegrityViolationException("duplicate key"))
+                .when(billRepository).flush();
+
+        assertThatThrownBy(() -> service.updateBill(billId, request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409 CONFLICT")
+                .hasMessageContaining("Bill with the same name already exists.");
+
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test

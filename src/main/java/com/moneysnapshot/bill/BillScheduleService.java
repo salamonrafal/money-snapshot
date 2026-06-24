@@ -86,7 +86,7 @@ public class BillScheduleService {
         }
 
         Page<BillScheduleEntryResponse> page = billScheduleEntryRepository
-                .findUpcomingPageByBillIdAndOwnerId(billId, ownerId, today, pageable)
+                .findVisiblePageByBillIdAndOwnerId(billId, ownerId, today, pageable)
                 .map(BillScheduleEntryResponse::from);
 
         return PagedBillScheduleResponse.from(BillScheduleSummaryResponse.from(bill), page);

@@ -711,7 +711,8 @@ public class MessageBundleService {
             "bills.repaymentDay.value",
             "bills.status.ACTIVE",
             "bills.status.SUSPENDED",
-            "bills.status.COMPLETED"
+            "bills.status.COMPLETED",
+            "bills.form.error.duplicate"
     );
 
     private static final Set<String> USER_PAGE_KEYS = Set.of(

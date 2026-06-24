@@ -20,10 +20,10 @@ public interface BillScheduleEntryRepository extends JpaRepository<BillScheduleE
             from BillScheduleEntry entry
             where entry.bill.id = :billId
               and entry.owner.id = :ownerId
-              and entry.dueDate >= :dueDate
+              and (entry.dueDate >= :dueDate or entry.paid = false)
             order by entry.dueDate asc, entry.installmentNumber asc
             """)
-    Page<BillScheduleEntry> findUpcomingPageByBillIdAndOwnerId(
+    Page<BillScheduleEntry> findVisiblePageByBillIdAndOwnerId(
             @Param("billId") UUID billId,
             @Param("ownerId") UUID ownerId,
             @Param("dueDate") LocalDate dueDate,

@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -114,8 +115,13 @@ public class BillService {
                 request.status()
         );
 
-        Bill saved = billRepository.save(bill);
-        billRepository.flush();
+        Bill saved;
+        try {
+            saved = billRepository.save(bill);
+            billRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw duplicateBillNameConflict(exception);
+        }
         if (saved.getStatus() != BillStatus.COMPLETED) {
             eventPublisher.publishEvent(new BillScheduleRegenerationRequestedEvent(saved.getId(), false));
         }
@@ -155,8 +161,13 @@ public class BillService {
                 request.status()
         );
 
-        Bill saved = billRepository.save(bill);
-        billRepository.flush();
+        Bill saved;
+        try {
+            saved = billRepository.save(bill);
+            billRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw duplicateBillNameConflict(exception);
+        }
         // Status-only transitions are intentionally non-destructive. Regenerate
         // the schedule only when the schedule structure changes.
         if (scheduleStructureChanged && saved.getStatus() != BillStatus.COMPLETED) {
@@ -263,5 +274,9 @@ public class BillService {
         LocalDate candidate = startFrom.withDayOfMonth(1).plusMonths(monthOffset);
         int lastDayOfMonth = candidate.lengthOfMonth();
         return candidate.withDayOfMonth(Math.min(repaymentDay, lastDayOfMonth));
+    }
+
+    private ResponseStatusException duplicateBillNameConflict(Exception cause) {
+        return new ResponseStatusException(HttpStatus.CONFLICT, "Bill with the same name already exists.", cause);
     }
 }

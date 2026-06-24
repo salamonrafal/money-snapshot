@@ -9,6 +9,7 @@ import com.moneysnapshot.shared.validation.BankAccountNumbers;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -48,14 +49,18 @@ public class CounterpartyService {
             throw new DuplicateCounterpartyNameException(normalizedName);
         }
 
-        return counterpartyRepository.save(new Counterparty(
-                owner,
-                request.name().trim(),
-                normalizedName,
-                normalizeBankAccountNumber(request.bankAccountNumber()),
-                trimToNull(request.address()),
-                trimToNull(request.note())
-        ));
+        try {
+            return counterpartyRepository.saveAndFlush(new Counterparty(
+                    owner,
+                    request.name().trim(),
+                    normalizedName,
+                    normalizeBankAccountNumber(request.bankAccountNumber()),
+                    trimToNull(request.address()),
+                    trimToNull(request.note())
+            ));
+        } catch (DataIntegrityViolationException exception) {
+            throw new DuplicateCounterpartyNameException(normalizedName);
+        }
     }
 
     @Transactional
@@ -75,7 +80,11 @@ public class CounterpartyService {
                 trimToNull(request.address()),
                 trimToNull(request.note())
         );
-        return counterpartyRepository.save(counterparty);
+        try {
+            return counterpartyRepository.saveAndFlush(counterparty);
+        } catch (DataIntegrityViolationException exception) {
+            throw new DuplicateCounterpartyNameException(normalizedName);
+        }
     }
 
     @Transactional
