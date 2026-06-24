@@ -651,6 +651,77 @@ class BillScheduleServiceTest {
     }
 
     @Test
+    void regenerateScheduleFromCurrentDatePreservesShiftedFutureRowsByDueDateInsteadOfInstallmentNumber() {
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        Account account = new Account(bank, owner, "Personal PLN", "personal-pln", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+
+        com.moneysnapshot.counterparty.Counterparty counterparty = new com.moneysnapshot.counterparty.Counterparty(
+                owner,
+                "Orange Polska",
+                "orange-polska",
+                "12121212121212121212121212",
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(counterparty, "id", UUID.randomUUID());
+
+        Bill bill = new Bill(
+                owner,
+                counterparty,
+                account,
+                "Internet domowy",
+                "internet-domowy",
+                "PLN",
+                new BigDecimal("189.99"),
+                BillDurationType.UNTIL_DATE,
+                LocalDate.of(2026, 12, 31),
+                null,
+                10,
+                LocalDate.of(2026, 2, 1),
+                BillStatus.ACTIVE
+        );
+        UUID billId = UUID.randomUUID();
+        ReflectionTestUtils.setField(bill, "id", billId);
+
+        BillScheduleEntry preservedJuneEntry = new BillScheduleEntry(
+                owner,
+                bill,
+                6,
+                LocalDate.of(2026, 6, 10),
+                new BigDecimal("189.99"),
+                "PLN"
+        );
+
+        BillScheduleService service = new BillScheduleService(
+                billRepository,
+                billScheduleEntryRepository,
+                currentUserService,
+                Clock.fixed(Instant.parse("2026-06-22T09:00:00Z"), ZoneId.of("Europe/Warsaw"))
+        );
+
+        when(billRepository.findByIdWithAccountAndCounterparty(billId)).thenReturn(Optional.of(bill));
+        when(billScheduleEntryRepository.findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(billId))
+                .thenReturn(List.of(preservedJuneEntry));
+
+        service.regenerateScheduleFromCurrentDate(billId);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<BillScheduleEntry>> entriesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(billScheduleEntryRepository).saveAll(entriesCaptor.capture());
+        List<BillScheduleEntry> entries = entriesCaptor.getValue();
+
+        // Moving the effective schedule window can remap installment numbers to later months.
+        // The new July row must survive even if a preserved June row used the same number before.
+        assertThat(entries).extracting(BillScheduleEntry::getDueDate)
+                .contains(LocalDate.of(2026, 7, 10));
+        assertThat(entries).extracting(BillScheduleEntry::getInstallmentNumber)
+                .contains(6);
+    }
+
+    @Test
     void regenerateScheduleGeneratesAllSixHundredInstallmentsWhenFirstMonthIsSkipped() {
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);
         Bank bank = new Bank(owner, "Main bank", "main-bank");

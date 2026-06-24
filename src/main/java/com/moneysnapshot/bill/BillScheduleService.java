@@ -128,19 +128,21 @@ public class BillScheduleService {
     }
 
     private List<BillScheduleEntry> filterOutPreservedInstallments(Bill bill, LocalDate today, List<BillScheduleEntry> entries) {
-        Set<Integer> preservedInstallmentNumbers = billScheduleEntryRepository
+        Set<LocalDate> preservedDueDates = billScheduleEntryRepository
                 .findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(bill.getId())
                 .stream()
                 .filter(entry -> entry.isPaid() || entry.getDueDate().isBefore(today))
-                .map(BillScheduleEntry::getInstallmentNumber)
+                // Structural edits can remap installment numbers to different months.
+                // Preserve only rows that still point to the same due date.
+                .map(BillScheduleEntry::getDueDate)
                 .collect(Collectors.toSet());
 
-        if (preservedInstallmentNumbers.isEmpty()) {
+        if (preservedDueDates.isEmpty()) {
             return entries;
         }
 
         return entries.stream()
-                .filter(entry -> !preservedInstallmentNumbers.contains(entry.getInstallmentNumber()))
+                .filter(entry -> !preservedDueDates.contains(entry.getDueDate()))
                 .toList();
     }
 
