@@ -1,6 +1,7 @@
 const periodElement = document.querySelector("#snapshot-panel-period");
 const changePercentElement = document.querySelector("#snapshot-panel-change-percent");
 const accountsElement = document.querySelector("#snapshot-panel-accounts");
+const billsElement = document.querySelector("#snapshot-panel-bills");
 const liabilitiesElement = document.querySelector("#snapshot-panel-liabilities");
 const installmentsElement = document.querySelector("#snapshot-panel-installments");
 const balanceElement = document.querySelector("#snapshot-panel-balance");
@@ -144,6 +145,18 @@ function renderLiabilitiesSummary(summary) {
         const numericValue = summary ? -Math.abs(Number(summary.monthlyDueAmount ?? 0)) : null;
         installmentsElement.textContent = numericValue === null ? "-" : MoneySnapshotUi.formatMoneyValue(numericValue, userSettings);
     }
+}
+
+function renderBillsSummary(bills) {
+    if (!billsElement) {
+        return;
+    }
+
+    const totalActiveBillsAmount = (bills ?? [])
+        .filter((bill) => bill?.status === "ACTIVE")
+        .reduce((total, bill) => total + Number(bill.amount ?? 0), 0);
+
+    billsElement.textContent = MoneySnapshotUi.formatMoneyValue(-Math.abs(totalActiveBillsAmount), userSettings);
 }
 
 function configuredPeriodEndDate(periodDate) {
@@ -384,10 +397,23 @@ async function loadLiabilitiesSummary() {
     return response.json();
 }
 
+async function loadBillsSummary() {
+    const response = await fetch("/api/bills");
+    if (!response.ok) {
+        throw new Error("Cannot load bills summary.");
+    }
+
+    return response.json();
+}
+
 async function loadHomeData() {
-    const [panel, liabilitiesSummary] = await Promise.all([
+    const [panel, liabilitiesSummary, billsSummary] = await Promise.all([
         loadSnapshotPanel(),
         loadLiabilitiesSummary().catch((error) => {
+            console.error(error);
+            return null;
+        }),
+        loadBillsSummary().catch((error) => {
             console.error(error);
             return null;
         })
@@ -395,6 +421,7 @@ async function loadHomeData() {
 
     renderSnapshotChart(panel.chartPoints ?? [], panel.periodDate, liabilitiesSummary);
     renderLiabilitiesSummary(liabilitiesSummary);
+    renderBillsSummary(billsSummary);
 }
 
 async function ensureSnapshotFormController() {

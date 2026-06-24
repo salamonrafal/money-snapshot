@@ -6,11 +6,14 @@ import com.moneysnapshot.account.AccountService;
 import com.moneysnapshot.account.DuplicateAccountNameException;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,6 +38,13 @@ public class AccountController {
     @GetMapping
     public List<AccountResponse> listAccounts() {
         return accountService.listAccounts().stream()
+                .map(AccountResponse::from)
+                .toList();
+    }
+
+    @GetMapping("/snapshots")
+    public List<AccountResponse> listAccountsVisibleInSnapshots() {
+        return accountService.listAccountsVisibleInSnapshots().stream()
                 .map(AccountResponse::from)
                 .toList();
     }
@@ -93,5 +103,19 @@ public class AccountController {
     @ResponseStatus(HttpStatus.CONFLICT)
     public Map<String, String> handleAccountInUse(AccountInUseException exception) {
         return Map.of("message", exception.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> handleValidationFailure(MethodArgumentNotValidException exception) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
+            fieldErrors.putIfAbsent(fieldError.getField(), fieldError.getCode());
+        }
+
+        return Map.of(
+                "message", "Validation failed.",
+                "fieldErrors", fieldErrors
+        );
     }
 }

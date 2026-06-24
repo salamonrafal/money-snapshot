@@ -68,7 +68,7 @@ class SavingsForecastServiceTest {
     }
 
     @Test
-    void generateForecastBuildsMonthlyBalancesAndCurrencySummaries() {
+    void generateForecastBuildsMonthlyBalancesAndCurrencySummariesOnlyForAccountsWithPositiveContribution() {
         UUID ownerId = UUID.randomUUID();
         AppUser owner = mock(AppUser.class);
         LocalDate startDate = LocalDate.of(2026, 1, 1);
@@ -76,7 +76,7 @@ class SavingsForecastServiceTest {
         ReflectionTestUtils.setField(savedRun, "id", UUID.randomUUID());
 
         Account plnAccount = account("Main account", "Bank A", "PLN", new BigDecimal("100.00"));
-        Account usdAccount = account("USD reserve", "Bank B", "USD", null);
+        Account usdAccount = accountWithContribution(BigDecimal.ZERO);
         AccountSnapshot plnSnapshot = new AccountSnapshot(
                 plnAccount,
                 owner,
@@ -122,12 +122,11 @@ class SavingsForecastServiceTest {
         SavingsForecastRunResponse response = service.generateForecast(new GenerateSavingsForecastRequest(startDate, 6));
 
         assertEquals(6, response.forecastMonths().size());
-        assertEquals(2, response.entries().size());
-        assertEquals(12, response.summaries().size());
-        assertEquals(12, savedMonthValues.size());
+        assertEquals(1, response.entries().size());
+        assertEquals(6, response.summaries().size());
+        assertEquals(6, savedMonthValues.size());
 
         SavingsForecastEntryResponse firstEntry = response.entries().get(0);
-        SavingsForecastEntryResponse secondEntry = response.entries().get(1);
 
         assertEquals("Main account", firstEntry.accountName());
         assertBigDecimalEquals("1000.00", firstEntry.startingBalance());
@@ -136,15 +135,7 @@ class SavingsForecastServiceTest {
         assertBigDecimalEquals("1100.00", firstEntry.monthlyBalances().get(0).balance());
         assertBigDecimalEquals("1600.00", firstEntry.monthlyBalances().get(5).balance());
 
-        assertEquals("USD reserve", secondEntry.accountName());
-        assertBigDecimalEquals("0", secondEntry.startingBalance());
-        assertBigDecimalEquals("0", secondEntry.forecastedMonthlyContribution());
-        assertBigDecimalEquals("0", secondEntry.projectedBalance());
-        assertBigDecimalEquals("0", secondEntry.monthlyBalances().get(0).balance());
-        assertBigDecimalEquals("0", secondEntry.monthlyBalances().get(5).balance());
-
         assertSummaryTotal(response.summaries(), LocalDate.of(2026, 1, 1), "PLN", new BigDecimal("1100.00"));
-        assertSummaryTotal(response.summaries(), LocalDate.of(2026, 1, 1), "USD", new BigDecimal("0"));
     }
 
     private Account account(String accountName, String bankName, String currencyCode, BigDecimal monthlyContribution) {
@@ -156,6 +147,12 @@ class SavingsForecastServiceTest {
         when(account.getName()).thenReturn(accountName);
         when(account.getBank()).thenReturn(bank);
         when(account.getCurrencyCode()).thenReturn(currencyCode);
+        when(account.getForecastedMonthlyContribution()).thenReturn(monthlyContribution);
+        return account;
+    }
+
+    private Account accountWithContribution(BigDecimal monthlyContribution) {
+        Account account = mock(Account.class);
         when(account.getForecastedMonthlyContribution()).thenReturn(monthlyContribution);
         return account;
     }

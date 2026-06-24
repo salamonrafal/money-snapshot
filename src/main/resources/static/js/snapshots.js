@@ -547,7 +547,7 @@ async function loadSnapshots() {
 }
 
 async function loadAccounts() {
-    const response = await fetch("/api/accounts");
+    const response = await fetch("/api/accounts/snapshots");
     if (!response.ok) {
         throw new Error(messages["snapshots.error.loadAccounts"]);
     }

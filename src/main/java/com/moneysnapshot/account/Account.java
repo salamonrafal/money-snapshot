@@ -1,6 +1,7 @@
 package com.moneysnapshot.account;
 
 import com.moneysnapshot.security.AppUser;
+import com.moneysnapshot.shared.validation.BankAccountNumbers;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,8 +54,14 @@ public class Account {
     @Column(length = 500)
     private String description;
 
+    @Column(name = "bank_account_number", length = 64)
+    private String bankAccountNumber;
+
     @Column(name = "forecasted_monthly_contribution", precision = 19, scale = 2)
     private BigDecimal forecastedMonthlyContribution;
+
+    @Column(name = "show_in_snapshots", nullable = false)
+    private boolean showInSnapshots = true;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -77,7 +84,9 @@ public class Account {
             String accountTypeCode,
             String currencyCode,
             String description,
+            String bankAccountNumber,
             BigDecimal forecastedMonthlyContribution,
+            boolean showInSnapshots,
             AccountStatus status
     ) {
         this.bank = bank;
@@ -87,8 +96,24 @@ public class Account {
         this.accountTypeCode = accountTypeCode;
         this.currencyCode = currencyCode;
         this.description = description;
+        this.bankAccountNumber = BankAccountNumbers.normalize(bankAccountNumber);
         this.forecastedMonthlyContribution = forecastedMonthlyContribution;
+        this.showInSnapshots = showInSnapshots;
         this.status = status;
+    }
+
+    public Account(
+            Bank bank,
+            AppUser owner,
+            String name,
+            String normalizedName,
+            String accountTypeCode,
+            String currencyCode,
+            String description,
+            BigDecimal forecastedMonthlyContribution,
+            AccountStatus status
+    ) {
+        this(bank, owner, name, normalizedName, accountTypeCode, currencyCode, description, null, forecastedMonthlyContribution, true, status);
     }
 
     @PrePersist
@@ -114,7 +139,9 @@ public class Account {
             String accountTypeCode,
             String currencyCode,
             String description,
+            String bankAccountNumber,
             BigDecimal forecastedMonthlyContribution,
+            boolean showInSnapshots,
             AccountStatus status
     ) {
         this.bank = bank;
@@ -123,7 +150,9 @@ public class Account {
         this.accountTypeCode = accountTypeCode;
         this.currencyCode = currencyCode;
         this.description = description;
+        this.bankAccountNumber = BankAccountNumbers.normalize(bankAccountNumber);
         this.forecastedMonthlyContribution = forecastedMonthlyContribution;
+        this.showInSnapshots = showInSnapshots;
         this.status = status;
     }
 
@@ -159,8 +188,16 @@ public class Account {
         return forecastedMonthlyContribution;
     }
 
+    public String getBankAccountNumber() {
+        return bankAccountNumber;
+    }
+
     public void updateForecastedMonthlyContribution(BigDecimal forecastedMonthlyContribution) {
         this.forecastedMonthlyContribution = forecastedMonthlyContribution;
+    }
+
+    public boolean isShowInSnapshots() {
+        return showInSnapshots;
     }
 
     public AccountStatus getStatus() {

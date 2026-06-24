@@ -1,6 +1,7 @@
 package com.moneysnapshot.account;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,6 +12,7 @@ import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.shared.normalization.NameNormalizationService;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -98,7 +100,9 @@ class AccountServiceTest {
                 "BANK_ACCOUNT",
                 "EUR",
                 null,
+                null,
                 new BigDecimal("10"),
+                true,
                 AccountStatus.ACTIVE
         );
 
@@ -113,5 +117,97 @@ class AccountServiceTest {
         service.updateAccount(accountId, request);
 
         verify(eventPublisher).publishEvent(new AccountCurrencyChangedEvent(accountId, "EUR"));
+    }
+
+    @Test
+    void createAccountDefaultsShowInSnapshotsToTrueAndNormalizesBankAccountNumber() {
+        UUID ownerId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+        when(owner.getId()).thenReturn(ownerId);
+
+        AccountService service = new AccountService(
+                accountRepository,
+                bankRepository,
+                billRepository,
+                normalizer,
+                eventPublisher,
+                currentUserService
+        );
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        CreateAccountRequest request = new CreateAccountRequest(
+                "Main bank",
+                "Main account",
+                "BANK_ACCOUNT",
+                "PLN",
+                null,
+                "12 1020 5558 1111 2233 4455 6677",
+                null,
+                null,
+                AccountStatus.ACTIVE
+        );
+
+        when(currentUserService.currentUser()).thenReturn(owner);
+        when(normalizer.normalize("Main account")).thenReturn("main-account");
+        when(normalizer.normalize("Main bank")).thenReturn("main-bank");
+        when(accountRepository.existsByOwnerIdAndNormalizedName(ownerId, "main-account")).thenReturn(false);
+        when(bankRepository.findByOwnerIdAndNormalizedName(ownerId, "main-bank")).thenReturn(Optional.of(bank));
+        when(accountRepository.save(org.mockito.ArgumentMatchers.any(Account.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account savedAccount = service.createAccount(request);
+
+        assertThat(savedAccount.isShowInSnapshots()).isTrue();
+        assertThat(savedAccount.getBankAccountNumber()).isEqualTo("12102055581111223344556677");
+    }
+
+    @Test
+    void listAccountsVisibleInSnapshotsReturnsOnlyVisibleAccounts() {
+        UUID ownerId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+
+        AccountService service = new AccountService(
+                accountRepository,
+                bankRepository,
+                billRepository,
+                normalizer,
+                eventPublisher,
+                currentUserService
+        );
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        Account visibleAccount = new Account(
+                bank,
+                owner,
+                "Visible",
+                "visible",
+                "BANK_ACCOUNT",
+                "PLN",
+                null,
+                null,
+                null,
+                true,
+                AccountStatus.ACTIVE
+        );
+        Account hiddenAccount = new Account(
+                bank,
+                owner,
+                "Hidden",
+                "hidden",
+                "BANK_ACCOUNT",
+                "PLN",
+                null,
+                null,
+                null,
+                false,
+                AccountStatus.ACTIVE
+        );
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(accountRepository.findAllByOwnerIdWithBankOrderByName(ownerId)).thenReturn(List.of(visibleAccount, hiddenAccount));
+
+        List<Account> result = service.listAccountsVisibleInSnapshots();
+
+        assertThat(result).containsExactly(visibleAccount);
     }
 }

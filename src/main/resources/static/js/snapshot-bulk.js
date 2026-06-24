@@ -384,7 +384,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
         }
 
         async function loadAccounts() {
-            const response = await fetch("/api/accounts");
+            const response = await fetch("/api/accounts/snapshots");
             if (!response.ok) {
                 throw new Error(currentMessages["snapshots.error.loadAccounts"]);
             }
