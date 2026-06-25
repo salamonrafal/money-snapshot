@@ -147,16 +147,40 @@ function renderLiabilitiesSummary(summary) {
     }
 }
 
+function aggregateBillsByCurrency(bills) {
+    const totalsByCurrency = new Map();
+
+    (bills ?? [])
+        .filter((bill) => bill?.status === "ACTIVE")
+        .forEach((bill) => {
+            const currencyCode = `${bill.currencyCode ?? ""}`.trim().toUpperCase();
+            const amount = Number(bill.amount ?? 0);
+            if (!currencyCode || !Number.isFinite(amount)) {
+                return;
+            }
+
+            totalsByCurrency.set(currencyCode, (totalsByCurrency.get(currencyCode) ?? 0) + amount);
+        });
+
+    return [...totalsByCurrency.entries()]
+        .sort(([leftCurrency], [rightCurrency]) => leftCurrency.localeCompare(rightCurrency))
+        .map(([currencyCode, amount]) => ({
+            currencyCode,
+            amount: -Math.abs(amount)
+        }));
+}
+
 function renderBillsSummary(bills) {
     if (!billsElement) {
         return;
     }
 
-    const totalActiveBillsAmount = (bills ?? [])
-        .filter((bill) => bill?.status === "ACTIVE")
-        .reduce((total, bill) => total + Number(bill.amount ?? 0), 0);
+    if (bills === null) {
+        billsElement.textContent = currentMessages["home.summary.unavailable"] ?? "-";
+        return;
+    }
 
-    billsElement.textContent = MoneySnapshotUi.formatMoneyValue(-Math.abs(totalActiveBillsAmount), userSettings);
+    billsElement.textContent = formatAmountList(aggregateBillsByCurrency(bills));
 }
 
 function configuredPeriodEndDate(periodDate) {

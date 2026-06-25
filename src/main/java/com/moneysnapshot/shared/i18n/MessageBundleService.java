@@ -67,6 +67,7 @@ public class MessageBundleService {
                             "home.hero.banksAccountsAction",
                             "home.summary.accounts",
                             "home.summary.bills",
+                            "home.summary.unavailable",
                             "home.summary.liabilities",
                             "home.summary.installments",
                             "home.summary.balance",
