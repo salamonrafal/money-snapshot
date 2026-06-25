@@ -13,6 +13,7 @@ const billInstallmentsField = document.querySelector("#bill-installments-field")
 const billCounterpartySelect = document.querySelector("#bill-counterparty");
 const billAccountSelect = document.querySelector("#bill-account");
 const billFormModalTitle = document.querySelector("#bill-form-modal-title");
+const billFormSubmitButton = document.querySelector("#bill-form-modal button[type='submit'][form='bill-form']");
 const billInfoTitle = document.querySelector("#bill-info-title");
 const billInfoList = document.querySelector("#bill-info-list");
 const deleteBillModal = MoneySnapshotUi.createConfirmModal({
@@ -428,6 +429,12 @@ function setBillModalMode(isEdit) {
     billFormModalTitle.textContent = isEdit
         ? (billsMessages["bills.actions.edit"] ?? billsMessages["bills.form.title"] ?? "")
         : (billsMessages["bills.form.title"] ?? "");
+
+    if (billFormSubmitButton) {
+        billFormSubmitButton.textContent = isEdit
+            ? (billsMessages["bills.form.update"] ?? billsMessages["bills.form.submit"] ?? "")
+            : (billsMessages["bills.form.submit"] ?? "");
+    }
 }
 
 function resetBillForm() {

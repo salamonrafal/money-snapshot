@@ -61,14 +61,14 @@ public class SnapshotPanelService {
 
     private SnapshotPanelResponse buildPanel(UUID ownerId) {
         LocalDate periodDate = resolvePeriodStart(LocalDate.now(clock), userSettingsService.currentUserSettings().billingMonthStartDay());
-        List<CurrencyAmount> currentBalances = snapshotRepository.sumLatestBalancesByOwnerIdAndCurrency(ownerId);
-        List<CurrencyAmount> previousBalances = snapshotRepository.sumLatestBalancesBeforeDateByOwnerIdAndCurrency(ownerId, periodDate);
+        List<CurrencyAmount> currentBalances = snapshotRepository.sumLatestBalancesVisibleInSnapshotsByOwnerIdAndCurrency(ownerId);
+        List<CurrencyAmount> previousBalances = snapshotRepository.sumLatestBalancesBeforeDateVisibleInSnapshotsByOwnerIdAndCurrency(ownerId, periodDate);
         List<CurrencyAmount> monthlyChanges = subtractByCurrency(currentBalances, previousBalances);
 
         return new SnapshotPanelResponse(
                 periodDate,
                 calculateMonthlyChangePercent(currentBalances, previousBalances),
-                snapshotRepository.countAccountsWithSnapshotsByOwnerId(ownerId),
+                snapshotRepository.countAccountsWithSnapshotsVisibleInSnapshotsByOwnerId(ownerId),
                 toResponse(currentBalances),
                 toResponse(monthlyChanges),
                 List.of()

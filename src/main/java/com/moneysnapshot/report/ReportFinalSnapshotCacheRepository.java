@@ -19,7 +19,7 @@ public interface ReportFinalSnapshotCacheRepository extends JpaRepository<Report
 
     boolean existsByOwnerId(UUID ownerId);
 
-    List<ReportFinalSnapshotCache> findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
+    List<ReportFinalSnapshotCache> findAllByOwnerIdAndAccountShowInSnapshotsTrueAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(
             UUID ownerId,
             LocalDate fromDate,
             LocalDate toDate

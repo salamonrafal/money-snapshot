@@ -8,7 +8,7 @@
     <section class="page-heading">
         <p class="eyebrow" data-i18n="accounts.form.edit.eyebrow">Edycja konta</p>
         <h1 data-i18n="accounts.form.edit.title">Edytuj konto</h1>
-        <p data-i18n="accounts.form.edit.subtitle">Zmień dane konta, bank, walutę, status i opis.</p>
+        <p data-i18n="accounts.form.edit.subtitle">Zmień dane konta, bank, walutę, status, numer rachunku i opis.</p>
     </section>
 
     <section class="editor-panel account-form-panel">
@@ -50,6 +50,15 @@
                     </select>
                 </label>
             </div>
+            <label class="field">
+                <span data-i18n="accounts.form.bankAccountNumber">Numer rachunku</span>
+                <input id="account-bank-account-number" name="bankAccountNumber" type="text" maxlength="64" inputmode="numeric" autocomplete="off">
+                <span class="form-helper bank-account-info-helper is-empty" id="account-bank-account-number-bank-info"></span>
+            </label>
+            <label class="checkbox-field">
+                <input id="account-show-in-snapshots" name="showInSnapshots" type="checkbox" checked>
+                <span data-i18n="accounts.form.showInSnapshots">Pokazuj konto w migawkach</span>
+            </label>
             <label class="field">
                 <span data-i18n="accounts.form.description">Opis konta</span>
                 <textarea id="account-description" name="description" maxlength="500" rows="5"></textarea>

@@ -109,7 +109,7 @@ public class ReportQueryService {
         return new SnapshotPanelResponse(
                 periodDate,
                 calculateMonthlyChangePercent(periodEntries),
-                dailyBalanceCacheRepository.countTrackedAccounts(ownerId, today),
+                dailyBalanceCacheRepository.countTrackedAccountsVisibleInSnapshots(ownerId, today),
                 currentBalances,
                 monthlyChanges,
                 snapshotPanelChart(periodEntries, periodDate, periodEndDate, preferredCurrency)
@@ -337,7 +337,7 @@ public class ReportQueryService {
                         HashMap::new
                 ));
         List<ReportDailyBalanceCache> rows = dailyBalanceCacheRepository
-                .findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
+                .findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
         Map<UUID, HistoryReportResponse.Account> accountsById = new LinkedHashMap<>();
         Map<LocalDate, Map<UUID, HistoryReportResponse.Value>> valuesByDate = new LinkedHashMap<>();
         java.util.Set<String> emittedSnapshotKeys = new java.util.HashSet<>();
@@ -493,7 +493,7 @@ public class ReportQueryService {
         UUID ownerId = currentUserService.currentUserId();
         String totalAccountsLabel = totalAccountsLabel();
         List<ReportDailyBalanceCache> rows = dailyBalanceCacheRepository
-                .findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
+                .findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
         Map<String, Map<LocalDate, BigDecimal>> balancesByEntry = new LinkedHashMap<>();
         Map<String, EntryMeta> metaByEntry = new LinkedHashMap<>();
 
@@ -531,7 +531,7 @@ public class ReportQueryService {
     private List<EntrySeries> buildSummaryEntrySeries(String scope, LocalDate fromDate, LocalDate toDate) {
         UUID ownerId = currentUserService.currentUserId();
         List<ReportFinalSnapshotCache> snapshots = finalSnapshotCacheRepository
-                .findAllByOwnerIdAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(ownerId, LocalDate.of(1900, 1, 1), toDate);
+                .findAllByOwnerIdAndAccountShowInSnapshotsTrueAndSnapshotDateBetweenOrderBySnapshotDateAscAccountNameAsc(ownerId, LocalDate.of(1900, 1, 1), toDate);
 
         Map<UUID, AccountSummarySeries> byAccountId = new LinkedHashMap<>();
         snapshots.forEach(snapshot -> byAccountId.computeIfAbsent(
@@ -542,7 +542,7 @@ public class ReportQueryService {
         byAccountId.values().forEach(series -> series.snapshots().sort(Comparator.comparing(SummarySnapshot::date)));
 
         List<ReportDailyBalanceCache> dailyRows = dailyBalanceCacheRepository
-                .findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
+                .findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(ownerId, fromDate, toDate);
         dailyRows.forEach(row -> byAccountId.computeIfAbsent(
                 row.getAccount().getId(),
                 ignored -> new AccountSummarySeries(row.getAccount().getId(), row.getAccountName(), row.getBankName(), row.getCurrencyCode())

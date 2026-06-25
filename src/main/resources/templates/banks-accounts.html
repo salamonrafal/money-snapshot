@@ -227,7 +227,7 @@
         <div class="snapshot-form-modal-header">
             <div class="snapshot-form-modal-copy">
                 <h2 id="edit-account-modal-title" data-i18n="accounts.form.edit.title">Edytuj konto</h2>
-                <p data-i18n="accounts.form.edit.subtitle">Zmień dane konta, bank, walutę, status i opis.</p>
+                <p data-i18n="accounts.form.edit.subtitle">Zmień dane konta, bank, walutę, status, numer rachunku i opis.</p>
             </div>
             <button type="button"
                     class="icon-button secondary snapshot-form-modal-close"
@@ -296,6 +296,15 @@
                     </label>
                 </div>
                 <label class="field">
+                    <span data-i18n="accounts.form.bankAccountNumber">Numer rachunku</span>
+                    <input id="edit-account-bank-account-number" name="bankAccountNumber" type="text" maxlength="64" inputmode="numeric" autocomplete="off">
+                    <span class="form-helper bank-account-info-helper is-empty" id="edit-account-bank-account-number-bank-info"></span>
+                </label>
+                <label class="checkbox-field">
+                    <input id="edit-account-show-in-snapshots" name="showInSnapshots" type="checkbox" checked>
+                    <span data-i18n="accounts.form.showInSnapshots">Pokazuj konto w migawkach</span>
+                </label>
+                <label class="field">
                     <span data-i18n="accounts.form.description">Opis konta</span>
                     <textarea id="edit-account-description" name="description" maxlength="500" rows="5"></textarea>
                 </label>
@@ -321,7 +330,7 @@
         <div class="snapshot-form-modal-header">
             <div class="snapshot-form-modal-copy">
                 <h2 id="new-account-modal-title" data-i18n="accounts.form.title">Nowe konto</h2>
-                <p data-i18n="accounts.form.subtitle">Uzupełnij dane konta, bank, walutę, status i opis.</p>
+                <p data-i18n="accounts.form.subtitle">Uzupełnij dane konta, bank, walutę, status, numer rachunku i opis.</p>
             </div>
             <button type="button"
                     class="icon-button secondary snapshot-form-modal-close"
@@ -389,6 +398,15 @@
                         </select>
                     </label>
                 </div>
+                <label class="field">
+                    <span data-i18n="accounts.form.bankAccountNumber">Numer rachunku</span>
+                    <input id="new-account-bank-account-number" name="bankAccountNumber" type="text" maxlength="64" inputmode="numeric" autocomplete="off">
+                    <span class="form-helper bank-account-info-helper is-empty" id="new-account-bank-account-number-bank-info"></span>
+                </label>
+                <label class="checkbox-field">
+                    <input id="new-account-show-in-snapshots" name="showInSnapshots" type="checkbox" checked>
+                    <span data-i18n="accounts.form.showInSnapshots">Pokazuj konto w migawkach</span>
+                </label>
                 <label class="field">
                     <span data-i18n="accounts.form.description">Opis konta</span>
                     <textarea id="new-account-description" name="description" maxlength="500" rows="5"></textarea>

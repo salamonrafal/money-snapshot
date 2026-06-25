@@ -21,7 +21,7 @@ public interface ReportDailyBalanceCacheRepository extends JpaRepository<ReportD
             """)
     int deleteByOwnerId(@Param("ownerId") UUID ownerId);
 
-    List<ReportDailyBalanceCache> findAllByOwnerIdAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
+    List<ReportDailyBalanceCache> findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
             UUID ownerId,
             LocalDate fromDate,
             LocalDate toDate
@@ -45,6 +45,7 @@ public interface ReportDailyBalanceCacheRepository extends JpaRepository<ReportD
             from ReportDailyBalanceCache entry
             where entry.owner.id = :ownerId
                 and entry.balanceDate = :balanceDate
+                and entry.account.showInSnapshots = true
             """)
-    long countTrackedAccounts(@Param("ownerId") UUID ownerId, @Param("balanceDate") LocalDate balanceDate);
+    long countTrackedAccountsVisibleInSnapshots(@Param("ownerId") UUID ownerId, @Param("balanceDate") LocalDate balanceDate);
 }

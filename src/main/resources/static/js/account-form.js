@@ -5,6 +5,9 @@ const accountBankSelect = document.querySelector("#account-bank");
 const accountTypeSelect = document.querySelector("#account-type");
 const accountCurrencySelect = document.querySelector("#account-currency");
 const accountStatusSelect = document.querySelector("#account-status");
+const accountBankAccountNumberInput = document.querySelector("#account-bank-account-number");
+const accountBankAccountNumberBankInfo = document.querySelector("#account-bank-account-number-bank-info");
+const accountShowInSnapshotsInput = document.querySelector("#account-show-in-snapshots");
 const accountDescriptionInput = document.querySelector("#account-description");
 const cancelLink = document.querySelector(".split-actions a.button.secondary");
 
@@ -18,6 +21,64 @@ const BANKS_ACCOUNTS_NOTIFICATION_KEY = "money-snapshot-banks-accounts-notificat
 let messages = {};
 let cachedBanks = [];
 let loadedAccount = null;
+
+function setBankAccountInfo(text) {
+    if (!accountBankAccountNumberBankInfo) {
+        return;
+    }
+
+    accountBankAccountNumberBankInfo.textContent = text;
+    accountBankAccountNumberBankInfo.classList.toggle("is-empty", !text);
+}
+
+function updateBankAccountInfo() {
+    const rawValue = accountBankAccountNumberInput?.value ?? "";
+    const normalizedValue = MoneySnapshotUi.normalizeBankAccountNumber(rawValue);
+    if (!normalizedValue || !isValidBankAccountNumber(normalizedValue)) {
+        setBankAccountInfo("");
+        return;
+    }
+
+    const label = messages["accounts.form.bankAccountNumberHint"] ?? "";
+    const bankName = MoneySnapshotUi.resolvePolishBankNameFromAccountNumber(normalizedValue)
+        || (messages["accounts.form.bankNameUnknown"] ?? "");
+    setBankAccountInfo(`${label}: ${bankName}`);
+}
+
+function isValidBankAccountNumber(value) {
+    const normalized = MoneySnapshotUi.normalizeBankAccountNumber(value);
+    if (!normalized) {
+        return false;
+    }
+
+    let iban = normalized;
+    if (/^\d{26}$/.test(normalized)) {
+        iban = `PL${normalized}`;
+    } else if (!/^PL\d{26}$/.test(normalized)) {
+        return false;
+    }
+
+    const rearranged = `${iban.slice(4)}${iban.slice(0, 4)}`;
+    let remainder = 0;
+
+    for (const character of rearranged) {
+        if (/\d/.test(character)) {
+            remainder = (remainder * 10 + Number(character)) % 97;
+            continue;
+        }
+
+        if (!/[A-Z]/.test(character)) {
+            return false;
+        }
+
+        const mapped = String(character.charCodeAt(0) - 55);
+        for (const digit of mapped) {
+            remainder = (remainder * 10 + Number(digit)) % 97;
+        }
+    }
+
+    return remainder === 1;
+}
 
 function resolveRedirectUrl() {
     const safePath = MoneySnapshotUi.safeReturnToPath(returnTo);
@@ -128,7 +189,10 @@ async function loadAccount() {
     accountTypeSelect.value = loadedAccount.accountTypeCode;
     accountCurrencySelect.value = loadedAccount.currencyCode;
     accountStatusSelect.value = loadedAccount.status;
+    accountBankAccountNumberInput.value = loadedAccount.bankAccountNumber ?? "";
+    accountShowInSnapshotsInput.checked = loadedAccount.showInSnapshots !== false;
     accountDescriptionInput.value = loadedAccount.description ?? "";
+    updateBankAccountInfo();
 }
 
 function payloadFromForm() {
@@ -137,6 +201,8 @@ function payloadFromForm() {
         bankName: accountBankSelect.value,
         accountTypeCode: accountTypeSelect.value,
         currencyCode: accountCurrencySelect.value,
+        bankAccountNumber: MoneySnapshotUi.normalizeBankAccountNumber(accountBankAccountNumberInput.value) || null,
+        showInSnapshots: accountShowInSnapshotsInput.checked,
         description: accountDescriptionInput.value.trim(),
         status: accountStatusSelect.value
     };
@@ -160,6 +226,14 @@ async function saveAccount(payload) {
         throw new Error(messages["accounts.error.duplicate"]);
     }
 
+    if (response.status === 400) {
+        const errorBody = await response.json().catch(() => null);
+        if (errorBody?.fieldErrors?.bankAccountNumber === "ValidBankAccountNumber") {
+            throw new Error(messages["accounts.form.invalidBankAccountNumber"]);
+        }
+        throw new Error(messages["accounts.form.required"]);
+    }
+
     if (!response.ok) {
         throw new Error(messages[isEdit ? "accounts.error.update" : "accounts.error.create"]);
     }
@@ -175,6 +249,11 @@ accountForm.addEventListener("submit", async (event) => {
         setFormMessage(messages["accounts.form.required"], "error");
         return;
     }
+    if (payload.bankAccountNumber && !isValidBankAccountNumber(payload.bankAccountNumber)) {
+        setFormMessage(messages["accounts.form.invalidBankAccountNumber"], "error");
+        accountBankAccountNumberInput.focus();
+        return;
+    }
 
     accountForm.querySelector("button[type='submit']").disabled = true;
     setFormMessage("");
@@ -186,8 +265,16 @@ accountForm.addEventListener("submit", async (event) => {
     } catch (error) {
         setFormMessage(error.message, "error");
         accountForm.querySelector("button[type='submit']").disabled = false;
-        accountNameInput.focus();
+        if (error.message === messages["accounts.form.invalidBankAccountNumber"]) {
+            accountBankAccountNumberInput.focus();
+        } else {
+            accountNameInput.focus();
+        }
     }
+});
+
+accountBankAccountNumberInput?.addEventListener("input", () => {
+    updateBankAccountInfo();
 });
 
 MoneySnapshotI18n.init({
@@ -201,6 +288,7 @@ MoneySnapshotI18n.init({
         })
         .then(loadBanks)
         .then(loadAccount)
+        .then(updateBankAccountInfo)
         .catch((error) => {
             setFormMessage(error.message, "error");
         });

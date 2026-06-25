@@ -16,7 +16,9 @@ public record AccountResponse(
         String accountTypeCode,
         String currencyCode,
         String description,
+        String bankAccountNumber,
         BigDecimal forecastedMonthlyContribution,
+        boolean showInSnapshots,
         AccountStatus status,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
@@ -36,7 +38,9 @@ public record AccountResponse(
                 account.getAccountTypeCode(),
                 account.getCurrencyCode(),
                 account.getDescription(),
+                account.getBankAccountNumber(),
                 account.getForecastedMonthlyContribution(),
+                account.isShowInSnapshots(),
                 account.getStatus(),
                 account.getCreatedAt(),
                 account.getUpdatedAt()

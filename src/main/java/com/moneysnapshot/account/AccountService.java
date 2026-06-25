@@ -6,6 +6,7 @@ import com.moneysnapshot.bill.BillRepository;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.shared.normalization.NameNormalizationService;
+import com.moneysnapshot.shared.validation.BankAccountNumbers;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
@@ -45,6 +46,12 @@ public class AccountService {
         return accountRepository.findAllByOwnerIdWithBankOrderByName(currentUserService.currentUserId());
     }
 
+    public List<Account> listAccountsVisibleInSnapshots() {
+        return listAccounts().stream()
+                .filter(Account::isShowInSnapshots)
+                .toList();
+    }
+
     public Account getAccount(UUID id) {
         return accountRepository.findByIdAndOwnerIdWithBank(id, currentUserService.currentUserId())
                 .orElseThrow(() -> new AccountNotFoundException(id));
@@ -71,7 +78,9 @@ public class AccountService {
                 normalizeAccountTypeCode(request.accountTypeCode()),
                 request.currencyCode().trim().toUpperCase(),
                 normalizeDescription(request.description()),
+                normalizeBankAccountNumber(request.bankAccountNumber()),
                 normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution()),
+                normalizeShowInSnapshots(request.showInSnapshots(), true),
                 status
         );
 
@@ -98,6 +107,8 @@ public class AccountService {
         BigDecimal forecastedMonthlyContribution = request.forecastedMonthlyContribution() == null
                 ? account.getForecastedMonthlyContribution()
                 : normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution());
+        String bankAccountNumber = normalizeBankAccountNumber(request.bankAccountNumber());
+        boolean showInSnapshots = normalizeShowInSnapshots(request.showInSnapshots(), account.isShowInSnapshots());
         String nextCurrencyCode = request.currencyCode().trim().toUpperCase();
         boolean currencyChanged = !account.getCurrencyCode().equals(nextCurrencyCode);
 
@@ -108,7 +119,9 @@ public class AccountService {
                 normalizeAccountTypeCode(request.accountTypeCode()),
                 nextCurrencyCode,
                 normalizeDescription(request.description()),
+                bankAccountNumber,
                 forecastedMonthlyContribution,
+                showInSnapshots,
                 status
         );
 
@@ -187,5 +200,17 @@ public class AccountService {
         return forecastedMonthlyContribution.stripTrailingZeros().scale() < 0
                 ? forecastedMonthlyContribution.setScale(0)
                 : forecastedMonthlyContribution;
+    }
+
+    private String normalizeBankAccountNumber(String bankAccountNumber) {
+        if (bankAccountNumber == null || bankAccountNumber.isBlank()) {
+            return null;
+        }
+
+        return BankAccountNumbers.normalize(bankAccountNumber);
+    }
+
+    private boolean normalizeShowInSnapshots(Boolean showInSnapshots, boolean fallbackValue) {
+        return showInSnapshots == null ? fallbackValue : showInSnapshots;
     }
 }

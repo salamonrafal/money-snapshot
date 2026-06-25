@@ -101,6 +101,14 @@ window.MoneySnapshotSnapshotForm = (() => {
             return cachedAccounts.some((account) => account.id === accountId);
         }
 
+        function ensureAccountOption(account) {
+            if (!account?.id || accountExists(account.id)) {
+                return;
+            }
+
+            cachedAccounts = [...cachedAccounts, account];
+        }
+
         function lastSnapshotForSelectedAccount() {
             if (!accountSelect.value) {
                 return null;
@@ -171,7 +179,7 @@ window.MoneySnapshotSnapshotForm = (() => {
         }
 
         async function loadAccounts() {
-            const response = await fetch("/api/accounts");
+            const response = await fetch("/api/accounts/snapshots");
             if (!response.ok) {
                 throw new Error(currentMessages["snapshots.error.loadAccounts"]);
             }
@@ -210,6 +218,13 @@ window.MoneySnapshotSnapshotForm = (() => {
             }
 
             loadedSnapshot = await response.json();
+            ensureAccountOption({
+                id: loadedSnapshot.accountId,
+                accountName: loadedSnapshot.accountName,
+                bankName: loadedSnapshot.bankName,
+                currencyCode: loadedSnapshot.currencyCode
+            });
+            renderAccountOptions();
             accountSelect.value = loadedSnapshot.accountId;
             snapshotDateInput.value = loadedSnapshot.snapshotDate;
             balanceInput.value = loadedSnapshot.balance;

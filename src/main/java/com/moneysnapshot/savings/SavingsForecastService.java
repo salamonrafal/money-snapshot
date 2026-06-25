@@ -98,6 +98,7 @@ public class SavingsForecastService {
         ));
 
         List<SavingsForecastEntry> entries = accounts.stream()
+                .filter(account -> hasVisibleForecast(account.getForecastedMonthlyContribution()))
                 .map(account -> createEntry(run, account, latestSnapshotsByAccountId.get(account.getId()), request.durationMonths()))
                 .toList();
 
@@ -107,11 +108,11 @@ public class SavingsForecastService {
         List<SavingsForecastMonthValue> savedMonthValues = monthValueRepository.saveAll(
                 buildMonthValues(savedEntries, monthlyBalancesByEntryId)
         );
-        List<SavingsForecastMonthSummary> savedMonthSummaries = monthSummaryRepository.saveAll(
+        monthSummaryRepository.saveAll(
                 buildMonthSummaries(run, savedEntries, monthlyBalancesByEntryId)
         );
         eventPublisher.publishEvent(new SavingsForecastChangedEvent(ownerId));
-        return toResponse(run, savedEntries, savedMonthValues, savedMonthSummaries);
+        return toResponse(run, savedEntries, savedMonthValues);
     }
 
     private void validateRequest(GenerateSavingsForecastRequest request) {
@@ -153,18 +154,25 @@ public class SavingsForecastService {
     private SavingsForecastRunResponse toResponse(SavingsForecastRun run) {
         List<SavingsForecastEntry> entries = entryRepository.findAllByRunIdWithAccountOrderByAccountName(run.getId());
         List<SavingsForecastMonthValue> monthValues = monthValueRepository.findAllByRunIdOrderByForecastMonthAndAccountName(run.getId());
-        List<SavingsForecastMonthSummary> monthSummaries = monthSummaryRepository.findAllByRunIdOrderByForecastMonthAndCurrencyCode(run.getId());
-        return toResponse(run, entries, monthValues, monthSummaries);
+        return toResponse(run, entries, monthValues);
     }
 
     private SavingsForecastRunResponse toResponse(
             SavingsForecastRun run,
             List<SavingsForecastEntry> entries,
-            List<SavingsForecastMonthValue> monthValues,
-            List<SavingsForecastMonthSummary> monthSummaries
+            List<SavingsForecastMonthValue> monthValues
     ) {
+        List<SavingsForecastEntry> visibleEntries = entries.stream()
+                .filter(entry -> hasVisibleForecast(entry.getForecastedMonthlyContribution()))
+                .toList();
+        Set<UUID> visibleEntryIds = visibleEntries.stream()
+                .map(SavingsForecastEntry::getId)
+                .collect(Collectors.toSet());
+        List<SavingsForecastMonthValue> visibleMonthValues = monthValues.stream()
+                .filter(monthValue -> visibleEntryIds.contains(monthValue.getEntry().getId()))
+                .toList();
         List<LocalDate> forecastMonths = buildForecastMonths(run.getForecastStartDate(), run.getDurationMonths());
-        Map<UUID, List<SavingsForecastMonthValueResponse>> monthlyValuesByEntryId = monthValues
+        Map<UUID, List<SavingsForecastMonthValueResponse>> monthlyValuesByEntryId = visibleMonthValues
                 .stream()
                 .collect(Collectors.groupingBy(
                         monthValue -> monthValue.getEntry().getId(),
@@ -177,6 +185,20 @@ public class SavingsForecastService {
                                 Collectors.toList()
                         )
                 ));
+        Map<UUID, List<MonthBalance>> monthlyBalancesByEntryId = visibleMonthValues
+                .stream()
+                .collect(Collectors.groupingBy(
+                        monthValue -> monthValue.getEntry().getId(),
+                        java.util.LinkedHashMap::new,
+                        Collectors.mapping(
+                                monthValue -> new MonthBalance(monthValue.getForecastMonth(), monthValue.getBalance()),
+                                Collectors.toList()
+                        )
+                ));
+        List<SavingsForecastSummaryResponse> visibleSummaries = buildMonthSummaries(run, visibleEntries, monthlyBalancesByEntryId)
+                .stream()
+                .map(SavingsForecastSummaryResponse::from)
+                .toList();
 
         return new SavingsForecastRunResponse(
                 run.getId(),
@@ -185,16 +207,18 @@ public class SavingsForecastService {
                 run.getDurationMonths(),
                 run.getGeneratedAt(),
                 forecastMonths,
-                monthSummaries.stream()
-                        .map(SavingsForecastSummaryResponse::from)
-                        .toList(),
-                entries.stream()
+                visibleSummaries,
+                visibleEntries.stream()
                         .map(entry -> SavingsForecastEntryResponse.from(
                                 entry,
                                 monthlyValuesByEntryId.getOrDefault(entry.getId(), List.of())
                         ))
                         .toList()
         );
+    }
+
+    private boolean hasVisibleForecast(BigDecimal monthlyContribution) {
+        return monthlyContribution != null && monthlyContribution.compareTo(BigDecimal.ZERO) > 0;
     }
 
     private List<LocalDate> buildForecastMonths(LocalDate forecastStartDate, int durationMonths) {
