@@ -162,6 +162,64 @@ class AccountServiceTest {
     }
 
     @Test
+    void updateAccountClearsBankAccountNumberWhenRequestFieldIsEmpty() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+        when(owner.getId()).thenReturn(ownerId);
+
+        AccountService service = new AccountService(
+                accountRepository,
+                bankRepository,
+                billRepository,
+                normalizer,
+                eventPublisher,
+                currentUserService
+        );
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        org.springframework.test.util.ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+        Account account = new Account(
+                bank,
+                owner,
+                "Main account",
+                "main-account",
+                "BANK_ACCOUNT",
+                "PLN",
+                null,
+                "12102055581111223344556677",
+                new BigDecimal("10"),
+                true,
+                AccountStatus.ACTIVE
+        );
+        org.springframework.test.util.ReflectionTestUtils.setField(account, "id", accountId);
+
+        CreateAccountRequest request = new CreateAccountRequest(
+                "Main bank",
+                "Main account",
+                "BANK_ACCOUNT",
+                "PLN",
+                null,
+                null,
+                new BigDecimal("10"),
+                true,
+                AccountStatus.ACTIVE
+        );
+
+        when(normalizer.normalize("Main account")).thenReturn("main-account");
+        when(normalizer.normalize("Main bank")).thenReturn("main-bank");
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(accountRepository.findByIdAndOwnerIdWithBank(accountId, ownerId)).thenReturn(Optional.of(account));
+        when(accountRepository.findByOwnerIdAndNormalizedName(ownerId, "main-account")).thenReturn(Optional.of(account));
+        when(bankRepository.findByOwnerIdAndNormalizedName(ownerId, "main-bank")).thenReturn(Optional.of(bank));
+        when(accountRepository.save(account)).thenReturn(account);
+
+        Account savedAccount = service.updateAccount(accountId, request);
+
+        assertThat(savedAccount.getBankAccountNumber()).isNull();
+    }
+
+    @Test
     void listAccountsVisibleInSnapshotsReturnsOnlyVisibleAccounts() {
         UUID ownerId = UUID.randomUUID();
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);

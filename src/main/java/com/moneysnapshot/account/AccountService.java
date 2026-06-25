@@ -107,9 +107,7 @@ public class AccountService {
         BigDecimal forecastedMonthlyContribution = request.forecastedMonthlyContribution() == null
                 ? account.getForecastedMonthlyContribution()
                 : normalizeForecastedMonthlyContribution(request.forecastedMonthlyContribution());
-        String bankAccountNumber = request.bankAccountNumber() == null
-                ? account.getBankAccountNumber()
-                : normalizeBankAccountNumber(request.bankAccountNumber());
+        String bankAccountNumber = normalizeBankAccountNumber(request.bankAccountNumber());
         boolean showInSnapshots = normalizeShowInSnapshots(request.showInSnapshots(), account.isShowInSnapshots());
         String nextCurrencyCode = request.currencyCode().trim().toUpperCase();
         boolean currencyChanged = !account.getCurrencyCode().equals(nextCurrencyCode);
