@@ -176,7 +176,7 @@ function renderBillsSummary(bills) {
     }
 
     if (bills === null) {
-        billsElement.textContent = currentMessages["home.summary.unavailable"] ?? "-";
+        billsElement.textContent = homeMessages["home.summary.unavailable"] ?? "-";
         return;
     }
 

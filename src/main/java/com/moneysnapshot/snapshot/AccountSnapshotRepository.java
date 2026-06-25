@@ -163,8 +163,13 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
     @Query("select count(distinct snapshot.account.id) from AccountSnapshot snapshot")
     long countAccountsWithSnapshots();
 
-    @Query("select count(distinct snapshot.account.id) from AccountSnapshot snapshot where snapshot.owner.id = :ownerId")
-    long countAccountsWithSnapshotsByOwnerId(@Param("ownerId") UUID ownerId);
+    @Query("""
+            select count(distinct snapshot.account.id)
+            from AccountSnapshot snapshot
+            where snapshot.owner.id = :ownerId
+                and snapshot.account.showInSnapshots = true
+            """)
+    long countAccountsWithSnapshotsVisibleInSnapshotsByOwnerId(@Param("ownerId") UUID ownerId);
 
     @Query("""
             select new com.moneysnapshot.snapshot.CurrencyAmount(account.currencyCode, sum(snapshot.balance))
@@ -185,6 +190,7 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
             from AccountSnapshot snapshot
             join snapshot.account account
             where snapshot.owner.id = :ownerId
+                and account.showInSnapshots = true
                 and snapshot.snapshotDate = (
                     select max(candidate.snapshotDate)
                     from AccountSnapshot candidate
@@ -194,7 +200,7 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
             group by account.currencyCode
             order by account.currencyCode
             """)
-    List<CurrencyAmount> sumLatestBalancesByOwnerIdAndCurrency(@Param("ownerId") UUID ownerId);
+    List<CurrencyAmount> sumLatestBalancesVisibleInSnapshotsByOwnerIdAndCurrency(@Param("ownerId") UUID ownerId);
 
     @Query("""
             select new com.moneysnapshot.snapshot.CurrencyAmount(account.currencyCode, sum(snapshot.balance))
@@ -216,6 +222,7 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
             from AccountSnapshot snapshot
             join snapshot.account account
             where snapshot.owner.id = :ownerId
+                and account.showInSnapshots = true
                 and snapshot.snapshotDate = (
                     select max(candidate.snapshotDate)
                     from AccountSnapshot candidate
@@ -226,7 +233,7 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
             group by account.currencyCode
             order by account.currencyCode
             """)
-    List<CurrencyAmount> sumLatestBalancesBeforeDateByOwnerIdAndCurrency(@Param("ownerId") UUID ownerId, @Param("beforeDate") LocalDate beforeDate);
+    List<CurrencyAmount> sumLatestBalancesBeforeDateVisibleInSnapshotsByOwnerIdAndCurrency(@Param("ownerId") UUID ownerId, @Param("beforeDate") LocalDate beforeDate);
 
     @Query("""
             select snapshot
