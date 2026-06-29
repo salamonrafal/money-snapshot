@@ -158,6 +158,16 @@
         <div class="section-header">
             <h2 id="planning-title" data-i18n="reports.planning.title">Planowanie</h2>
             <div class="section-actions topbar-account-actions icon-toolbar report-controls" role="toolbar" aria-label="Akcje planowania">
+                <button type="button"
+                        class="icon-button secondary topbar-icon-link report-planning-help-button"
+                        id="planning-total-hint-button"
+                        data-i18n-title="reports.planning.help"
+                        data-i18n-aria-label="reports.planning.totalHintOpen"
+                        aria-haspopup="dialog"
+                        aria-controls="planning-help-modal"
+                        aria-label="Otwórz pomoc o planie łącznym">
+                    <span class="visually-hidden" data-i18n="reports.planning.totalHintOpen">Pomoc</span>
+                </button>
                 <button type="button" class="icon-button secondary topbar-icon-link report-pdf-button" data-report-section="planning" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
                     <span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span>
                 </button>
@@ -285,5 +295,39 @@
     </div>
 </main>
 <th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+<div class="modal-backdrop" id="planning-help-modal" hidden>
+    <div class="modal info-modal planning-help-modal" role="dialog" aria-modal="true" aria-labelledby="planning-help-title">
+        <div class="planning-help-modal-header">
+                <div class="planning-help-modal-heading">
+                    <span class="planning-help-modal-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.1 9a3 3 0 1 1 4.83 2.36c-.8.62-1.93 1.3-1.93 2.64"></path>
+                            <path d="M12 18h.01"></path>
+                        </svg>
+                    </span>
+                    <div class="planning-help-modal-copy">
+                        <h2 id="planning-help-title" data-i18n="reports.planning.totalHintTitle">Jak działa Plan łączny?</h2>
+                    </div>
+                </div>
+                <button type="button"
+                        class="icon-button secondary planning-help-modal-close"
+                    data-planning-help-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="planning-help-modal-callout">
+            <div class="planning-help-modal-callout-copy">
+                <strong data-i18n="reports.planning.totalHintSummary">Dane bez wartości są pomijane tylko dla konkretnej kolumny</strong>
+                <p data-i18n="reports.planning.totalHintLead">Plan łączny pokazuje sumę danych dostępnych dla wszystkich kont w danej walucie.</p>
+                <p data-i18n="reports.planning.totalHintBody">Jeśli jedno konto ma brak danych, nie blokuje to całego podsumowania. Suma korzysta z pozostałych dostępnych wartości, dzięki czemu wiersz Plan łączny pozostaje użyteczny.</p>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

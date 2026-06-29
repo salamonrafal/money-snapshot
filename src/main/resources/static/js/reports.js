@@ -16,6 +16,11 @@ const averageContributionsMessageElement = document.querySelector("#average-cont
 const averageContributionsTableBody = document.querySelector("#average-contributions-table-body");
 const averageContributionsTableFoot = document.querySelector("#average-contributions-table-foot");
 const planningMessageElement = document.querySelector("#planning-message");
+const planningHelpButton = document.querySelector("#planning-total-hint-button");
+const planningHelpModal = planningHelpButton ? MoneySnapshotUi.createModal({
+    modalSelector: "#planning-help-modal",
+    closeSelectors: ["[data-planning-help-modal-close]"]
+}) : null;
 const planningSummaryElement = document.querySelector("#planning-summary");
 const planningTableBody = document.querySelector("#planning-table-body");
 const planningTableFoot = document.querySelector("#planning-table-foot");
@@ -1650,6 +1655,9 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     reportsNavElement.setAttribute("aria-label", messages["reports.nav.aria"]);
     reportFilterButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.filters"]));
     reportPdfButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.pdf"]));
+    if (planningHelpButton) {
+        MoneySnapshotUi.setTooltip(planningHelpButton, messages["reports.planning.help"]);
+    }
     if (clearReportsCacheButton) {
         MoneySnapshotUi.setTooltip(clearReportsCacheButton, messages["reports.actions.clearCache"]);
     }
@@ -1772,6 +1780,14 @@ reportFilterButtons.forEach((button) => {
         toggleReportFilterMenu(button);
     });
 });
+
+if (planningHelpButton) {
+    planningHelpButton.append(MoneySnapshotUi.createHelpIcon());
+    MoneySnapshotUi.setTooltip(planningHelpButton, planningHelpButton.textContent.trim());
+    planningHelpButton.addEventListener("click", () => {
+        planningHelpModal?.open({trigger: planningHelpButton});
+    });
+}
 
 if (clearReportsCacheButton) {
     clearReportsCacheButton.append(MoneySnapshotUi.createTrashIcon());

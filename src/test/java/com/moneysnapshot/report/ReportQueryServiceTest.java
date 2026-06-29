@@ -10,6 +10,7 @@ import com.moneysnapshot.dashboard.SnapshotPanelResponse;
 import com.moneysnapshot.dashboard.SnapshotPanelChartPointResponse;
 import com.moneysnapshot.report.web.OverviewReportResponse;
 import com.moneysnapshot.report.web.HistoryReportResponse;
+import com.moneysnapshot.report.web.PlanningReportResponse;
 import com.moneysnapshot.report.web.SummaryReportResponse;
 import com.moneysnapshot.savings.SavingsForecastService;
 import com.moneysnapshot.security.AppUser;
@@ -23,6 +24,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -229,6 +231,146 @@ class ReportQueryServiceTest {
         assertThat(baselinePoint.balance()).isEqualByComparingTo("100.00");
         assertThat(baselinePoint.change()).isEqualByComparingTo("0.00");
         assertThat(firstBillingDayPoint.change()).isEqualByComparingTo("25.00");
+    }
+
+    @Test
+    void planningTotalsIgnoreMissingValuesInsteadOfTurningWholeRowIntoNoData() {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountWithMissingCurrentBalanceId = UUID.randomUUID();
+        UUID accountWithCurrentBalanceId = UUID.randomUUID();
+        AppUser owner = mock(AppUser.class);
+        Account accountWithMissingCurrentBalance = mock(Account.class);
+        Account accountWithCurrentBalance = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(accountWithMissingCurrentBalance.getId()).thenReturn(accountWithMissingCurrentBalanceId);
+        when(accountWithCurrentBalance.getId()).thenReturn(accountWithCurrentBalanceId);
+        when(averageContributionCacheRepository.findAllByOwnerIdOrderByAccountNameAsc(ownerId)).thenReturn(List.of(
+                new ReportAverageContributionCache(
+                        owner,
+                        accountWithMissingCurrentBalance,
+                        bank,
+                        "Missing balance",
+                        "Bank",
+                        "PLN",
+                        new BigDecimal("100.00"),
+                        LocalDate.of(2026, 1, 1),
+                        LocalDate.of(2026, 1, 31)
+                ),
+                new ReportAverageContributionCache(
+                        owner,
+                        accountWithCurrentBalance,
+                        bank,
+                        "Present balance",
+                        "Bank",
+                        "PLN",
+                        new BigDecimal("200.00"),
+                        LocalDate.of(2026, 1, 1),
+                        LocalDate.of(2026, 1, 31)
+                )
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, LocalDate.of(2026, 6, 3)))
+                .thenReturn(List.of(
+                        new ReportDailyBalanceCache(
+                                owner,
+                                accountWithCurrentBalance,
+                                bank,
+                                LocalDate.of(2026, 6, 3),
+                                LocalDate.of(2026, 6, 3),
+                                "Present balance",
+                                "Bank",
+                                "PLN",
+                                new BigDecimal("1000.00")
+                        )
+                ));
+        when(savingsForecastService.latestForecast()).thenReturn(Optional.empty());
+
+        PlanningReportResponse response = service.planning();
+
+        assertThat(response.rows()).hasSize(2);
+        PlanningReportResponse.Total total = response.totals().get(0);
+        assertThat(total.currencyCode()).isEqualTo("PLN");
+        assertThat(total.currentBalance()).isEqualByComparingTo("1000.00");
+        assertThat(total.averageContribution()).isEqualByComparingTo("300.00");
+        assertThat(total.yearlyChange()).isEqualByComparingTo("3600.00");
+        assertThat(total.projectedChangePercent()).isNull();
+        assertThat(total.projectedBalance()).isEqualByComparingTo("3400.00");
+    }
+
+    @Test
+    void planningTotalsHideProjectedChangePercentWhenIncompleteRowsCancelOut() {
+        UUID ownerId = UUID.randomUUID();
+        UUID completeAccountId = UUID.randomUUID();
+        UUID missingPositiveAccountId = UUID.randomUUID();
+        UUID missingNegativeAccountId = UUID.randomUUID();
+        AppUser owner = mock(AppUser.class);
+        Account completeAccount = mock(Account.class);
+        Account missingPositiveAccount = mock(Account.class);
+        Account missingNegativeAccount = mock(Account.class);
+        Bank bank = mock(Bank.class);
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(completeAccount.getId()).thenReturn(completeAccountId);
+        when(missingPositiveAccount.getId()).thenReturn(missingPositiveAccountId);
+        when(missingNegativeAccount.getId()).thenReturn(missingNegativeAccountId);
+        when(averageContributionCacheRepository.findAllByOwnerIdOrderByAccountNameAsc(ownerId)).thenReturn(List.of(
+                new ReportAverageContributionCache(
+                        owner,
+                        completeAccount,
+                        bank,
+                        "Complete",
+                        "Bank",
+                        "PLN",
+                        new BigDecimal("200.00"),
+                        LocalDate.of(2026, 1, 1),
+                        LocalDate.of(2026, 1, 31)
+                ),
+                new ReportAverageContributionCache(
+                        owner,
+                        missingPositiveAccount,
+                        bank,
+                        "Missing positive",
+                        "Bank",
+                        "PLN",
+                        new BigDecimal("10.00"),
+                        LocalDate.of(2026, 1, 1),
+                        LocalDate.of(2026, 1, 31)
+                ),
+                new ReportAverageContributionCache(
+                        owner,
+                        missingNegativeAccount,
+                        bank,
+                        "Missing negative",
+                        "Bank",
+                        "PLN",
+                        new BigDecimal("-10.00"),
+                        LocalDate.of(2026, 1, 1),
+                        LocalDate.of(2026, 1, 31)
+                )
+        ));
+        when(dailyBalanceCacheRepository.findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(ownerId, LocalDate.of(2026, 6, 3)))
+                .thenReturn(List.of(
+                        new ReportDailyBalanceCache(
+                                owner,
+                                completeAccount,
+                                bank,
+                                LocalDate.of(2026, 6, 3),
+                                LocalDate.of(2026, 6, 3),
+                                "Complete",
+                                "Bank",
+                                "PLN",
+                                new BigDecimal("1000.00")
+                        )
+                ));
+        when(savingsForecastService.latestForecast()).thenReturn(Optional.empty());
+
+        PlanningReportResponse response = service.planning();
+
+        PlanningReportResponse.Total total = response.totals().get(0);
+        assertThat(total.yearlyChange()).isEqualByComparingTo("2400.00");
+        assertThat(total.projectedChangePercent()).isNull();
+        assertThat(total.projectedBalance()).isEqualByComparingTo("3400.00");
     }
 
     @Test
