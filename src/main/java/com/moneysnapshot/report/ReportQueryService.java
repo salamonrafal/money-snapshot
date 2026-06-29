@@ -450,6 +450,11 @@ public class ReportQueryService {
                     row -> row.yearlyChange() != null,
                     PlanningReportResponse.Row::yearlyChange
             );
+            BigDecimal projectedChangePercentYearlyChange = aggregateWhen(
+                    currencyRows,
+                    row -> row.currentBalance() != null && row.yearlyChange() != null,
+                    PlanningReportResponse.Row::yearlyChange
+            );
             BigDecimal projectedCurrentBalance = aggregateWhen(
                     currencyRows,
                     row -> row.currentBalance() != null && row.yearlyChange() != null,
@@ -471,7 +476,7 @@ public class ReportQueryService {
                             PlanningReportResponse.Row::projectedBalance
                     ),
                     projectedYearlyChange,
-                    percent(projectedYearlyChange, projectedCurrentBalance),
+                    percent(projectedChangePercentYearlyChange, projectedCurrentBalance),
                     aggregate(currencyRows, PlanningReportResponse.Row::plannedBalance),
                     aggregateWhen(
                             currencyRows,

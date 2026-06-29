@@ -552,6 +552,7 @@ public class MessageBundleService {
             "reports.planning.currentGroup",
             "reports.planning.currentPlan",
             "reports.planning.empty",
+            "reports.planning.help",
             "reports.planning.hint",
             "reports.planning.monthly",
             "reports.planning.noData",

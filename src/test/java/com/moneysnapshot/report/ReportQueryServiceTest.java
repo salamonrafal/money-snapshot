@@ -294,7 +294,7 @@ class ReportQueryServiceTest {
         assertThat(total.currentBalance()).isEqualByComparingTo("1000.00");
         assertThat(total.averageContribution()).isEqualByComparingTo("300.00");
         assertThat(total.yearlyChange()).isEqualByComparingTo("3600.00");
-        assertThat(total.projectedChangePercent()).isEqualByComparingTo("360.00");
+        assertThat(total.projectedChangePercent()).isEqualByComparingTo("240.00");
         assertThat(total.projectedBalance()).isEqualByComparingTo("3400.00");
     }
 

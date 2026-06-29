@@ -1655,6 +1655,9 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     reportsNavElement.setAttribute("aria-label", messages["reports.nav.aria"]);
     reportFilterButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.filters"]));
     reportPdfButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, messages["reports.actions.pdf"]));
+    if (planningHelpButton) {
+        MoneySnapshotUi.setTooltip(planningHelpButton, messages["reports.planning.help"]);
+    }
     if (clearReportsCacheButton) {
         MoneySnapshotUi.setTooltip(clearReportsCacheButton, messages["reports.actions.clearCache"]);
     }
@@ -1780,6 +1783,7 @@ reportFilterButtons.forEach((button) => {
 
 if (planningHelpButton) {
     planningHelpButton.append(MoneySnapshotUi.createHelpIcon());
+    MoneySnapshotUi.setTooltip(planningHelpButton, planningHelpButton.textContent.trim());
     planningHelpButton.addEventListener("click", () => {
         planningHelpModal?.open({trigger: planningHelpButton});
     });
