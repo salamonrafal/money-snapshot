@@ -460,7 +460,10 @@ public class ReportQueryService {
                     row -> row.currentBalance() != null && row.yearlyChange() != null,
                     PlanningReportResponse.Row::currentBalance
             );
-            BigDecimal projectedChangePercent = java.util.Objects.equals(projectedYearlyChange, projectedChangePercentYearlyChange)
+            boolean canCalculateProjectedChangePercent = currencyRows.stream()
+                    .filter(row -> row.yearlyChange() != null)
+                    .allMatch(row -> row.currentBalance() != null);
+            BigDecimal projectedChangePercent = canCalculateProjectedChangePercent
                     ? percent(projectedChangePercentYearlyChange, projectedCurrentBalance)
                     : null;
             totals.add(new PlanningReportResponse.Total(
