@@ -16,6 +16,11 @@ const averageContributionsMessageElement = document.querySelector("#average-cont
 const averageContributionsTableBody = document.querySelector("#average-contributions-table-body");
 const averageContributionsTableFoot = document.querySelector("#average-contributions-table-foot");
 const planningMessageElement = document.querySelector("#planning-message");
+const planningHelpButton = document.querySelector("#planning-total-hint-button");
+const planningHelpModal = planningHelpButton ? MoneySnapshotUi.createModal({
+    modalSelector: "#planning-help-modal",
+    closeSelectors: ["[data-planning-help-modal-close]"]
+}) : null;
 const planningSummaryElement = document.querySelector("#planning-summary");
 const planningTableBody = document.querySelector("#planning-table-body");
 const planningTableFoot = document.querySelector("#planning-table-foot");
@@ -1772,6 +1777,13 @@ reportFilterButtons.forEach((button) => {
         toggleReportFilterMenu(button);
     });
 });
+
+if (planningHelpButton) {
+    planningHelpButton.append(MoneySnapshotUi.createHelpIcon());
+    planningHelpButton.addEventListener("click", () => {
+        planningHelpModal?.open({trigger: planningHelpButton});
+    });
+}
 
 if (clearReportsCacheButton) {
     clearReportsCacheButton.append(MoneySnapshotUi.createTrashIcon());

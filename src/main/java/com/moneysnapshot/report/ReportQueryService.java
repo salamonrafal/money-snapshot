@@ -679,8 +679,11 @@ public class ReportQueryService {
     }
 
     private BigDecimal aggregate(List<PlanningReportResponse.Row> rows, java.util.function.Function<PlanningReportResponse.Row, BigDecimal> extractor) {
-        List<BigDecimal> values = rows.stream().map(extractor).toList();
-        if (values.stream().anyMatch(java.util.Objects::isNull)) {
+        List<BigDecimal> values = rows.stream()
+                .map(extractor)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        if (values.isEmpty()) {
             return null;
         }
         return values.stream().reduce(BigDecimal.ZERO, BigDecimal::add);

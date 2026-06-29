@@ -4037,6 +4037,94 @@ td:nth-child(5) {
     width: min(720px, 100%);
 }
 
+.planning-help-modal {
+    width: min(760px, 100%);
+}
+
+.planning-help-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.planning-help-modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.planning-help-modal-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-top: 0;
+    border-radius: 999px;
+    background: var(--accent-wash-strong);
+    color: var(--accent-strong);
+}
+
+.planning-help-modal-icon svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+.planning-help-modal-copy {
+    min-width: 0;
+}
+
+.planning-help-modal-copy h2 {
+    margin: 0;
+    line-height: 1.2;
+}
+
+.planning-help-modal-copy .eyebrow {
+    margin: 0 0 6px;
+}
+
+.planning-help-modal-copy p:last-child {
+    margin-top: 10px;
+}
+
+.planning-help-modal-close {
+    flex: 0 0 auto;
+}
+
+.planning-help-modal .planning-help-modal-callout {
+    margin-top: 20px;
+}
+
+.planning-help-modal-callout {
+    display: flex;
+    gap: 12px;
+    margin-top: 22px;
+    border: 1px solid var(--accent-border);
+    border-radius: 8px;
+    background: var(--accent-wash);
+    padding: 14px 16px;
+}
+
+.planning-help-modal-callout-copy {
+    min-width: 0;
+}
+
+.planning-help-modal-callout strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+
+.planning-help-modal-callout p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
 .modal h2 {
     margin: 0;
     font-size: 1.35rem;

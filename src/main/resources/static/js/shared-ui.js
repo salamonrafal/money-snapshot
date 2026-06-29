@@ -354,6 +354,29 @@ window.MoneySnapshotUi = (() => {
         return icon;
     }
 
+    function createHelpIcon() {
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("fill", "none");
+        icon.setAttribute("stroke", "currentColor");
+        icon.setAttribute("stroke-width", "2");
+        icon.setAttribute("stroke-linecap", "round");
+        icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
+
+        [
+            "M12 18h.01",
+            "M9.1 9a3 3 0 1 1 4.83 2.36c-.8.62-1.93 1.3-1.93 2.64",
+            "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"
+        ].forEach((value) => {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", value);
+            icon.append(path);
+        });
+
+        return icon;
+    }
+
     function createCalendarIcon() {
         const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         icon.setAttribute("viewBox", "0 0 24 24");
@@ -943,6 +966,7 @@ window.MoneySnapshotUi = (() => {
         createClearFiltersIcon,
         createCalendarIcon,
         createCheckIcon,
+        createHelpIcon,
         createEditIcon,
         createInfoIcon,
         createUndoIcon,
