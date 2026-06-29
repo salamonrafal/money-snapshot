@@ -445,17 +445,39 @@ public class ReportQueryService {
                 .collect(java.util.stream.Collectors.groupingBy(PlanningReportResponse.Row::currencyCode, LinkedHashMap::new, java.util.stream.Collectors.toList()));
         List<PlanningReportResponse.Total> totals = new ArrayList<>();
         rowsByCurrency.forEach((currencyCode, currencyRows) -> {
+            BigDecimal projectedYearlyChange = aggregateWhen(
+                    currencyRows,
+                    row -> row.currentBalance() != null && row.yearlyChange() != null,
+                    PlanningReportResponse.Row::yearlyChange
+            );
+            BigDecimal projectedCurrentBalance = aggregateWhen(
+                    currencyRows,
+                    row -> row.currentBalance() != null && row.yearlyChange() != null,
+                    PlanningReportResponse.Row::currentBalance
+            );
             totals.add(new PlanningReportResponse.Total(
                     currencyCode,
                     aggregate(currencyRows, PlanningReportResponse.Row::currentBalance),
                     aggregate(currencyRows, PlanningReportResponse.Row::currentPlannedBalance),
-                    aggregate(currencyRows, PlanningReportResponse.Row::currentDifferenceToPlan),
+                    aggregateWhen(
+                            currencyRows,
+                            row -> row.currentBalance() != null && row.currentPlannedBalance() != null,
+                            PlanningReportResponse.Row::currentDifferenceToPlan
+                    ),
                     aggregate(currencyRows, PlanningReportResponse.Row::averageContribution),
-                    aggregate(currencyRows, PlanningReportResponse.Row::projectedBalance),
-                    aggregate(currencyRows, PlanningReportResponse.Row::yearlyChange),
-                    percent(aggregate(currencyRows, PlanningReportResponse.Row::yearlyChange), aggregate(currencyRows, PlanningReportResponse.Row::currentBalance)),
+                    aggregateWhen(
+                            currencyRows,
+                            row -> row.currentBalance() != null && row.yearlyChange() != null,
+                            PlanningReportResponse.Row::projectedBalance
+                    ),
+                    projectedYearlyChange,
+                    percent(projectedYearlyChange, projectedCurrentBalance),
                     aggregate(currencyRows, PlanningReportResponse.Row::plannedBalance),
-                    aggregate(currencyRows, PlanningReportResponse.Row::differenceToPlan)
+                    aggregateWhen(
+                            currencyRows,
+                            row -> row.projectedBalance() != null && row.plannedBalance() != null,
+                            PlanningReportResponse.Row::differenceToPlan
+                    )
             ));
         });
         return totals;
@@ -687,6 +709,14 @@ public class ReportQueryService {
             return null;
         }
         return values.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal aggregateWhen(
+            List<PlanningReportResponse.Row> rows,
+            java.util.function.Predicate<PlanningReportResponse.Row> predicate,
+            java.util.function.Function<PlanningReportResponse.Row, BigDecimal> extractor
+    ) {
+        return aggregate(rows.stream().filter(predicate).toList(), extractor);
     }
 
     private BigDecimal percent(BigDecimal numerator, BigDecimal denominator) {
