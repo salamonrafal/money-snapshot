@@ -447,7 +447,7 @@ public class ReportQueryService {
         rowsByCurrency.forEach((currencyCode, currencyRows) -> {
             BigDecimal projectedYearlyChange = aggregateWhen(
                     currencyRows,
-                    row -> row.currentBalance() != null && row.yearlyChange() != null,
+                    row -> row.yearlyChange() != null,
                     PlanningReportResponse.Row::yearlyChange
             );
             BigDecimal projectedCurrentBalance = aggregateWhen(
