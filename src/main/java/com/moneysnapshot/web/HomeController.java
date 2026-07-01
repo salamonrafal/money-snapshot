@@ -1,16 +1,22 @@
 package com.moneysnapshot.web;
 
+import com.moneysnapshot.calendar.CalendarQueryService;
+import com.moneysnapshot.calendar.web.CalendarEventResponse;
 import com.moneysnapshot.dashboard.SnapshotPanelResponse;
 import com.moneysnapshot.report.ReportQueryService;
 import com.moneysnapshot.shared.i18n.MessageBundleService;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api")
@@ -18,13 +24,20 @@ public class HomeController {
 
     private static final Locale DEFAULT_LOCALE = Locale.forLanguageTag("pl");
     private static final List<Locale> SUPPORTED_LOCALES = List.of(DEFAULT_LOCALE, Locale.ENGLISH);
+    private static final long MAX_CALENDAR_RANGE_DAYS = 42L;
 
     private final MessageBundleService messageBundleService;
     private final ReportQueryService reportQueryService;
+    private final CalendarQueryService calendarQueryService;
 
-    public HomeController(MessageBundleService messageBundleService, ReportQueryService reportQueryService) {
+    public HomeController(
+            MessageBundleService messageBundleService,
+            ReportQueryService reportQueryService,
+            CalendarQueryService calendarQueryService
+    ) {
         this.messageBundleService = messageBundleService;
         this.reportQueryService = reportQueryService;
+        this.calendarQueryService = calendarQueryService;
     }
 
     @GetMapping("/home/messages")
@@ -86,6 +99,34 @@ public class HomeController {
             @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
     ) {
         return messageBundleService.reportPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/calendar/messages")
+    public Map<String, String> calendarMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.calendarPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
+    @GetMapping("/calendar/events")
+    public List<CalendarEventResponse> calendarEvents(
+            @RequestParam LocalDate fromDate,
+            @RequestParam LocalDate toDate
+    ) {
+        validateCalendarRange(fromDate, toDate);
+        return calendarQueryService.listEvents(fromDate, toDate);
+    }
+
+    private void validateCalendarRange(LocalDate fromDate, LocalDate toDate) {
+        if (toDate.isBefore(fromDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fromDate must be on or before toDate.");
+        }
+
+        long rangeDays = ChronoUnit.DAYS.between(fromDate, toDate) + 1L;
+        if (rangeDays > MAX_CALENDAR_RANGE_DAYS) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Calendar range cannot exceed " + MAX_CALENDAR_RANGE_DAYS + " days.");
+        }
     }
 
     @GetMapping("/counterparties/messages")

@@ -901,6 +901,201 @@ h1 {
         left: 0;
         right: 0;
     }
+
+    .calendar-weekday {
+        padding: 4px 1px;
+        font-size: 0.62rem;
+    }
+
+    .calendar-weekdays,
+    .calendar-row {
+        gap: 6px;
+    }
+
+    .calendar-grid {
+        gap: 6px;
+    }
+
+    .calendar-day-button {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        height: 36px !important;
+        min-height: 36px !important;
+        gap: 1px;
+        padding: 4px;
+    }
+
+    .calendar-day-number {
+        font-size: 0.68rem;
+        line-height: 1;
+    }
+
+    .calendar-day-markers {
+        display: flex !important;
+        align-items: center;
+        gap: 0 !important;
+        min-height: 8px;
+        margin-top: 0;
+        overflow: hidden;
+    }
+
+    .calendar-day-marker {
+        display: inline-flex !important;
+        width: 8px !important;
+        min-width: 8px !important;
+        min-height: 8px !important;
+        height: 8px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        color: transparent !important;
+        flex: 0 0 8px !important;
+        box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 35%, var(--surface));
+    }
+
+    .calendar-day-marker-payment {
+        background: var(--danger-strong);
+    }
+
+    .calendar-day-marker-billing_period_start {
+        background: var(--accent-strong);
+    }
+
+    .calendar-day-marker-billing_period_end {
+        background: var(--warning-strong);
+    }
+
+    .calendar-day-marker-snapshot {
+        background: var(--success-strong);
+    }
+
+    .calendar-day-marker:nth-child(n + 2),
+    .calendar-day-more {
+        display: none !important;
+    }
+
+    .calendar-events-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-weekdays,
+    .calendar-row,
+    .calendar-grid {
+        gap: 4px;
+    }
+
+    .calendar-day-button {
+        height: 32px !important;
+        min-height: 32px !important;
+        padding: 3px;
+    }
+
+    .calendar-day-number {
+        font-size: 0.66rem;
+        line-height: 1;
+    }
+
+    .calendar-day-markers {
+        min-height: 8px;
+        margin-top: 0;
+    }
+
+    .calendar-day-marker {
+        width: 8px;
+        min-width: 8px;
+        min-height: 8px;
+        height: 8px;
+        padding: 0;
+        border-radius: 999px;
+        font-size: 0;
+        line-height: 0;
+        color: transparent;
+        flex: 0 0 8px;
+        box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 35%, var(--surface));
+    }
+}
+
+/* Mobile calendar overrides must live after the base calendar styles. */
+@media (max-width: 760px) {
+    .calendar-day-button {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        box-sizing: border-box !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        gap: 2px !important;
+        padding: 6px 7px !important;
+    }
+
+    .calendar-day-number {
+        font-size: 0.68rem !important;
+        line-height: 1 !important;
+    }
+
+    .calendar-day-markers {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0 !important;
+        min-height: 8px !important;
+        margin-top: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .calendar-day-marker {
+        display: inline-flex !important;
+        width: 8px !important;
+        min-width: 8px !important;
+        min-height: 8px !important;
+        height: 8px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        color: transparent !important;
+        flex: 0 0 8px !important;
+        box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 35%, var(--surface)) !important;
+    }
+
+    .calendar-day-marker-payment {
+        background: var(--danger-strong) !important;
+    }
+
+    .calendar-day-marker-billing_period_start {
+        background: var(--accent-strong) !important;
+    }
+
+    .calendar-day-marker-billing_period_end {
+        background: var(--warning-strong) !important;
+    }
+
+    .calendar-day-marker-snapshot {
+        background: var(--success-strong) !important;
+    }
+
+    .calendar-day-marker:nth-child(n + 2),
+    .calendar-day-more {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-day-button {
+        box-sizing: border-box !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 5px 6px !important;
+    }
+
+    .calendar-day-number {
+        font-size: 0.66rem !important;
+    }
 }
 
 .shortcuts-launcher-bar {
@@ -1514,6 +1709,23 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
 .icon-toolbar .icon-button.danger.topbar-icon-link:active {
     color: var(--danger-strong);
     background: var(--danger-soft);
+}
+
+.calendar-navigation-actions > * + *::before {
+    display: none;
+}
+
+@media (max-width: 760px) {
+    .calendar-panel .section-header {
+        justify-content: center;
+    }
+
+    .calendar-panel .calendar-navigation-actions {
+        margin-left: auto;
+        margin-right: auto;
+        justify-content: center;
+        align-self: center;
+    }
 }
 
 .button.compact.savings-planning-generate-button {
@@ -2455,6 +2667,205 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     line-height: 1.25;
     overflow-wrap: anywhere;
     word-break: normal;
+}
+
+.calendar-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.95fr);
+    gap: 16px;
+    align-items: start;
+    margin-top: 18px;
+}
+
+.calendar-panel {
+    display: grid;
+    gap: 18px;
+}
+
+.calendar-day-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    position: sticky;
+    top: calc(var(--topbar-height, 72px) + 16px);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.calendar-panel-hint,
+.calendar-events-subtitle {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.calendar-board {
+    display: grid;
+    gap: 10px;
+}
+
+.calendar-weekdays,
+.calendar-row {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.calendar-weekday {
+    min-width: 0;
+    padding: 8px 6px;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.calendar-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.calendar-cell {
+    min-width: 0;
+}
+
+.calendar-day-button {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    width: 100%;
+    height: 104px;
+    min-height: 104px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: inherit;
+    text-align: left;
+    overflow: hidden;
+    transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.calendar-day-button:hover,
+.calendar-day-button:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.calendar-day-button-selected {
+    border-color: var(--accent);
+    background: var(--accent-wash-soft);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.calendar-day-button-today .calendar-day-number {
+    color: var(--accent-strong);
+}
+
+.calendar-day-button-outside {
+    background: var(--surface-subtle);
+    color: var(--muted);
+}
+
+.calendar-day-number {
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.calendar-day-markers {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.calendar-day-marker,
+.calendar-day-more,
+.calendar-event-badge {
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-day-marker-payment,
+.calendar-event-badge-payment {
+    background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+    color: var(--danger-strong);
+}
+
+.calendar-day-marker-billing_period_start,
+.calendar-event-badge-billing_period_start {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent-strong);
+}
+
+.calendar-day-marker-billing_period_end,
+.calendar-event-badge-billing_period_end {
+    background: color-mix(in srgb, var(--warning) 14%, var(--surface));
+    color: var(--warning-strong);
+}
+
+.calendar-day-marker-snapshot,
+.calendar-event-badge-snapshot {
+    background: color-mix(in srgb, var(--success) 14%, var(--surface));
+    color: var(--success-strong);
+}
+
+.calendar-day-more {
+    color: var(--muted);
+    background: var(--surface-subtle);
+}
+
+.calendar-events-header {
+    align-items: start;
+}
+
+.calendar-events-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    justify-items: stretch;
+    gap: 12px;
+    min-height: 0;
+}
+
+.calendar-event-card {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.calendar-event-title {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+.calendar-event-meta,
+.calendar-event-description,
+.calendar-events-empty {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
 }
 
 .liabilities-layout {
@@ -4582,9 +4993,36 @@ td:nth-child(5) {
         padding: 0 8px;
         font-size: 0.74rem;
     }
+
+    .calendar-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .calendar-day-panel {
+        position: static;
+    }
 }
 
+
 @media (min-width: 1025px) {
+    .calendar-day-panel {
+        position: static;
+        top: auto;
+        align-self: start;
+        height: var(--calendar-panel-height, auto);
+        max-height: var(--calendar-panel-height, none);
+        min-height: 0;
+    }
+
+    .calendar-events-list {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        align-content: start;
+        padding-right: 8px;
+        scrollbar-gutter: stable;
+        box-sizing: border-box;
+    }
+
     .report-panel .report-controls {
         flex-wrap: nowrap;
         gap: 8px;

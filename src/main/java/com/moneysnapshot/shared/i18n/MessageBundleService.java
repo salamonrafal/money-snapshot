@@ -46,6 +46,9 @@ public class MessageBundleService {
             "home.feature.counterparties.action",
             "home.feature.reports.title",
             "home.feature.reports.description",
+            "home.feature.calendar.title",
+            "home.feature.calendar.description",
+            "home.feature.calendar.action",
             "home.feature.savingsPlanning.title",
             "home.feature.savingsPlanning.description",
             "home.feature.savingsPlanning.action",
@@ -84,6 +87,9 @@ public class MessageBundleService {
                             "home.feature.counterparties.action",
                             "home.feature.reports.title",
                             "home.feature.reports.description",
+                            "home.feature.calendar.title",
+                            "home.feature.calendar.description",
+                            "home.feature.calendar.action",
                             "home.feature.savingsPlanning.title",
                             "home.feature.savingsPlanning.description",
                             "home.feature.savingsPlanning.action",
@@ -253,6 +259,67 @@ public class MessageBundleService {
             "savingsPlanningGenerator.actions.back",
             "savingsPlanningGenerator.error.generate",
             "savingsPlanningGenerator.error.loadPlan"
+    );
+
+    private static final Set<String> CALENDAR_PAGE_KEYS = Set.of(
+            "calendar.heading.eyebrow",
+            "calendar.heading.title",
+            "calendar.heading.subtitle",
+            "calendar.summary.title",
+            "calendar.summary.month",
+            "calendar.summary.selection",
+            "calendar.summary.count",
+            "calendar.summary.emptySelection",
+            "calendar.actions.previousMonth",
+            "calendar.actions.nextMonth",
+            "calendar.actions.today",
+            "calendar.calendar.title",
+            "calendar.calendar.instructions",
+            "calendar.calendar.empty",
+            "calendar.calendar.more",
+            "calendar.events.title",
+            "calendar.events.subtitle",
+            "calendar.events.selectedDaySummary",
+            "calendar.events.empty",
+            "calendar.events.noneSelected",
+            "calendar.event.type.PAYMENT",
+            "calendar.event.type.BILLING_PERIOD_START",
+            "calendar.event.type.BILLING_PERIOD_END",
+            "calendar.event.type.SNAPSHOT",
+            "calendar.event.amount",
+            "calendar.event.period",
+            "calendar.event.snapshot",
+            "calendar.aria.navigation",
+            "calendar.aria.grid",
+            "calendar.aria.eventList",
+            "calendar.aria.selectedDate",
+            "calendar.aria.dayButton",
+            "calendar.aria.dayButtonSelected",
+            "calendar.mock.paymentRent.title",
+            "calendar.mock.paymentRent.description",
+            "calendar.mock.snapshotMonthStart.title",
+            "calendar.mock.snapshotMonthStart.description",
+            "calendar.mock.snapshotMonthStart.label",
+            "calendar.mock.billingStart.title",
+            "calendar.mock.billingStart.description",
+            "calendar.mock.paymentPhone.title",
+            "calendar.mock.paymentPhone.description",
+            "calendar.mock.paymentCreditCard.title",
+            "calendar.mock.paymentCreditCard.description",
+            "calendar.mock.snapshotMidMonth.title",
+            "calendar.mock.snapshotMidMonth.description",
+            "calendar.mock.snapshotMidMonth.label",
+            "calendar.mock.paymentElectricity.title",
+            "calendar.mock.paymentElectricity.description",
+            "calendar.mock.billingEnd.title",
+            "calendar.mock.billingEnd.description",
+            "calendar.mock.paymentInternet.title",
+            "calendar.mock.paymentInternet.description",
+            "calendar.mock.snapshotNextMonth.title",
+            "calendar.mock.snapshotNextMonth.description",
+            "calendar.mock.snapshotNextMonth.label",
+            "snapshots.type.FINAL",
+            "snapshots.type.PARTIAL"
     );
 
     private static final Set<String> LOGIN_PAGE_KEYS = Set.of(
@@ -1120,6 +1187,10 @@ public class MessageBundleService {
 
     public Map<String, String> savingsPlanningGeneratorPageMessages(Locale locale) {
         return messages(SAVINGS_PLANNING_GENERATOR_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> calendarPageMessages(Locale locale) {
+        return messages(CALENDAR_PAGE_KEYS, locale);
     }
 
     private Map<String, String> messages(Set<String> keys, Locale locale) {
