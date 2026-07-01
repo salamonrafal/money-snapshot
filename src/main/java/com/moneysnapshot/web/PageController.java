@@ -57,6 +57,11 @@ public class PageController {
         return "reports";
     }
 
+    @GetMapping("/calendar.html")
+    public String calendar() {
+        return "calendar";
+    }
+
     @GetMapping("/counterparties.html")
     public String counterparties() {
         return "counterparties";

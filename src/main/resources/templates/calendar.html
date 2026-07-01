@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Kalendarz | Money Snapshot', 'calendar.js')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('calendar')}"></header>
+
+<main class="workspace workspace-with-sticky-launcher">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="calendar.heading.eyebrow">Płatności i okresy</p>
+        <h1 data-i18n="calendar.heading.title">Kalendarz</h1>
+        <p data-i18n="calendar.heading.subtitle">Podejrzyj nadchodzące płatności, początek i koniec okresu rozliczeniowego oraz migawki w układzie miesięcznym.</p>
+    </section>
+
+    <section class="calendar-layout" aria-labelledby="calendar-panel-title">
+        <section class="table-panel calendar-panel" aria-labelledby="calendar-panel-title">
+            <div class="section-header">
+                <div>
+                    <h2 id="calendar-panel-title" data-i18n="calendar.calendar.title">Widok miesiąca</h2>
+                    <p class="calendar-panel-hint" id="calendar-panel-month-label" data-i18n="calendar.summary.emptySelection">Nie wybrano dnia</p>
+                </div>
+                <div class="section-actions topbar-account-actions icon-toolbar calendar-navigation-actions"
+                     role="toolbar"
+                     data-i18n-aria-label="calendar.aria.navigation"
+                     aria-label="Nawigacja po miesiącach">
+                    <button type="button"
+                            class="icon-button secondary topbar-icon-link"
+                            id="calendar-previous-month"
+                            data-i18n-title="calendar.actions.previousMonth"
+                            data-i18n-aria-label="calendar.actions.previousMonth"
+                            aria-label="Poprzedni miesiąc">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M15 18l-6-6 6-6"></path>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            class="button secondary compact"
+                            id="calendar-today"
+                            data-i18n="calendar.actions.today">Dzisiaj</button>
+                    <button type="button"
+                            class="icon-button secondary topbar-icon-link"
+                            id="calendar-next-month"
+                            data-i18n-title="calendar.actions.nextMonth"
+                            data-i18n-aria-label="calendar.actions.nextMonth"
+                            aria-label="Następny miesiąc">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 18l6-6-6-6"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="calendar-board"
+                 id="calendar-board"
+                 role="grid"
+                 data-i18n-aria-label="calendar.aria.grid"
+                 aria-label="Kalendarz miesięczny"></div>
+        </section>
+
+        <section class="table-panel calendar-day-panel"
+                 aria-labelledby="calendar-events-title"
+                 data-i18n-aria-label="calendar.aria.eventList"
+                 aria-label="Lista zdarzeń">
+            <div class="section-header calendar-events-header">
+                <div>
+                    <h2 id="calendar-events-title" data-i18n="calendar.events.title">Zdarzenia</h2>
+                    <p class="calendar-events-subtitle" id="calendar-events-subtitle" data-i18n="calendar.events.subtitle">Wybierz dzień, aby zobaczyć szczegóły zdarzeń.</p>
+                </div>
+            </div>
+            <div id="calendar-events-list" class="calendar-events-list" role="region" aria-labelledby="calendar-events-title"></div>
+        </section>
+    </section>
+</main>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+</body>
+</html>

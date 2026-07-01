@@ -69,6 +69,21 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
             join fetch snapshot.account account
             join fetch account.bank
             where snapshot.owner.id = :ownerId
+                and snapshot.snapshotDate between :fromDate and :toDate
+            order by snapshot.snapshotDate asc, account.name
+            """)
+    List<AccountSnapshot> findAllByOwnerIdAndSnapshotDateBetweenWithAccountOrderBySnapshotDateAsc(
+            @Param("ownerId") UUID ownerId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
+
+    @Query("""
+            select snapshot
+            from AccountSnapshot snapshot
+            join fetch snapshot.account account
+            join fetch account.bank
+            where snapshot.owner.id = :ownerId
                 and account.id = :accountId
                 and snapshot.snapshotDate = :snapshotDate
             order by snapshot.snapshotDate desc, account.name
