@@ -1,7 +1,7 @@
 const tableBody = document.querySelector("#snapshots-table-body");
 const refreshButton = document.querySelector("#refresh-snapshots");
 const newSnapshotAction = document.querySelector("#new-snapshot-action");
-const newBulkSnapshotsAction = document.querySelector("#new-bulk-snapshots-action");
+const newBulkSnapshotsActions = document.querySelectorAll("#new-bulk-snapshots-action, [data-shortcut-action='bulk-snapshots']");
 const listMessage = document.querySelector("#snapshots-list-message");
 const previousPageButton = document.querySelector("#snapshots-prev-page");
 const nextPageButton = document.querySelector("#snapshots-next-page");
@@ -113,7 +113,7 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     messages = nextMessages;
     document.title = `${messages["snapshots.heading.title"]} | ${messages["app.name"]}`;
     MoneySnapshotUi.setTooltip(newSnapshotAction, messages["snapshots.actions.add"]);
-    MoneySnapshotUi.setTooltip(newBulkSnapshotsAction, messages["snapshots.actions.addBulk"]);
+    newBulkSnapshotsActions.forEach((action) => MoneySnapshotUi.setTooltip(action, messages["snapshots.actions.addBulk"]));
     MoneySnapshotUi.setTooltip(refreshButton, messages["snapshots.actions.refresh"]);
     updateClearFiltersButton();
     if (snapshotsLoaded) {
@@ -140,6 +140,13 @@ function setListMessage(text, type = "") {
     toastManager.show(text, {
         type
     });
+}
+
+function formatMessage(template, values = {}) {
+    return Object.entries(values).reduce((message, [key, value]) => {
+        const pattern = new RegExp(`\\{${key}\\}`, "gi");
+        return message.replace(pattern, String(value));
+    }, template ?? "");
 }
 
 function hasActiveFilters() {
@@ -179,7 +186,7 @@ function showBulkSnapshotSuccessMessage() {
         console.warn("Cannot clear bulk snapshot success state", error);
     }
     const successMessage = messages["snapshots.bulk.success"] ?? "Saved snapshots: {count}.";
-    setListMessage(successMessage.replace("{count}", savedCount), "success");
+    setListMessage(formatMessage(successMessage, {count: savedCount}), "success");
 }
 
 function formatDate(value) {
@@ -388,7 +395,7 @@ async function ensureBulkSnapshotFormController() {
             controller.resetForm();
             bulkSnapshotFormModal?.close();
             const successMessageTemplate = messages["snapshots.bulk.success"] ?? "";
-            setListMessage(successMessageTemplate.replace("{count}", String(savedSnapshots.length)), "success");
+            setListMessage(formatMessage(successMessageTemplate, {count: savedSnapshots.length}), "success");
             await loadSnapshots();
         }
     })
@@ -696,33 +703,46 @@ newSnapshotAction?.addEventListener("click", async (event) => {
     }
 });
 
-newBulkSnapshotsAction?.addEventListener("click", async (event) => {
-    if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
-        return;
-    }
-
-    event.preventDefault();
-
-    try {
-        const controller = await ensureBulkSnapshotFormController();
-        if (!controller) {
-            window.location.href = newBulkSnapshotsAction.href;
+newBulkSnapshotsActions.forEach((trigger) => {
+    trigger.addEventListener("click", async (event) => {
+        if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
             return;
         }
 
-        await controller.prepare({forceReload: true});
-        controller.resetForm();
-        controller.clearMessage();
-        bulkSnapshotFormModal.open({
-            trigger: newBulkSnapshotsAction
-        });
-        window.requestAnimationFrame(() => {
-            controller.focus();
-        });
-    } catch (error) {
-        setListMessage(error.message, "error");
-        window.location.href = newBulkSnapshotsAction.href;
+        event.preventDefault();
+
+        try {
+            const controller = await ensureBulkSnapshotFormController();
+            if (!controller) {
+                window.location.href = trigger.href;
+                return;
+            }
+
+            await controller.prepare({forceReload: true});
+            controller.resetForm();
+            controller.clearMessage();
+            bulkSnapshotFormModal.open({
+                trigger
+            });
+            window.requestAnimationFrame(() => {
+                controller.focus();
+            });
+        } catch (error) {
+            setListMessage(error.message, "error");
+            window.location.href = trigger.href;
+        }
+    });
+});
+
+window.addEventListener("money-snapshot:shortcut-action-saved", (event) => {
+    if (event.detail?.type !== "bulk-snapshots") {
+        return;
     }
+
+    setListMessage("");
+    loadSnapshots().catch((error) => {
+        setListMessage(error.message, "error");
+    });
 });
 
 deleteModal.confirmButton.addEventListener("click", async () => {

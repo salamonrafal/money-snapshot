@@ -154,7 +154,7 @@
             });
         }
 
-        function close() {
+        function close({restoreFocus = true} = {}) {
             MoneySnapshotUi.dismissTooltip();
             panel.classList.remove("is-open");
             setPageInert(false);
@@ -176,7 +176,7 @@
 
             const focusTarget = lastTrigger;
             lastTrigger = null;
-            if (focusTarget instanceof HTMLElement) {
+            if (restoreFocus && focusTarget instanceof HTMLElement) {
                 window.requestAnimationFrame(() => {
                     MoneySnapshotUi.dismissTooltip();
                     focusTarget.dataset.suppressTooltipOnFocusOnce = "true";
@@ -201,6 +201,12 @@
         panel.addEventListener("click", (event) => {
             if (event.target === panel) {
                 close();
+                return;
+            }
+
+            if (event.target instanceof Element
+                && event.target.closest("a[href], button:not([data-shortcuts-launcher-close])")) {
+                close({restoreFocus: false});
             }
         });
 

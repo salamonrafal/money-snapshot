@@ -714,6 +714,69 @@ h1 {
     padding: 0 var(--page-padding);
 }
 
+.home-main .feature-sections {
+    display: none;
+}
+
+@media (min-width: 1025px) {
+    .home-main {
+        display: grid;
+        align-items: center;
+        min-height: calc(100dvh - 88px - 52px);
+        padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .home-main .hero {
+        grid-template-columns: minmax(0, 1fr) minmax(360px, 0.92fr);
+        gap: 40px;
+        align-self: center;
+        margin-top: 0;
+        min-height: auto;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .home-main .hero-content {
+        width: min(100%, 700px);
+    }
+
+    .home-main h1 {
+        max-width: 700px;
+        font-size: clamp(2.45rem, 4.25vw, 4.35rem);
+        line-height: 1.04;
+        text-wrap: balance;
+    }
+
+    .home-main .hero-copy {
+        max-width: 600px;
+        margin-top: 22px;
+        font-size: 1.04rem;
+        line-height: 1.58;
+        text-wrap: pretty;
+    }
+
+    .home-main .hero-actions {
+        margin-top: 30px;
+    }
+
+    .home-main .snapshot-panel {
+        padding: 24px;
+    }
+
+    .home-main .balance-line {
+        height: clamp(190px, 24vw, 250px);
+        margin: 22px 0;
+    }
+
+    .home-main .summary-grid {
+        gap: 10px;
+    }
+
+    .home-main .summary-grid div {
+        padding: 12px;
+    }
+}
+
 .feature-section {
     display: grid;
     gap: 14px;
@@ -890,6 +953,7 @@ h1 {
     bottom: 0;
     width: auto;
     transform: none;
+    pointer-events: auto;
 }
 
 @media (max-width: 760px) {
@@ -1109,6 +1173,7 @@ h1 {
     transform: translateY(calc(-100% + 1px));
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
     transition: opacity 0.16s ease, visibility 0s linear 0s;
 }
 
