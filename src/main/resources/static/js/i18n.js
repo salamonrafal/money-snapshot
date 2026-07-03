@@ -77,6 +77,12 @@ const MoneySnapshotI18n = (() => {
             }
 
             onLanguageChange({language: currentLanguage, messages});
+            document.dispatchEvent(new CustomEvent("money-snapshot:i18n-language-change", {
+                detail: {
+                    language: currentLanguage,
+                    messages
+                }
+            }));
             return {language: currentLanguage, messages};
         }
 

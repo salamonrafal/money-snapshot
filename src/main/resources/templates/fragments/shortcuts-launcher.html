@@ -315,6 +315,49 @@
 <div th:fragment="launcherStickyBar" class="shortcuts-launcher shortcuts-launcher-sticky-bar" data-shortcuts-launcher>
     <div class="shortcuts-launcher-dock shortcuts-launcher-dock-bar">
         <div class="shortcuts-launcher-bar">
+            <div class="shortcuts-events-anchor">
+                <button type="button"
+                        class="icon-button secondary shortcuts-launcher-bar-button shortcuts-launcher-events-button"
+                        data-shortcuts-events-button
+                        aria-expanded="false"
+                        data-shortcuts-events-count="0"
+                        title="Dzisiejsze zdarzenia"
+                        aria-label="Dzisiejsze zdarzenia">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 2v4"></path>
+                        <path d="M16 2v4"></path>
+                        <path d="M3 10h18"></path>
+                        <path d="M8 14h.01"></path>
+                        <path d="M12 14h.01"></path>
+                        <path d="M16 14h.01"></path>
+                        <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+                    </svg>
+                    <span class="shortcuts-launcher-events-badge" data-shortcuts-events-badge hidden></span>
+                    <span class="visually-hidden" data-shortcuts-events-button-label>Dzisiejsze zdarzenia</span>
+                </button>
+                <section class="shortcuts-events-panel"
+                         data-shortcuts-events-panel
+                         role="dialog"
+                         aria-modal="false"
+                         aria-label="Dzisiejsze zdarzenia"
+                         hidden>
+                    <div class="shortcuts-events-panel-header">
+                        <div class="shortcuts-events-panel-copy">
+                            <h2 data-shortcuts-events-title>Dzisiejsze zdarzenia</h2>
+                        </div>
+                        <button type="button"
+                                class="icon-button secondary shortcuts-events-close"
+                                data-shortcuts-events-close
+                                aria-label="Zamknij">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M18 6 6 18"></path>
+                                <path d="m6 6 12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="shortcuts-events-list" data-shortcuts-events-list></div>
+                </section>
+            </div>
             <button type="button"
                     class="icon-button secondary shortcuts-launcher-bar-button"
                     data-shortcuts-launcher-button
