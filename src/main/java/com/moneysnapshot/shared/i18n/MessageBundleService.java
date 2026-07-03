@@ -55,9 +55,11 @@ public class MessageBundleService {
             "home.feature.liabilities.title",
             "home.feature.liabilities.description",
             "home.feature.liabilities.manageAction",
+            "home.feature.liabilities.registerAction",
             "home.feature.bills.title",
             "home.feature.bills.description",
-            "home.feature.bills.action"
+            "home.feature.bills.action",
+            "snapshots.actions.addBulk"
     );
 
     private static final Set<String> HOME_PAGE_KEYS =
