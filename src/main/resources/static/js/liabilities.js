@@ -5,7 +5,7 @@ const liabilitiesSummaryCurrentDebt = document.querySelector("#liabilities-summa
 const liabilitiesSummaryNextPayment = document.querySelector("#liabilities-summary-next-payment");
 const liabilitiesListMessage = document.querySelector("#liabilities-list-message");
 const newLiabilityAction = document.getElementById("new-liability-action");
-const newLiabilityRepaymentAction = document.getElementById("new-liability-repayment-action");
+const newLiabilityRepaymentActions = document.querySelectorAll("#new-liability-repayment-action, [data-shortcut-action='liability-repayment']");
 const newLiabilityModalElement = document.querySelector("#new-liability-modal");
 const newLiabilityModal = MoneySnapshotUi.createModal({
     modalSelector: "#new-liability-modal",
@@ -1922,8 +1922,8 @@ function setupNewLiabilityRepaymentForm() {
         input?.addEventListener("change", () => input.removeAttribute("aria-invalid"));
     });
 
-    if (newLiabilityRepaymentAction) {
-        newLiabilityRepaymentAction.addEventListener("click", async (event) => {
+    newLiabilityRepaymentActions.forEach((trigger) => {
+        trigger.addEventListener("click", async (event) => {
             if (!shouldOpenModalFromClick(event)) {
                 return;
             }
@@ -1931,13 +1931,13 @@ function setupNewLiabilityRepaymentForm() {
             event.preventDefault();
 
             try {
-                await openNewLiabilityRepaymentModal(newLiabilityRepaymentAction);
+                await openNewLiabilityRepaymentModal(trigger);
             } catch (error) {
                 showToast(error.message, "error");
-                window.location.href = newLiabilityRepaymentAction.href;
+                window.location.href = trigger.href;
             }
         });
-    }
+    });
 }
 
 function setupEditLiabilityRepaymentForm() {
@@ -2434,9 +2434,7 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     if (newLiabilityAction) {
         MoneySnapshotUi.setTooltip(newLiabilityAction, liabilitiesMessages["liabilities.actions.registerLiability"]);
     }
-    if (newLiabilityRepaymentAction) {
-        MoneySnapshotUi.setTooltip(newLiabilityRepaymentAction, liabilitiesMessages["liabilities.actions.registerRepayment"]);
-    }
+    newLiabilityRepaymentActions.forEach((action) => MoneySnapshotUi.setTooltip(action, liabilitiesMessages["liabilities.actions.registerRepayment"]));
     if (creditCardDebtModalElement) {
         const updateButtons = creditCardDebtModalElement.querySelectorAll("[data-credit-card-debt-modal-close]");
         updateButtons.forEach((button) => MoneySnapshotUi.setTooltip(button, liabilitiesMessages["common.close"]));
@@ -2467,6 +2465,16 @@ function handleLanguageChange(nextLanguage, nextMessages) {
         renderDashboard(cachedDashboard);
     }
 }
+
+window.addEventListener("money-snapshot:shortcut-action-saved", (event) => {
+    if (event.detail?.type !== "liability-repayment") {
+        return;
+    }
+
+    loadDashboard().catch((error) => {
+        setListMessage(error.message, "error");
+    });
+});
 
 MoneySnapshotI18n.init({
     endpoint: "/api/liabilities/messages",

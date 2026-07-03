@@ -9,9 +9,9 @@ const changeElement = document.querySelector("#snapshot-panel-change");
 const chartElement = document.querySelector("#snapshot-panel-chart");
 const openSnapshotFormModalButton = document.querySelector("#open-snapshot-form-modal");
 const snapshotFormModalElement = document.querySelector("#snapshot-form-modal");
-const openBulkSnapshotFormModalButton = document.querySelector("#open-bulk-snapshot-form-modal");
+const openBulkSnapshotFormModalButtons = document.querySelectorAll("[data-shortcut-action='bulk-snapshots'], #open-bulk-snapshot-form-modal");
 const bulkSnapshotFormModalElement = document.querySelector("#bulk-snapshot-form-modal");
-const openHomeLiabilityRepaymentModalButton = document.querySelector("#open-home-liability-repayment-modal");
+const openHomeLiabilityRepaymentModalButtons = document.querySelectorAll("[data-shortcut-action='liability-repayment'], #open-home-liability-repayment-modal");
 const homeLiabilityRepaymentModalElement = document.querySelector("#home-liability-repayment-modal");
 const snapshotFormModal = snapshotFormModalElement
     ? MoneySnapshotUi.createModal({
@@ -96,6 +96,13 @@ function normalizeDecimalInput(rawValue) {
     }
 
     return normalizedValue;
+}
+
+function formatMessage(template, values = {}) {
+    return Object.entries(values).reduce((message, [key, value]) => {
+        const pattern = new RegExp(`\\{${key}\\}`, "gi");
+        return message.replace(pattern, String(value));
+    }, template ?? "");
 }
 
 function formatAmountList(amounts, includeSign = false) {
@@ -516,7 +523,7 @@ async function ensureBulkSnapshotFormController() {
             bulkSnapshotFormModal?.close();
             await loadHomeData();
             const successMessageTemplate = homeMessages["snapshots.bulk.success"] ?? "";
-            const successMessage = successMessageTemplate.replace("{count}", String(savedSnapshots.length));
+            const successMessage = formatMessage(successMessageTemplate, {count: savedSnapshots.length});
             toastManager.show(successMessage, {type: "success"});
         }
     })
@@ -816,7 +823,7 @@ async function openHomeLiabilityRepaymentModal(trigger) {
 }
 
 function setupHomeLiabilityRepaymentModal() {
-    if (!homeLiabilityRepaymentForm || !openHomeLiabilityRepaymentModalButton) {
+    if (!homeLiabilityRepaymentForm || openHomeLiabilityRepaymentModalButtons.length === 0) {
         return;
     }
 
@@ -890,21 +897,23 @@ function setupHomeLiabilityRepaymentModal() {
         }
     });
 
-    openHomeLiabilityRepaymentModalButton.addEventListener("click", async (event) => {
-        if (!shouldOpenModalFromClick(event)) {
-            return;
-        }
+    openHomeLiabilityRepaymentModalButtons.forEach((trigger) => {
+        trigger.addEventListener("click", async (event) => {
+            if (!shouldOpenModalFromClick(event)) {
+                return;
+            }
 
-        event.preventDefault();
+            event.preventDefault();
 
-        try {
-            await openHomeLiabilityRepaymentModal(openHomeLiabilityRepaymentModalButton);
-        } catch (error) {
-            console.error(error);
-            toastManager.clear();
-            toastManager.show(error.message, {type: "error"});
-            window.location.href = openHomeLiabilityRepaymentModalButton.href;
-        }
+            try {
+                await openHomeLiabilityRepaymentModal(trigger);
+            } catch (error) {
+                console.error(error);
+                toastManager.clear();
+                toastManager.show(error.message, {type: "error"});
+                window.location.href = trigger.href;
+            }
+        });
     });
 }
 
@@ -965,31 +974,41 @@ openSnapshotFormModalButton?.addEventListener("click", async (event) => {
     }
 });
 
-openBulkSnapshotFormModalButton?.addEventListener("click", async (event) => {
-    if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
-        return;
-    }
-
-    event.preventDefault();
-
-    try {
-        const controller = await ensureBulkSnapshotFormController();
-        if (!controller) {
-            window.location.href = openBulkSnapshotFormModalButton.href;
+openBulkSnapshotFormModalButtons.forEach((trigger) => {
+    trigger.addEventListener("click", async (event) => {
+        if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
             return;
         }
 
-        await controller.prepare({forceReload: true});
-        controller.resetForm();
-        controller.clearMessage();
-        bulkSnapshotFormModal.open({
-            trigger: openBulkSnapshotFormModalButton
+        event.preventDefault();
+
+        try {
+            const controller = await ensureBulkSnapshotFormController();
+            if (!controller) {
+                window.location.href = trigger.href;
+                return;
+            }
+
+            await controller.prepare({forceReload: true});
+            controller.resetForm();
+            controller.clearMessage();
+            bulkSnapshotFormModal.open({
+                trigger
+            });
+            window.requestAnimationFrame(() => {
+                controller.focus();
+            });
+        } catch (error) {
+            console.error(error);
+            window.location.href = trigger.href;
+        }
+    });
+});
+
+window.addEventListener("money-snapshot:shortcut-action-saved", (event) => {
+    if (event.detail?.type === "bulk-snapshots" || event.detail?.type === "liability-repayment") {
+        loadHomeData().catch((error) => {
+            console.error(error);
         });
-        window.requestAnimationFrame(() => {
-            controller.focus();
-        });
-    } catch (error) {
-        console.error(error);
-        window.location.href = openBulkSnapshotFormModalButton.href;
     }
 });

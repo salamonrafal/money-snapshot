@@ -44,6 +44,10 @@
                         <p data-i18n="home.feature.snapshots.description">Zapisuj salda według konta i daty, a następnie porównuj je w czasie.</p>
                         <div class="feature-actions">
                             <a href="/snapshots.html" class="button secondary feature-action" data-i18n="home.hero.snapshotsAction">Zarządzaj migawkami</a>
+                            <a href="/snapshots/bulk.html"
+                               class="button secondary feature-action"
+                               data-launchbar-shortcut-action="bulk-snapshots"
+                               data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
                         </div>
                     </article>
                     <article>
@@ -172,6 +176,10 @@
                         <p data-i18n="home.feature.liabilities.description">Zbierz raty, terminy spłat i szybki podgląd najbliższych obciążeń w jednym miejscu.</p>
                         <div class="feature-actions">
                             <a href="/liabilities.html" class="button secondary feature-action" data-i18n="home.feature.liabilities.manageAction">Zarządzanie obciążeniami</a>
+                            <a href="/liabilities/repayments/new.html"
+                               class="button secondary feature-action"
+                               data-launchbar-shortcut-action="liability-repayment"
+                               data-i18n="home.feature.liabilities.registerAction">Zarejestruj spłatę</a>
                         </div>
                     </article>
                     <article>
@@ -197,6 +205,89 @@
     </div>
 </section>
 
+<th:block th:fragment="shortcutModals">
+    <div th:replace="~{fragments/snapshot-bulk-form :: snapshotBulkFormModal('shortcut-bulk-snapshot-form-modal', 'shortcut-bulk-snapshot-form-modal-title')}"></div>
+
+    <div class="modal-backdrop" id="shortcut-liability-repayment-modal" hidden>
+        <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="shortcut-liability-repayment-modal-title">
+            <div class="snapshot-form-modal-header">
+                <div class="snapshot-form-modal-copy">
+                    <h2 id="shortcut-liability-repayment-modal-title" data-i18n="liabilityRepayment.heading.title">Zarejestruj spłatę</h2>
+                    <p data-i18n="liabilityRepayment.heading.subtitle">Wybierz, czy podajesz kwotę spłaty czy aktualne saldo. Druga wartość zostanie obliczona automatycznie.</p>
+                </div>
+                <button type="button"
+                        class="icon-button secondary snapshot-form-modal-close"
+                        data-shortcut-liability-repayment-modal-close
+                        data-i18n-aria-label="common.close"
+                        aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="snapshot-form-modal-body">
+                <form id="shortcut-liability-repayment-form" class="snapshot-form">
+                    <div class="snapshot-form-modal-message" id="shortcut-liability-repayment-form-message-container" data-type="error" hidden>
+                        <span class="snapshot-form-modal-message-icon snapshot-form-modal-message-icon-error" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <path d="M12 8v5"></path>
+                                <path d="M12 16h.01"></path>
+                            </svg>
+                        </span>
+                        <p class="form-message" id="shortcut-liability-repayment-form-message" role="alert"></p>
+                    </div>
+                    <div class="form-grid">
+                        <label class="field">
+                            <span class="field-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                            <select id="shortcut-liability-repayment-liability" required>
+                                <option value="" selected data-i18n="liabilityRepayment.form.liabilityPlaceholder">Wybierz obciążenie</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span class="field-label"><span data-i18n="liabilityRepayment.form.repaymentDate">Data spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                            <input id="shortcut-liability-repayment-date" type="date" value="" required>
+                        </label>
+                        <label class="field">
+                            <span class="field-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                            <select id="shortcut-liability-repayment-source-type" required>
+                                <option value="REPAYMENT_AMOUNT" selected data-i18n="liabilityRepayment.form.sourceTypeRepaymentAmount">Kwota spłaty</option>
+                                <option value="CURRENT_AMOUNT" data-i18n="liabilityRepayment.form.sourceTypeCurrentAmount">Aktualne saldo</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span class="field-label"><span id="shortcut-liability-repayment-source-label" data-i18n="liabilityRepayment.form.sourceAmountRepaymentAmount">Kwota spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
+                            <input id="shortcut-liability-repayment-source-amount" type="text" value="0" inputmode="decimal" min="0" step="0.0001" required>
+                        </label>
+                        <label class="field">
+                            <span data-i18n="liabilityRepayment.form.finalAmount">Ostateczna kwota obciążenia</span>
+                            <input id="shortcut-liability-repayment-final-amount" type="text" value="-" readonly>
+                        </label>
+                    </div>
+                    <label class="field">
+                        <span data-i18n="liabilityRepayment.form.note">Notatka</span>
+                        <textarea id="shortcut-liability-repayment-note" rows="4" maxlength="500"></textarea>
+                    </label>
+                </form>
+            </div>
+            <div class="snapshot-form-modal-footer">
+                <div class="snapshot-form-modal-actions">
+                    <button type="button"
+                            class="button secondary snapshot-form-modal-action-button"
+                            data-shortcut-liability-repayment-modal-close
+                            data-i18n="liabilityRepayment.form.cancel">Anuluj</button>
+                    <button type="submit"
+                            form="shortcut-liability-repayment-form"
+                            class="button primary snapshot-form-modal-action-button"
+                            id="shortcut-liability-repayment-submit"
+                            data-i18n="liabilityRepayment.form.submit">Zarejestruj spłatę</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
 <div th:fragment="launcher" class="shortcuts-launcher" data-shortcuts-launcher>
     <div class="shortcuts-launcher-dock shortcuts-launcher-dock-tab">
         <button type="button"
@@ -218,6 +309,7 @@
         </button>
     </div>
     <th:block th:replace="~{fragments/shortcuts-launcher :: panel}"></th:block>
+    <th:block th:replace="~{fragments/shortcuts-launcher :: shortcutModals}"></th:block>
 </div>
 
 <div th:fragment="launcherStickyBar" class="shortcuts-launcher shortcuts-launcher-sticky-bar" data-shortcuts-launcher>
@@ -243,4 +335,5 @@
         </div>
     </div>
     <th:block th:replace="~{fragments/shortcuts-launcher :: panel}"></th:block>
+    <th:block th:replace="~{fragments/shortcuts-launcher :: shortcutModals}"></th:block>
 </div>
