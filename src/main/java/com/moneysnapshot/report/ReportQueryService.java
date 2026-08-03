@@ -113,13 +113,13 @@ public class ReportQueryService {
                 ownerId,
                 SnapshotType.FINAL,
                 periodDate,
-                balanceCutoffDate
+                periodEndDate
         );
         List<String> trackedAccountNamesWithoutFinalSnapshots = accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(
                 ownerId,
                 SnapshotType.FINAL,
                 periodDate,
-                balanceCutoffDate
+                periodEndDate
         );
         long trackedAccounts = accountRepository.countTrackedAccountsVisibleInSnapshotsByOwnerId(ownerId);
         List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", baselineDate, balanceCutoffDate);
