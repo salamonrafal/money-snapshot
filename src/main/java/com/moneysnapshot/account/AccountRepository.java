@@ -30,8 +30,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("""
             select count(account)
             from Account account
+            left join account.owner owner
             where (
-                    account.owner.id = :ownerId
+                    owner.id = :ownerId
                     and account.showInSnapshots = true
                 )
                 or (
@@ -50,9 +51,10 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("""
             select count(account)
             from Account account
+            left join account.owner owner
             where (
                     (
-                    account.owner.id = :ownerId
+                    owner.id = :ownerId
                     and account.showInSnapshots = true
                     )
                     or (
@@ -85,9 +87,10 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("""
             select account.name
             from Account account
+            left join account.owner owner
             where (
                     (
-                    account.owner.id = :ownerId
+                    owner.id = :ownerId
                     and account.showInSnapshots = true
                     )
                     or (
