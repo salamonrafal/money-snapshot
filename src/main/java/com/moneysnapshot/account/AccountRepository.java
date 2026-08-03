@@ -30,16 +30,42 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("""
             select count(account)
             from Account account
-            where account.owner.id = :ownerId
-                and account.showInSnapshots = true
+            where (
+                    account.owner.id = :ownerId
+                    and account.showInSnapshots = true
+                )
+                or (
+                    account.owner is null
+                    and account.showInSnapshots = true
+                    and exists (
+                        select trackedSnapshot.id
+                        from AccountSnapshot trackedSnapshot
+                        where trackedSnapshot.account = account
+                            and trackedSnapshot.owner.id = :ownerId
+                    )
+                )
             """)
     long countTrackedAccountsVisibleInSnapshotsByOwnerId(@Param("ownerId") UUID ownerId);
 
     @Query("""
             select count(account)
             from Account account
-            where account.owner.id = :ownerId
-                and account.showInSnapshots = true
+            where (
+                    (
+                    account.owner.id = :ownerId
+                    and account.showInSnapshots = true
+                    )
+                    or (
+                    account.owner is null
+                    and account.showInSnapshots = true
+                    and exists (
+                        select trackedSnapshot.id
+                        from AccountSnapshot trackedSnapshot
+                        where trackedSnapshot.account = account
+                            and trackedSnapshot.owner.id = :ownerId
+                    )
+                    )
+                )
                 and not exists (
                     select snapshot.id
                     from AccountSnapshot snapshot
@@ -59,8 +85,22 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("""
             select account.name
             from Account account
-            where account.owner.id = :ownerId
-                and account.showInSnapshots = true
+            where (
+                    (
+                    account.owner.id = :ownerId
+                    and account.showInSnapshots = true
+                    )
+                    or (
+                    account.owner is null
+                    and account.showInSnapshots = true
+                    and exists (
+                        select trackedSnapshot.id
+                        from AccountSnapshot trackedSnapshot
+                        where trackedSnapshot.account = account
+                            and trackedSnapshot.owner.id = :ownerId
+                    )
+                    )
+                )
                 and not exists (
                     select snapshot.id
                     from AccountSnapshot snapshot
