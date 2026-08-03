@@ -869,6 +869,27 @@ window.MoneySnapshotUi = (() => {
         syncMenuState(false);
     }
 
+    function closeMobileNavigation() {
+        if (!window.matchMedia("(max-width: 1024px)").matches) {
+            return;
+        }
+
+        const menuToggle = document.querySelector(".menu-toggle");
+        const topbarActions = document.querySelector(".topbar-actions");
+
+        if (!(menuToggle instanceof HTMLElement) || !(topbarActions instanceof HTMLElement)) {
+            return;
+        }
+
+        const openLabel = menuToggle.querySelector(".menu-toggle-open-label")?.textContent?.trim();
+        menuToggle.setAttribute("aria-expanded", "false");
+        if (openLabel) {
+            menuToggle.setAttribute("aria-label", openLabel);
+        }
+        topbarActions.classList.remove("is-open");
+        document.body.classList.remove("menu-open");
+    }
+
     function pad(value) {
         return String(value).padStart(2, "0");
     }
@@ -975,6 +996,7 @@ window.MoneySnapshotUi = (() => {
         setTooltip,
         createTrashIcon,
         initializeMobileNavigation,
+        closeMobileNavigation,
         formatDate,
         formatDateValue,
         formatBankAccountNumber,

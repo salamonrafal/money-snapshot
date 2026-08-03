@@ -1,5 +1,6 @@
 package com.moneysnapshot.report;
 
+import com.moneysnapshot.account.AccountRepository;
 import com.moneysnapshot.dashboard.SnapshotPanelAmountResponse;
 import com.moneysnapshot.dashboard.SnapshotPanelChartPointResponse;
 import com.moneysnapshot.dashboard.SnapshotPanelResponse;
@@ -15,6 +16,7 @@ import com.moneysnapshot.savings.web.SavingsForecastRunResponse;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.security.UserSettingsService;
 import com.moneysnapshot.security.web.UserSettingsResponse;
+import com.moneysnapshot.snapshot.SnapshotType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -39,6 +41,7 @@ public class ReportQueryService {
     private final ReportDailyBalanceCacheRepository dailyBalanceCacheRepository;
     private final ReportAverageContributionCacheRepository averageContributionCacheRepository;
     private final ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository;
+    private final AccountRepository accountRepository;
     private final ReportCacheRefreshService reportCacheRefreshService;
     private final CurrentUserService currentUserService;
     private final UserSettingsService userSettingsService;
@@ -51,6 +54,7 @@ public class ReportQueryService {
             ReportDailyBalanceCacheRepository dailyBalanceCacheRepository,
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
+            AccountRepository accountRepository,
             ReportCacheRefreshService reportCacheRefreshService,
             CurrentUserService currentUserService,
             UserSettingsService userSettingsService,
@@ -61,6 +65,7 @@ public class ReportQueryService {
                 dailyBalanceCacheRepository,
                 averageContributionCacheRepository,
                 finalSnapshotCacheRepository,
+                accountRepository,
                 reportCacheRefreshService,
                 currentUserService,
                 userSettingsService,
@@ -74,6 +79,7 @@ public class ReportQueryService {
             ReportDailyBalanceCacheRepository dailyBalanceCacheRepository,
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
+            AccountRepository accountRepository,
             ReportCacheRefreshService reportCacheRefreshService,
             CurrentUserService currentUserService,
             UserSettingsService userSettingsService,
@@ -84,6 +90,7 @@ public class ReportQueryService {
         this.dailyBalanceCacheRepository = dailyBalanceCacheRepository;
         this.averageContributionCacheRepository = averageContributionCacheRepository;
         this.finalSnapshotCacheRepository = finalSnapshotCacheRepository;
+        this.accountRepository = accountRepository;
         this.reportCacheRefreshService = reportCacheRefreshService;
         this.currentUserService = currentUserService;
         this.userSettingsService = userSettingsService;
@@ -102,14 +109,31 @@ public class ReportQueryService {
         LocalDate baselineDate = periodDate.minusDays(1);
         LocalDate periodEndDate = resolvePeriodEnd(periodDate, billingMonthEndDay);
         LocalDate balanceCutoffDate = resolveSnapshotPanelBalanceCutoff(periodDate, periodEndDate, today);
+        long trackedAccountsWithoutFinalSnapshots = accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(
+                ownerId,
+                SnapshotType.FINAL,
+                periodDate,
+                balanceCutoffDate
+        );
+        List<String> trackedAccountNamesWithoutFinalSnapshots = accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(
+                ownerId,
+                SnapshotType.FINAL,
+                periodDate,
+                balanceCutoffDate
+        );
+        long trackedAccounts = accountRepository.countTrackedAccountsVisibleInSnapshotsByOwnerId(ownerId);
         List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", baselineDate, balanceCutoffDate);
         List<SnapshotPanelAmountResponse> currentBalances = balancesByCurrency(periodEntries, EntrySeries::endBalance);
         List<SnapshotPanelAmountResponse> monthlyChanges = changesByCurrency(periodEntries);
         String preferredCurrency = resolvePreferredCurrency(periodEntries, userSettings.defaultCurrency());
         return new SnapshotPanelResponse(
                 periodDate,
+                periodEndDate,
+                Math.max(0L, ChronoUnit.DAYS.between(today, periodEndDate)),
+                trackedAccountsWithoutFinalSnapshots,
+                trackedAccountNamesWithoutFinalSnapshots,
                 calculateMonthlyChangePercent(periodEntries),
-                dailyBalanceCacheRepository.countTrackedAccountsVisibleInSnapshots(ownerId, today),
+                trackedAccounts,
                 currentBalances,
                 monthlyChanges,
                 snapshotPanelChart(periodEntries, periodDate, periodEndDate, preferredCurrency)

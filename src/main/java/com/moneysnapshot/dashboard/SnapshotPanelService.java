@@ -60,13 +60,19 @@ public class SnapshotPanelService {
     }
 
     private SnapshotPanelResponse buildPanel(UUID ownerId) {
-        LocalDate periodDate = resolvePeriodStart(LocalDate.now(clock), userSettingsService.currentUserSettings().billingMonthStartDay());
+        LocalDate today = LocalDate.now(clock);
+        LocalDate periodDate = resolvePeriodStart(today, userSettingsService.currentUserSettings().billingMonthStartDay());
+        LocalDate periodEndDate = resolvePeriodEnd(periodDate, userSettingsService.currentUserSettings().billingMonthStartDay());
         List<CurrencyAmount> currentBalances = snapshotRepository.sumLatestBalancesVisibleInSnapshotsByOwnerIdAndCurrency(ownerId);
         List<CurrencyAmount> previousBalances = snapshotRepository.sumLatestBalancesBeforeDateVisibleInSnapshotsByOwnerIdAndCurrency(ownerId, periodDate);
         List<CurrencyAmount> monthlyChanges = subtractByCurrency(currentBalances, previousBalances);
 
         return new SnapshotPanelResponse(
                 periodDate,
+                periodEndDate,
+                Math.max(0L, java.time.temporal.ChronoUnit.DAYS.between(today, periodEndDate)),
+                0L,
+                List.of(),
                 calculateMonthlyChangePercent(currentBalances, previousBalances),
                 snapshotRepository.countAccountsWithSnapshotsVisibleInSnapshotsByOwnerId(ownerId),
                 toResponse(currentBalances),
@@ -85,6 +91,17 @@ public class SnapshotPanelService {
         LocalDate previousMonth = today.minusMonths(1);
         LocalDate previousMonthEnd = previousMonth.withDayOfMonth(Math.min(normalizedEndDay, previousMonth.lengthOfMonth()));
         return previousMonthEnd.plusDays(1);
+    }
+
+    static LocalDate resolvePeriodEnd(LocalDate periodStart, int billingMonthEndDay) {
+        int normalizedEndDay = Math.max(1, Math.min(31, billingMonthEndDay));
+        LocalDate currentMonthEnd = periodStart.withDayOfMonth(Math.min(normalizedEndDay, periodStart.lengthOfMonth()));
+        if (!currentMonthEnd.isBefore(periodStart)) {
+            return currentMonthEnd;
+        }
+
+        LocalDate nextMonth = periodStart.plusMonths(1);
+        return nextMonth.withDayOfMonth(Math.min(normalizedEndDay, nextMonth.lengthOfMonth()));
     }
 
     private BigDecimal calculateMonthlyChangePercent(List<CurrencyAmount> currentBalances, List<CurrencyAmount> previousBalances) {

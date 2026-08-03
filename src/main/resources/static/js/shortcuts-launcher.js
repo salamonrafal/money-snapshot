@@ -277,6 +277,7 @@
                 return;
             }
 
+            MoneySnapshotUi.closeMobileNavigation?.();
             close({restoreFocus: false});
             eventsPanel.hidden = false;
             eventsButton.setAttribute("aria-expanded", "true");
@@ -333,6 +334,7 @@
 
         function open(trigger = button) {
             MoneySnapshotUi.dismissTooltip();
+            MoneySnapshotUi.closeMobileNavigation?.();
             closeEventsPanel({restoreFocus: false});
             updateLauncherOffset();
             scrollTop = window.scrollY || window.pageYOffset || 0;
