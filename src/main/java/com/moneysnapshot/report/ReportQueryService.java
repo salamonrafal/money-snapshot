@@ -109,17 +109,18 @@ public class ReportQueryService {
         LocalDate baselineDate = periodDate.minusDays(1);
         LocalDate periodEndDate = resolvePeriodEnd(periodDate, billingMonthEndDay);
         LocalDate balanceCutoffDate = resolveSnapshotPanelBalanceCutoff(periodDate, periodEndDate, today);
+        LocalDate finalSnapshotWarningCutoffDate = balanceCutoffDate;
         long trackedAccountsWithoutFinalSnapshots = accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(
                 ownerId,
                 SnapshotType.FINAL,
                 periodDate,
-                periodEndDate
+                finalSnapshotWarningCutoffDate
         );
         List<String> trackedAccountNamesWithoutFinalSnapshots = accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(
                 ownerId,
                 SnapshotType.FINAL,
                 periodDate,
-                periodEndDate
+                finalSnapshotWarningCutoffDate
         );
         long trackedAccounts = accountRepository.countTrackedAccountsVisibleInSnapshotsByOwnerId(ownerId);
         List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", baselineDate, balanceCutoffDate);
@@ -129,6 +130,7 @@ public class ReportQueryService {
         return new SnapshotPanelResponse(
                 periodDate,
                 periodEndDate,
+                finalSnapshotWarningCutoffDate,
                 Math.max(0L, ChronoUnit.DAYS.between(today, periodEndDate)),
                 trackedAccountsWithoutFinalSnapshots,
                 trackedAccountNamesWithoutFinalSnapshots,

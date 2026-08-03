@@ -398,9 +398,9 @@ class ReportQueryServiceTest {
                 LocalDate.of(1900, 1, 1),
                 today
         )).thenReturn(List.of());
-        when(accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, expectedPeriodStart, expectedPeriodEnd))
+        when(accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, expectedPeriodStart, today))
                 .thenReturn(0L);
-        when(accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, expectedPeriodStart, expectedPeriodEnd))
+        when(accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, expectedPeriodStart, today))
                 .thenReturn(List.of());
         when(accountRepository.countTrackedAccountsVisibleInSnapshotsByOwnerId(ownerId)).thenReturn(0L);
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
@@ -418,6 +418,7 @@ class ReportQueryServiceTest {
                 today
         );
         assertThat(response.periodDate()).isEqualTo(expectedPeriodStart);
+        assertThat(response.finalSnapshotWarningCutoffDate()).isEqualTo(today);
     }
 
     @Test
@@ -448,9 +449,9 @@ class ReportQueryServiceTest {
         )).thenReturn(List.of(
                 new ReportFinalSnapshotCache(owner, account, bank, previousPeriodEnd, "Main", "Bank", "PLN", new BigDecimal("100.00"))
         ));
-        when(accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, LocalDate.of(2026, 6, 30)))
+        when(accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, today))
                 .thenReturn(1L);
-        when(accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, LocalDate.of(2026, 6, 30)))
+        when(accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, today))
                 .thenReturn(List.of("Main"));
         when(accountRepository.countTrackedAccountsVisibleInSnapshotsByOwnerId(ownerId)).thenReturn(1L);
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
@@ -465,6 +466,7 @@ class ReportQueryServiceTest {
         SnapshotPanelResponse response = service.snapshotPanel();
 
         assertThat(response.periodEndDate()).isEqualTo(LocalDate.of(2026, 6, 30));
+        assertThat(response.finalSnapshotWarningCutoffDate()).isEqualTo(today);
         assertThat(response.daysUntilPeriodEnd()).isEqualTo(27);
         assertThat(response.trackedAccountsWithoutFinalSnapshots()).isEqualTo(1);
         assertThat(response.trackedAccountNamesWithoutFinalSnapshots()).containsExactly("Main");
@@ -505,10 +507,10 @@ class ReportQueryServiceTest {
         )).thenReturn(List.of(
                 new ReportFinalSnapshotCache(owner, account, bank, previousPeriodEnd, "Main", "Bank", "PLN", new BigDecimal("100.00"))
         ));
-        when(accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, periodEnd))
-                .thenReturn(0L);
-        when(accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, periodEnd))
-                .thenReturn(List.of());
+        when(accountRepository.countTrackedAccountsWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, today))
+                .thenReturn(1L);
+        when(accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(ownerId, com.moneysnapshot.snapshot.SnapshotType.FINAL, periodStart, today))
+                .thenReturn(List.of("Main"));
         when(accountRepository.countTrackedAccountsVisibleInSnapshotsByOwnerId(ownerId)).thenReturn(1L);
         when(dailyBalanceCacheRepository.findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateBetweenOrderByBalanceDateAscAccountNameAsc(
                 ownerId,
@@ -526,8 +528,9 @@ class ReportQueryServiceTest {
                 LocalDate.of(1900, 1, 1),
                 today
         );
-        assertThat(response.trackedAccountsWithoutFinalSnapshots()).isEqualTo(0);
-        assertThat(response.trackedAccountNamesWithoutFinalSnapshots()).isEmpty();
+        assertThat(response.finalSnapshotWarningCutoffDate()).isEqualTo(today);
+        assertThat(response.trackedAccountsWithoutFinalSnapshots()).isEqualTo(1);
+        assertThat(response.trackedAccountNamesWithoutFinalSnapshots()).containsExactly("Main");
         assertThat(response.currentBalances()).hasSize(1);
         assertThat(response.currentBalances().get(0).amount()).isEqualByComparingTo("125.00");
         assertThat(response.monthlyChanges().get(0).amount()).isEqualByComparingTo("25.00");

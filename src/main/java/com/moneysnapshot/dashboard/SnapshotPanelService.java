@@ -70,6 +70,7 @@ public class SnapshotPanelService {
         return new SnapshotPanelResponse(
                 periodDate,
                 periodEndDate,
+                today.isBefore(periodEndDate) ? today : periodEndDate,
                 Math.max(0L, java.time.temporal.ChronoUnit.DAYS.between(today, periodEndDate)),
                 0L,
                 List.of(),

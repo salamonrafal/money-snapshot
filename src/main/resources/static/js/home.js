@@ -157,7 +157,8 @@ function finalSnapshotsWarningTooltip(panel) {
 
     const warningMessage = finalSnapshotsWarningMessage(missingFinalSnapshots);
     const periodStart = panel.periodDate ? MoneySnapshotUi.formatDateValue(panel.periodDate, userSettings) : "";
-    const periodEnd = panel.periodEndDate ? MoneySnapshotUi.formatDateValue(panel.periodEndDate, userSettings) : "";
+    const warningCutoffDate = panel.finalSnapshotWarningCutoffDate ?? panel.periodEndDate;
+    const periodEnd = warningCutoffDate ? MoneySnapshotUi.formatDateValue(warningCutoffDate, userSettings) : "";
     const accountNames = Array.isArray(panel.trackedAccountNamesWithoutFinalSnapshots)
         ? panel.trackedAccountNamesWithoutFinalSnapshots
             .map((name) => `${name ?? ""}`.trim())
