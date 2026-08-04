@@ -1,6 +1,8 @@
 const periodElement = document.querySelector("#snapshot-panel-period");
 const changePercentElement = document.querySelector("#snapshot-panel-change-percent");
 const accountsElement = document.querySelector("#snapshot-panel-accounts");
+const daysUntilPeriodEndElement = document.querySelector("#snapshot-panel-days-until-period-end");
+const billingWarningElement = document.querySelector("#snapshot-panel-billing-warning");
 const billsElement = document.querySelector("#snapshot-panel-bills");
 const liabilitiesElement = document.querySelector("#snapshot-panel-liabilities");
 const installmentsElement = document.querySelector("#snapshot-panel-installments");
@@ -135,10 +137,76 @@ function formatPercent(value) {
     return `${sign}${numericValue.toFixed(1)}%`;
 }
 
+function finalSnapshotsWarningMessage(count) {
+    if (!count || count <= 0) {
+        return "";
+    }
+
+    if (count === 1) {
+        return homeMessages["home.summary.finalSnapshotsWarning.single"] ?? "";
+    }
+
+    return formatMessage(homeMessages["home.summary.finalSnapshotsWarning.multiple"] ?? "", {count});
+}
+
+function finalSnapshotsWarningTooltip(panel) {
+    const missingFinalSnapshots = Math.max(0, Number(panel.trackedAccountsWithoutFinalSnapshots ?? 0));
+    if (missingFinalSnapshots === 0) {
+        return "";
+    }
+
+    const warningMessage = finalSnapshotsWarningMessage(missingFinalSnapshots);
+    const periodStart = panel.periodDate ? MoneySnapshotUi.formatDateValue(panel.periodDate, userSettings) : "";
+    const warningCutoffDate = panel.finalSnapshotWarningCutoffDate ?? panel.periodEndDate;
+    const periodEnd = warningCutoffDate ? MoneySnapshotUi.formatDateValue(warningCutoffDate, userSettings) : "";
+    const accountNames = Array.isArray(panel.trackedAccountNamesWithoutFinalSnapshots)
+        ? panel.trackedAccountNamesWithoutFinalSnapshots
+            .map((name) => `${name ?? ""}`.trim())
+            .filter((name) => name.length > 0)
+        : [];
+    const periodLabel = periodStart && periodEnd
+        ? formatMessage(homeMessages["home.summary.finalSnapshotsWarning.period"] ?? "", {
+            fromDate: periodStart,
+            toDate: periodEnd
+        })
+        : "";
+    const accountsLabel = accountNames.length === 0
+        ? ""
+        : formatMessage(homeMessages["home.summary.finalSnapshotsWarning.accounts"] ?? "", {
+            accounts: accountNames.join(", ")
+        });
+
+    return [warningMessage, periodLabel, accountsLabel].filter(Boolean).join(" ");
+}
+
+function renderBillingPeriodStatus(panel) {
+    if (daysUntilPeriodEndElement) {
+        daysUntilPeriodEndElement.textContent = `${Math.max(0, Number(panel.daysUntilPeriodEnd ?? 0))}`;
+    }
+
+    if (!billingWarningElement) {
+        return;
+    }
+
+    const missingFinalSnapshots = Math.max(0, Number(panel.trackedAccountsWithoutFinalSnapshots ?? 0));
+    const warningMessage = finalSnapshotsWarningTooltip(panel);
+    if (missingFinalSnapshots === 0 && document.activeElement === billingWarningElement) {
+        MoneySnapshotUi.dismissTooltip(billingWarningElement);
+        billingWarningElement.blur();
+    }
+    billingWarningElement.hidden = missingFinalSnapshots === 0;
+    billingWarningElement.style.display = missingFinalSnapshots === 0 ? "none" : "inline-grid";
+    billingWarningElement.setAttribute("aria-hidden", missingFinalSnapshots === 0 ? "true" : "false");
+    billingWarningElement.classList.toggle("is-visible", missingFinalSnapshots > 0);
+    billingWarningElement.setAttribute("aria-label", warningMessage || (homeMessages["home.summary.finalSnapshotsWarning"] ?? ""));
+    MoneySnapshotUi.setTooltip(billingWarningElement, warningMessage);
+}
+
 function renderSnapshotPanel(panel) {
     periodElement.textContent = formatPeriod(panel.periodDate);
     changePercentElement.textContent = formatPercent(panel.monthlyChangePercent);
     accountsElement.textContent = panel.trackedAccounts;
+    renderBillingPeriodStatus(panel);
     balanceElement.textContent = formatAmountList(panel.currentBalances);
     changeElement.textContent = formatAmountList(panel.monthlyChanges, true);
 }

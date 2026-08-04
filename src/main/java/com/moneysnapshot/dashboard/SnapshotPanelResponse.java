@@ -6,6 +6,11 @@ import java.util.List;
 
 public record SnapshotPanelResponse(
         LocalDate periodDate,
+        LocalDate periodEndDate,
+        LocalDate finalSnapshotWarningCutoffDate,
+        long daysUntilPeriodEnd,
+        long trackedAccountsWithoutFinalSnapshots,
+        List<String> trackedAccountNamesWithoutFinalSnapshots,
         BigDecimal monthlyChangePercent,
         long trackedAccounts,
         List<SnapshotPanelAmountResponse> currentBalances,

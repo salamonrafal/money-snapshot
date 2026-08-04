@@ -3,6 +3,7 @@ package com.moneysnapshot.account;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
@@ -25,6 +26,100 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     @Query("select account from Account account join fetch account.bank left join fetch account.owner where account.owner.id = :ownerId order by account.name")
     List<Account> findAllByOwnerIdWithBankOrderByName(@Param("ownerId") UUID ownerId);
+
+    @Query("""
+            select count(account)
+            from Account account
+            left join account.owner owner
+            where (
+                    owner.id = :ownerId
+                    and account.showInSnapshots = true
+                )
+                or (
+                    account.owner is null
+                    and account.showInSnapshots = true
+                    and exists (
+                        select trackedSnapshot.id
+                        from AccountSnapshot trackedSnapshot
+                        where trackedSnapshot.account = account
+                            and trackedSnapshot.owner.id = :ownerId
+                    )
+                )
+            """)
+    long countTrackedAccountsVisibleInSnapshotsByOwnerId(@Param("ownerId") UUID ownerId);
+
+    @Query("""
+            select count(account)
+            from Account account
+            left join account.owner owner
+            where (
+                    (
+                    owner.id = :ownerId
+                    and account.showInSnapshots = true
+                    )
+                    or (
+                    account.owner is null
+                    and account.showInSnapshots = true
+                    and exists (
+                        select trackedSnapshot.id
+                        from AccountSnapshot trackedSnapshot
+                        where trackedSnapshot.account = account
+                            and trackedSnapshot.owner.id = :ownerId
+                    )
+                    )
+                )
+                and not exists (
+                    select snapshot.id
+                    from AccountSnapshot snapshot
+                    where snapshot.account = account
+                        and snapshot.owner.id = :ownerId
+                        and snapshot.snapshotType = :snapshotType
+                        and snapshot.snapshotDate between :fromDate and :toDate
+                )
+            """)
+    long countTrackedAccountsWithoutSnapshotTypeInPeriod(
+            @Param("ownerId") UUID ownerId,
+            @Param("snapshotType") com.moneysnapshot.snapshot.SnapshotType snapshotType,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
+
+    @Query("""
+            select account.name
+            from Account account
+            left join account.owner owner
+            where (
+                    (
+                    owner.id = :ownerId
+                    and account.showInSnapshots = true
+                    )
+                    or (
+                    account.owner is null
+                    and account.showInSnapshots = true
+                    and exists (
+                        select trackedSnapshot.id
+                        from AccountSnapshot trackedSnapshot
+                        where trackedSnapshot.account = account
+                            and trackedSnapshot.owner.id = :ownerId
+                    )
+                    )
+                )
+                and not exists (
+                    select snapshot.id
+                    from AccountSnapshot snapshot
+                    where snapshot.account = account
+                        and snapshot.owner.id = :ownerId
+                        and snapshot.snapshotType = :snapshotType
+                        and snapshot.snapshotDate between :fromDate and :toDate
+                )
+            order by account.name
+            """)
+    List<String> findTrackedAccountNamesWithoutSnapshotTypeInPeriod(
+            @Param("ownerId") UUID ownerId,
+            @Param("snapshotType") com.moneysnapshot.snapshot.SnapshotType snapshotType,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
 
     @Modifying
     long deleteByBankId(UUID bankId);

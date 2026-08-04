@@ -19,6 +19,13 @@ public interface AccountSnapshotRepository extends JpaRepository<AccountSnapshot
 
     boolean existsByOwnerIdAndSnapshotType(UUID ownerId, SnapshotType snapshotType);
 
+    boolean existsByOwnerIdAndSnapshotTypeAndSnapshotDateBetween(
+            UUID ownerId,
+            SnapshotType snapshotType,
+            LocalDate fromDate,
+            LocalDate toDate
+    );
+
     @Query("select snapshot from AccountSnapshot snapshot join fetch snapshot.account account join fetch account.bank order by snapshot.snapshotDate desc, account.name")
     List<AccountSnapshot> findAllWithAccountOrderBySnapshotDateDesc();
 

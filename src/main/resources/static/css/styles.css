@@ -684,10 +684,50 @@ h1 {
     font-size: 0.78rem;
 }
 
+.summary-label-with-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .summary-grid dd {
     margin: 8px 0 0;
     font-weight: 800;
     white-space: pre-line;
+}
+
+.summary-value-with-status {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+}
+
+.summary-warning-indicator {
+    display: inline-grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--danger);
+    cursor: help;
+}
+
+.summary-warning-indicator[hidden] {
+    display: none !important;
+}
+
+.summary-warning-indicator:hover,
+.summary-warning-indicator:focus-visible {
+    outline: none;
+}
+
+.summary-warning-indicator svg {
+    width: 16px;
+    height: 16px;
 }
 
 .summary-grid dd.summary-value-positive {
@@ -721,15 +761,16 @@ h1 {
 @media (min-width: 1025px) {
     .home-main {
         display: grid;
-        align-items: center;
+        align-items: start;
         min-height: calc(100dvh - 88px - 52px);
+        padding-top: 32px;
         padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
     }
 
     .home-main .hero {
         grid-template-columns: minmax(0, 1fr) minmax(360px, 0.92fr);
         gap: 40px;
-        align-self: center;
+        align-self: start;
         margin-top: 0;
         min-height: auto;
         padding-top: 0;
