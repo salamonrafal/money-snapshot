@@ -114,15 +114,17 @@ public class ReportQueryService {
                 ownerId,
                 SnapshotType.FINAL,
                 periodDate,
-                finalSnapshotWarningCutoffDate
+                periodEndDate
         );
         List<String> trackedAccountNamesWithoutFinalSnapshots = accountRepository.findTrackedAccountNamesWithoutSnapshotTypeInPeriod(
                 ownerId,
                 SnapshotType.FINAL,
                 periodDate,
-                finalSnapshotWarningCutoffDate
+                periodEndDate
         );
-        long trackedAccounts = accountRepository.countTrackedAccountsVisibleInSnapshotsByOwnerId(ownerId);
+        long trackedAccounts = dailyBalanceCacheRepository.findLatestBalanceDateOnOrBefore(ownerId, balanceCutoffDate)
+                .map(balanceDate -> dailyBalanceCacheRepository.countTrackedAccountsVisibleInSnapshots(ownerId, balanceDate))
+                .orElse(0L);
         List<EntrySeries> periodEntries = buildSummaryEntrySeries("total", baselineDate, balanceCutoffDate);
         List<SnapshotPanelAmountResponse> currentBalances = balancesByCurrency(periodEntries, EntrySeries::endBalance);
         List<SnapshotPanelAmountResponse> monthlyChanges = changesByCurrency(periodEntries);
