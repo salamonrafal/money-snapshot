@@ -327,8 +327,7 @@
 }
 
 .calendar-day-marker,
-.calendar-day-more,
-.calendar-event-badge {
+.calendar-day-more {
     display: inline-flex;
     align-items: center;
     width: 100%;
@@ -343,26 +342,22 @@
     white-space: nowrap;
 }
 
-.calendar-day-marker-payment,
-.calendar-event-badge-payment {
+.calendar-day-marker-payment {
     background: color-mix(in srgb, var(--danger) 12%, var(--surface));
     color: var(--danger-strong);
 }
 
-.calendar-day-marker-billing_period_start,
-.calendar-event-badge-billing_period_start {
+.calendar-day-marker-billing_period_start {
     background: color-mix(in srgb, var(--accent) 14%, var(--surface));
     color: var(--accent-strong);
 }
 
-.calendar-day-marker-billing_period_end,
-.calendar-event-badge-billing_period_end {
+.calendar-day-marker-billing_period_end {
     background: color-mix(in srgb, var(--warning) 14%, var(--surface));
     color: var(--warning-strong);
 }
 
-.calendar-day-marker-snapshot,
-.calendar-event-badge-snapshot {
+.calendar-day-marker-snapshot {
     background: color-mix(in srgb, var(--success) 14%, var(--surface));
     color: var(--success-strong);
 }

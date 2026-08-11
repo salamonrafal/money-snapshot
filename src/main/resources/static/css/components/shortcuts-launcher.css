@@ -186,6 +186,40 @@
     line-height: 1.5;
 }
 
+.calendar-event-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-event-badge-payment {
+    background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+    color: var(--danger-strong);
+}
+
+.calendar-event-badge-billing_period_start {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent-strong);
+}
+
+.calendar-event-badge-billing_period_end {
+    background: color-mix(in srgb, var(--warning) 14%, var(--surface));
+    color: var(--warning-strong);
+}
+
+.calendar-event-badge-snapshot {
+    background: color-mix(in srgb, var(--success) 14%, var(--surface));
+    color: var(--success-strong);
+}
+
 .shortcuts-events-card {
     display: grid;
     gap: 8px;
