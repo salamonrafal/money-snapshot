@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/page :: head('Harmonogram rachunku | Money Snapshot', 'bill-schedule.js')}"></head>
+<head th:replace="~{fragments/page :: head('Harmonogram rachunku | Money Snapshot', 'bill-schedule.js', 'liabilities-bills')}"></head>
 <body th:attr="data-bill-id=${billId}">
 <header th:replace="~{fragments/page :: header('liabilities')}"></header>
 

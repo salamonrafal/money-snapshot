@@ -1,0 +1,260 @@
+.banks-accounts-panels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    margin-top: 40px;
+    min-width: 0;
+}
+
+.banks-accounts-panels .table-panel,
+.banks-accounts-table-wrap,
+.bank-details-cell,
+.banks-accounts-nested-wrap {
+    min-width: 0;
+}
+
+.banks-accounts-table {
+    table-layout: auto;
+    min-width: 640px;
+}
+
+.banks-accounts-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.banks-accounts-table th:nth-child(1),
+.banks-accounts-table td:nth-child(1) {
+    width: 34%;
+}
+
+.banks-accounts-table th:nth-child(2),
+.banks-accounts-table td:nth-child(2) {
+    width: 24%;
+}
+
+.banks-accounts-table th:nth-child(3),
+.banks-accounts-table td:nth-child(3) {
+    width: 10%;
+    text-align: center;
+}
+
+.banks-accounts-table th:nth-child(4),
+.banks-accounts-table td:nth-child(4) {
+    width: 18%;
+    text-align: center;
+}
+
+.bank-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0;
+    font: inherit;
+    font-weight: 800;
+    text-align: left;
+}
+
+.bank-toggle-chevron {
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.16s ease;
+}
+
+.bank-toggle[aria-expanded="true"] .bank-toggle-chevron {
+    transform: rotate(45deg);
+}
+
+.bank-summary-row > td {
+    background: var(--accent-wash-muted);
+}
+
+.bank-details-row > td {
+    border-bottom: 0;
+    padding: 0 0 18px;
+}
+
+.bank-details-cell {
+    padding-top: 0;
+}
+
+.banks-accounts-nested-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.banks-accounts-nested-table {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    min-width: 560px;
+}
+
+.banks-accounts-nested-table th,
+.banks-accounts-nested-table td {
+    padding: 10px 12px;
+}
+
+.banks-accounts-nested-table th:nth-child(1),
+.banks-accounts-nested-table td:nth-child(1) {
+    width: 30%;
+}
+
+.banks-accounts-nested-table th:nth-child(2),
+.banks-accounts-nested-table td:nth-child(2) {
+    width: 18%;
+}
+
+.banks-accounts-nested-table th:nth-child(3),
+.banks-accounts-nested-table td:nth-child(3),
+.banks-accounts-nested-table th:nth-child(4),
+.banks-accounts-nested-table td:nth-child(4) {
+    width: 14%;
+}
+
+.banks-accounts-nested-table th:nth-child(5),
+.banks-accounts-nested-table td:nth-child(5) {
+    width: 124px;
+    text-align: center;
+    white-space: nowrap;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.banks-accounts-nested-table .row-actions {
+    gap: 4px;
+    width: max-content;
+    margin-inline: auto;
+}
+
+.banks-accounts-nested-table.accounts-table th:nth-child(1),
+.banks-accounts-nested-table.accounts-table td:nth-child(1) {
+    width: 15%;
+}
+
+.banks-accounts-nested-table.accounts-table th:nth-child(2),
+.banks-accounts-nested-table.accounts-table td:nth-child(2) {
+    width: 12%;
+}
+
+.banks-accounts-nested-table.accounts-table th:nth-child(3),
+.banks-accounts-nested-table.accounts-table td:nth-child(3) {
+    width: 13%;
+}
+
+.banks-accounts-nested-table.accounts-table th:nth-child(4),
+.banks-accounts-nested-table.accounts-table td:nth-child(4),
+.banks-accounts-nested-table.accounts-table th:nth-child(5),
+.banks-accounts-nested-table.accounts-table td:nth-child(5) {
+    width: 8%;
+}
+
+.bank-account-highlight > td {
+    background: var(--accent-wash);
+}
+
+@media (max-width: 768px) {
+    .banks-accounts-panels .table-panel {
+        padding: 18px 14px;
+    }
+
+    .banks-accounts-panels .section-header {
+        align-items: center;
+        flex-direction: row;
+        justify-content: flex-start;
+        width: 100%;
+        margin-right: 0;
+    }
+
+    .banks-accounts-panels .section-header > h2 {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin-right: 12px;
+    }
+
+    .banks-accounts-panels .section-actions {
+        justify-content: flex-end;
+        margin-left: auto;
+        padding-right: 0;
+        flex-shrink: 0;
+        align-self: center;
+    }
+
+    .banks-accounts-table {
+        min-width: 600px;
+    }
+
+    .banks-accounts-nested-table {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+        font-size: 0.78rem;
+    }
+
+    .banks-accounts-nested-wrap {
+        overflow-x: clip;
+    }
+
+    .banks-accounts-nested-table th,
+    .banks-accounts-nested-table td {
+        padding: 8px 6px;
+    }
+
+    .banks-accounts-nested-table th:nth-child(1),
+    .banks-accounts-nested-table td:nth-child(1) {
+        width: 32%;
+    }
+
+    .banks-accounts-nested-table th:nth-child(2),
+    .banks-accounts-nested-table td:nth-child(2) {
+        width: 18%;
+    }
+
+    .banks-accounts-nested-table th:nth-child(3),
+    .banks-accounts-nested-table td:nth-child(3),
+    .banks-accounts-nested-table th:nth-child(4),
+    .banks-accounts-nested-table td:nth-child(4) {
+        width: 12%;
+    }
+
+    .banks-accounts-nested-table th:nth-child(5),
+    .banks-accounts-nested-table td:nth-child(5) {
+        width: 106px;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+
+    .banks-accounts-nested-table .row-actions {
+        gap: 2px;
+    }
+
+    .banks-accounts-nested-table .row-actions > .icon-button,
+    .banks-accounts-nested-table .row-actions > a.icon-button,
+    .banks-accounts-nested-table .row-actions > button.icon-button {
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .banks-accounts-nested-table .icon-button svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+@media (max-width: 560px) {
+    .banks-accounts-panels .table-panel {
+        padding: 16px 12px;
+    }
+
+    .banks-accounts-panels .section-actions .button {
+        width: auto;
+    }
+}

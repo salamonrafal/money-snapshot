@@ -1,0 +1,438 @@
+.shortcuts-launcher-dock {
+    position: fixed;
+    right: 24px;
+    bottom: 0;
+    z-index: 35;
+    width: max-content;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.shortcuts-launcher-dock-bar {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    transform: none;
+    pointer-events: auto;
+}
+
+@media (max-width: 760px) {
+    .shortcuts-launcher-dock {
+        right: 16px;
+    }
+
+    .shortcuts-launcher-dock-bar {
+        left: 0;
+        right: 0;
+    }
+}
+
+.shortcuts-launcher-bar {
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 52px;
+    padding: 0 var(--page-padding);
+    transform: translateY(calc(-100% + 1px));
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.16s ease, visibility 0s linear 0s;
+}
+
+.shortcuts-launcher-bar::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100% + 1px);
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    pointer-events: none;
+}
+
+.shortcuts-launcher-bar-button.icon-button {
+    position: relative;
+    z-index: 1;
+    width: 56px;
+    height: 100%;
+    place-items: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+    pointer-events: auto;
+}
+
+.shortcuts-launcher-bar-button.icon-button.secondary {
+    border: 0;
+    background: transparent;
+}
+
+.shortcuts-launcher-bar-button.icon-button:hover,
+.shortcuts-launcher-bar-button.icon-button:focus-visible,
+.shortcuts-launcher-bar-button.icon-button.secondary:hover,
+.shortcuts-launcher-bar-button.icon-button.secondary:focus-visible {
+    color: var(--accent-strong);
+    border: 0;
+    background: color-mix(in srgb, var(--surface) 82%, var(--accent-wash-subtle));
+}
+
+.shortcuts-events-anchor {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    margin-right: auto;
+    flex: 0 0 auto;
+    height: 100%;
+}
+
+.shortcuts-launcher-events-button {
+    position: relative;
+    width: 56px;
+    height: 100%;
+}
+
+.shortcuts-launcher-events-badge {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--danger-strong);
+    color: var(--danger-text);
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 0 0 2px var(--background);
+}
+
+.shortcuts-events-panel {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 12px);
+    z-index: 2;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 12px;
+    width: min(420px, calc(100vw - 32px));
+    max-height: min(560px, calc(100vh - var(--shortcuts-launcher-top, 0px) - 92px));
+    min-height: 0;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.shortcuts-events-panel[hidden] {
+    display: none;
+}
+
+.shortcuts-events-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.shortcuts-events-panel-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.shortcuts-events-panel-copy .eyebrow,
+.shortcuts-events-panel-copy h2,
+.shortcuts-events-panel-subtitle {
+    margin: 0;
+}
+
+.shortcuts-events-panel-copy h2 {
+    font-size: 1.05rem;
+}
+
+.shortcuts-events-panel-subtitle {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.shortcuts-events-list {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.shortcuts-events-empty {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.shortcuts-events-card {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface) 94%, var(--accent-wash-bare));
+}
+
+.shortcuts-events-card-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.shortcuts-events-card-header .calendar-event-badge {
+    width: auto;
+    min-width: 0;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.shortcuts-events-card-header .shortcuts-events-card-title {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.shortcuts-events-card-title,
+.shortcuts-events-card-meta,
+.shortcuts-events-card-description {
+    margin: 0;
+}
+
+.shortcuts-events-card-title {
+    font-size: 0.95rem;
+}
+
+.shortcuts-events-card-meta,
+.shortcuts-events-card-description {
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.shortcuts-launcher-button {
+    box-sizing: border-box;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: calc(40px + env(safe-area-inset-bottom, 0px));
+    padding: env(safe-area-inset-bottom, 0px) 14px env(safe-area-inset-bottom, 0px);
+    border: 1px solid var(--line);
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: var(--surface);
+    color: var(--muted);
+    box-shadow: none;
+    cursor: pointer;
+    pointer-events: auto;
+    transform: translateY(calc(-100% + 1px));
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.16s ease, visibility 0s linear 0s;
+}
+
+.shortcuts-launcher-button:hover,
+.shortcuts-launcher-button:focus-visible {
+    background: var(--surface);
+    color: var(--muted);
+}
+
+body.shortcuts-launcher-open .shortcuts-launcher-button {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition-delay: 0s, 0.16s;
+}
+
+body.shortcuts-launcher-open .shortcuts-launcher-bar {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.16s ease, visibility 0s linear 0.16s;
+}
+
+.shortcuts-launcher-button svg {
+    display: block;
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+}
+
+.shortcuts-launcher-button span {
+    font-weight: 800;
+    font-size: 0.84rem;
+    line-height: 1;
+}
+
+.shortcuts-launcher-panel {
+    position: fixed;
+    inset: var(--shortcuts-launcher-top, 0px) 0 0;
+    z-index: 34;
+    overflow: hidden;
+    padding: 8px var(--page-padding) 0;
+    background: var(--background);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+
+.shortcuts-launcher-panel.is-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.shortcuts-launcher-surface {
+    box-sizing: border-box;
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0;
+    width: min(1380px, 100%);
+    height: 100%;
+    margin: 0 auto;
+    padding: 12px 52px 16px 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    transform: translateY(56px);
+    opacity: 0;
+    transition: transform 0.26s ease, opacity 0.22s ease;
+}
+
+.shortcuts-launcher-panel.is-open .shortcuts-launcher-surface {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.shortcuts-launcher-header {
+    z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+}
+
+.shortcuts-launcher-close {
+    flex: 0 0 auto;
+}
+
+.shortcuts-launcher-close.icon-button.secondary,
+.shortcuts-launcher-close.icon-button.secondary:hover,
+.shortcuts-launcher-close.icon-button.secondary:focus,
+.shortcuts-launcher-close.icon-button.secondary:focus-visible,
+.shortcuts-launcher-close.icon-button.secondary:active {
+    background: var(--surface);
+    opacity: 1;
+}
+
+.shortcuts-launcher-sections {
+    align-content: start;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+    gap: 14px;
+}
+
+.shortcuts-launcher-sections.feature-sections {
+    margin: 0;
+    padding-top: 0;
+}
+
+.shortcuts-launcher-sections .feature-section {
+    align-content: start;
+    gap: 0;
+}
+
+.shortcuts-launcher-sections .feature-section-heading {
+    margin: 0;
+    padding: 0;
+}
+
+.shortcuts-launcher-sections .feature-section-heading .eyebrow {
+    margin: 0;
+}
+
+.shortcuts-launcher-features {
+    gap: 12px;
+}
+
+.shortcuts-launcher-features article {
+    min-height: 100%;
+    padding: 16px 14px 12px;
+}
+
+.shortcuts-launcher-features .feature-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+}
+
+.shortcuts-launcher-features .feature-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.shortcuts-launcher-features h2 {
+    font-size: 0.96rem;
+}
+
+.shortcuts-launcher-features p {
+    margin-top: 8px;
+    font-size: 0.86rem;
+    line-height: 1.45;
+}
+
+.shortcuts-launcher-features .feature-actions {
+    margin-top: 12px;
+    gap: 6px;
+}
+
+.shortcuts-launcher-features .feature-action {
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 0.76rem;
+}
+
+@media (max-width: 1024px) {
+    .shortcuts-launcher-header {
+        padding-right: 16px;
+    }
+
+    .shortcuts-launcher-surface {
+        padding-right: 0;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .shortcuts-launcher-sections {
+        padding-right: 16px;
+    }
+}
+
+@media (max-width: 560px) {
+    .shortcuts-events-panel {
+        left: 0;
+        width: min(420px, calc(100vw - 32px));
+        max-height: min(60vh, 520px);
+    }
+}

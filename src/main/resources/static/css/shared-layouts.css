@@ -1,0 +1,95 @@
+.management-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+    margin-top: 40px;
+}
+
+.management-layout.single-column {
+    grid-template-columns: minmax(0, min(100%, 760px));
+    justify-content: center;
+}
+
+.banks-management-layout.management-layout.single-column {
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+}
+
+.wide-panel {
+    width: 100%;
+}
+
+.forecast-input {
+    width: min(100%, 180px);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 10px 12px;
+}
+
+.form-helper {
+    margin: 18px 0 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.bank-account-info-helper {
+    display: block;
+    min-height: 1.6em;
+}
+
+.snapshot-last-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    margin-top: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--accent-wash-faint);
+    padding: 10px 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.snapshot-last-summary[hidden] {
+    display: none;
+}
+
+.snapshot-last-summary strong {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.form-section-title {
+    margin: 28px 0 0;
+    font-size: 1rem;
+}
+
+.split-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.account-form-panel {
+    margin-top: 40px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+}
+
+@media (max-width: 860px) {
+    .management-layout,
+    .form-grid {
+        width: 100%;
+        margin-right: 0;
+        grid-template-columns: 1fr;
+    }
+}

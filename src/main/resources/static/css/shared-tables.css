@@ -1,0 +1,137 @@
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+th,
+td {
+    border-bottom: 1px solid var(--line);
+    padding: 12px 10px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+th {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+td {
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+th:nth-child(3),
+th:nth-child(4),
+td:nth-child(3),
+td:nth-child(4) {
+    width: 108px;
+}
+
+th:nth-child(5),
+td:nth-child(5) {
+    width: 64px;
+    text-align: center;
+}
+
+.reports-table th:nth-child(1),
+.reports-table td:nth-child(1) {
+    width: 26%;
+}
+
+.reports-table th:nth-child(2),
+.reports-table td:nth-child(2) {
+    width: 9%;
+}
+
+.reports-table th:nth-child(3),
+.reports-table td:nth-child(3),
+.reports-table th:nth-child(4),
+.reports-table td:nth-child(4),
+.reports-table th:nth-child(5),
+.reports-table td:nth-child(5),
+.reports-table th:nth-child(6),
+.reports-table td:nth-child(6) {
+    width: 16.25%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.reports-table th:nth-child(3),
+.reports-table th:nth-child(4) {
+    white-space: normal;
+    line-height: 1.2;
+}
+
+.reports-table {
+    min-width: 640px;
+    font-size: 0.88rem;
+}
+
+.banks-table-wrap {
+    overflow-x: auto;
+}
+
+.banks-table {
+    min-width: 760px;
+}
+
+.banks-table th:nth-child(1),
+.banks-table td:nth-child(1) {
+    width: 30%;
+}
+
+.banks-table th:nth-child(2),
+.banks-table td:nth-child(2) {
+    width: 28%;
+}
+
+.banks-table th:nth-child(3),
+.banks-table td:nth-child(3),
+.banks-table th:nth-child(4),
+.banks-table td:nth-child(4) {
+    width: 160px;
+    white-space: nowrap;
+}
+
+.banks-table th:nth-child(5),
+.banks-table td:nth-child(5) {
+    width: 88px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.numeric-cell {
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1760px) {
+    .reports-table th,
+    .reports-table td {
+        padding: 9px 7px;
+    }
+
+    .reports-table {
+        min-width: 600px;
+        font-size: 0.84rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .reports-table {
+        min-width: 700px;
+    }
+
+    .reports-table th,
+    .reports-table td {
+        padding: 10px 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .reports-table {
+        min-width: 640px;
+        font-size: 0.82rem;
+    }
+}

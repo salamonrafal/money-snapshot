@@ -1,0 +1,86 @@
+.users-table-wrap {
+    overflow-x: auto;
+}
+
+.counterparties-table-wrap {
+    overflow-x: auto;
+}
+
+.counterparties-table {
+    min-width: 980px;
+}
+
+.counterparties-table th:nth-child(1),
+.counterparties-table td:nth-child(1) {
+    width: 28%;
+}
+
+.counterparties-table th:nth-child(2),
+.counterparties-table td:nth-child(2) {
+    width: 24%;
+}
+
+.counterparties-table th:nth-child(3),
+.counterparties-table td:nth-child(3) {
+    width: 22%;
+}
+
+.counterparties-table th:nth-child(4),
+.counterparties-table td:nth-child(4) {
+    width: 150px;
+    white-space: nowrap;
+}
+
+.counterparties-table th:nth-child(5),
+.counterparties-table td:nth-child(5) {
+    width: 132px;
+    text-align: center;
+}
+
+.counterparty-bank-account {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    white-space: nowrap;
+}
+
+.users-table {
+    min-width: 820px;
+}
+
+.users-table th:nth-child(1),
+.users-table td:nth-child(1) {
+    width: 30%;
+    white-space: nowrap;
+}
+
+.users-table td:nth-child(1) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.users-table th:nth-child(2),
+.users-table td:nth-child(2) {
+    width: 23%;
+}
+
+.users-table th:nth-child(3),
+.users-table td:nth-child(3) {
+    width: 15%;
+}
+
+.users-table th:nth-child(4),
+.users-table td:nth-child(4) {
+    width: 12%;
+}
+
+.users-table th:nth-child(5),
+.users-table td:nth-child(5) {
+    width: 150px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.users-table th:nth-child(6),
+.users-table td:nth-child(6) {
+    width: 88px;
+    text-align: center;
+}

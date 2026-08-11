@@ -1,0 +1,22 @@
+.eyebrow {
+    margin: 0 0 16px;
+    color: var(--accent-strong);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.82rem;
+}
+
+h1 {
+    max-width: 760px;
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(2.5rem, 6vw, 5.8rem);
+    line-height: 0.95;
+    letter-spacing: 0;
+}
+
+@media (max-width: 560px) {
+    h1 {
+        font-size: 2.5rem;
+    }
+}

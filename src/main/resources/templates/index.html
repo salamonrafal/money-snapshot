@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/page :: head('Money Snapshot', 'home.js')}"></head>
+<head th:replace="~{fragments/page :: head('Money Snapshot', 'home.js', 'home')}"></head>
 <body>
 <header th:replace="~{fragments/page :: header('home')}"></header>
 
@@ -326,7 +326,7 @@
         </div>
     </div>
 </div>
-<script th:src="@{/js/snapshot-form.js(v='20260605-snapshot-modal')}"></script>
-<script th:src="@{/js/snapshot-bulk.js(v='20260811-snapshot-modal-bulk-fullscreen')}"></script>
+<script th:src="@{/js/snapshot-form.js}"></script>
+<script th:src="@{/js/snapshot-bulk.js}"></script>
 </body>
 </html>

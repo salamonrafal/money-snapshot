@@ -1,0 +1,343 @@
+html.shortcuts-launcher-scroll-locked {
+    overflow-y: scroll;
+}
+
+body.modal-open .topbar,
+body.shortcuts-launcher-open .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+}
+
+body.shortcuts-launcher-open {
+    position: fixed;
+    top: calc(var(--shortcuts-launcher-scroll-top, 0px) * -1);
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding-top: var(--topbar-lock-height, 0px);
+    overflow: hidden;
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 24px var(--page-padding);
+    background: var(--background);
+    box-shadow: var(--topbar-shadow);
+}
+
+.menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.menu-toggle-bar {
+    display: block;
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle-bar:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle-bar:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle[aria-expanded="true"] .menu-toggle-bar:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+}
+
+.topbar-actions,
+.main-nav,
+.topbar-account-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.main-nav a {
+    color: var(--text);
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.main-nav a[aria-current="page"] {
+    color: var(--accent-strong);
+}
+
+.main-nav a.topbar-icon-link {
+    display: inline-grid;
+    padding: 0;
+    background: var(--surface);
+}
+
+.topbar-icon-link[aria-current="page"] {
+    color: var(--accent-strong);
+    background: var(--accent-wash-subtle);
+}
+
+.topbar-account-actions {
+    align-items: stretch;
+    gap: 0;
+    flex-wrap: nowrap;
+    border-radius: 8px;
+    background: var(--surface);
+    overflow: hidden;
+    border: 1px solid var(--line);
+}
+
+.topbar-account-actions .topbar-icon-link,
+.topbar-account-actions .logout-form .button,
+.topbar-account-actions .topbar-language-switcher select {
+    border: 0;
+    border-radius: 0;
+    min-height: 40px;
+}
+
+.topbar-account-actions > * {
+    position: relative;
+}
+
+.topbar-account-actions > * + *::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: var(--line);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.topbar-account-actions .topbar-icon-link {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    transition: color 0.14s ease, background-color 0.14s ease, opacity 0.14s ease;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+}
+
+.topbar-account-actions .logout-form .topbar-icon-link {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+}
+
+.topbar-account-actions .topbar-icon-link:hover,
+.topbar-account-actions .topbar-icon-link:focus,
+.topbar-account-actions .topbar-icon-link:focus-visible,
+.topbar-account-actions .topbar-icon-link:active {
+    border: 0;
+    outline: none;
+    box-shadow: none;
+}
+
+.topbar-account-actions .logout-form .button {
+    padding: 0 16px;
+    background: transparent;
+}
+
+.topbar-account-actions .logout-form .button:hover,
+.topbar-account-actions .logout-form .button:focus,
+.topbar-account-actions .logout-form .button:focus-visible,
+.topbar-account-actions .logout-form .button:active {
+    border: 0;
+    background: var(--accent-wash-subtle);
+    color: var(--accent-strong);
+    outline: none;
+    box-shadow: none;
+}
+
+.topbar-language-switcher {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    gap: 0;
+    min-height: 40px;
+    padding: 0 12px;
+    background: transparent;
+}
+
+.topbar-account-actions .topbar-language-switcher select {
+    display: block;
+    width: auto;
+    min-width: 64px;
+    min-height: 40px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    appearance: auto;
+    box-shadow: none;
+    color-scheme: light dark;
+}
+
+.topbar-account-actions .topbar-language-switcher select option {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.topbar-account-actions > :first-child,
+.topbar-account-actions > :first-child .topbar-icon-link {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.topbar-account-actions > :last-child,
+.topbar-account-actions > :last-child .button,
+.topbar-account-actions > :last-child .topbar-icon-link,
+.topbar-account-actions > :last-child select {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.topbar-account-actions .topbar-icon-link.icon-button.secondary,
+.topbar-account-actions .topbar-icon-link.icon-button.secondary:hover,
+.topbar-account-actions .topbar-icon-link.icon-button.secondary:focus,
+.topbar-account-actions .topbar-icon-link.icon-button.secondary:focus-visible,
+.topbar-account-actions .topbar-icon-link.icon-button.secondary:active {
+    border: 0;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    font-weight: 800;
+    text-decoration: none;
+    min-width: 0;
+}
+
+.brand-icon {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.language-switcher select {
+    min-width: 76px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 9px 12px;
+}
+
+.logout-form {
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    body.menu-open {
+        overflow: hidden;
+    }
+
+    .topbar {
+        position: sticky;
+        top: 0;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .menu-toggle {
+        display: inline-flex;
+    }
+
+    .topbar-actions {
+        position: absolute;
+        top: calc(100% - 4px);
+        left: var(--page-padding);
+        right: var(--page-padding);
+        z-index: 15;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface-menu);
+        box-shadow: var(--shadow);
+        padding: 16px;
+    }
+
+    .topbar-actions.is-open {
+        display: flex;
+    }
+
+    .main-nav {
+        display: grid;
+        gap: 10px;
+    }
+
+    .topbar-actions .topbar-account-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        flex-wrap: nowrap;
+        width: fit-content;
+        margin-inline: auto;
+    }
+
+    .main-nav a {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--accent-wash-faint);
+    }
+
+    .topbar-account-actions .logout-form,
+    .topbar-account-actions .logout-form .button,
+    .topbar-language-switcher,
+    .topbar-language-switcher select {
+        width: auto;
+    }
+
+    .language-switcher:not(.topbar-language-switcher),
+    .language-switcher:not(.topbar-language-switcher) select,
+    .logout-form,
+    .logout-form .button {
+        width: 100%;
+    }
+}
