@@ -17,12 +17,14 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
     } = {}) {
         const bulkSnapshotForm = root;
         const modalRoot = bulkSnapshotForm.closest(".snapshot-bulk-modal");
+        const modalBackdrop = modalRoot?.closest(".modal-backdrop") ?? null;
         const noteInput = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-note']");
         const snapshotDateInput = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-date']");
         const snapshotTypeSelect = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-type']");
         const tableBody = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-table-body']");
         const messageContainer = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-message-container']");
         const formMessage = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-message']");
+        const fullscreenToggle = modalRoot?.querySelector("[data-bulk-snapshot-fullscreen-toggle]") ?? null;
         const submitButton = bulkSnapshotForm.querySelector("button[type='submit']")
             ?? document.querySelector(`[form='${bulkSnapshotForm.id}'][type='submit']`);
 
@@ -37,6 +39,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
         let resizeDebounceTimer = null;
         let initializedPromise = null;
         let lastLoadPromise = null;
+        let hiddenObserver = null;
 
         function setFormMessage(text, type = "") {
             formMessage.textContent = text;
@@ -87,17 +90,66 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
                 .sort((left, right) => right.snapshotDate.localeCompare(left.snapshotDate))[0] ?? null;
         }
 
-        function formatLastSnapshot(account) {
+        function lastSnapshotDetails(account) {
             if (!snapshotsLoaded) {
-                return "-";
+                return {
+                    date: "-",
+                    amount: ""
+                };
             }
 
             const lastSnapshot = lastSnapshotForAccount(account.id);
             if (!lastSnapshot) {
-                return currentMessages["snapshots.bulk.noLastBalance"] ?? "-";
+                return {
+                    date: currentMessages["snapshots.bulk.noLastBalance"] ?? "-",
+                    amount: ""
+                };
             }
 
-            return `${formatDate(lastSnapshot.snapshotDate)} · ${formatBalance(lastSnapshot)}`;
+            return {
+                date: formatDate(lastSnapshot.snapshotDate),
+                amount: formatBalance(lastSnapshot)
+            };
+        }
+
+        function fullscreenEnterLabel() {
+            const labelId = fullscreenToggle?.dataset.fullscreenEnterLabelId;
+            const label = labelId ? document.getElementById(labelId)?.textContent?.trim() : "";
+            return label || currentMessages["snapshots.bulk.fullscreen.enter"] || "";
+        }
+
+        function fullscreenExitLabel() {
+            const labelId = fullscreenToggle?.dataset.fullscreenExitLabelId;
+            const label = labelId ? document.getElementById(labelId)?.textContent?.trim() : "";
+            return label || currentMessages["snapshots.bulk.fullscreen.exit"] || "";
+        }
+
+        function isFullscreen() {
+            return Boolean(modalRoot?.classList.contains("is-fullscreen"));
+        }
+
+        function applyFullscreenState(nextState) {
+            if (!modalRoot || !fullscreenToggle) {
+                return;
+            }
+
+            modalRoot.classList.toggle("is-fullscreen", nextState);
+            modalBackdrop?.classList.toggle("is-bulk-snapshot-fullscreen", nextState);
+            fullscreenToggle.setAttribute("aria-pressed", nextState ? "true" : "false");
+            const label = nextState ? fullscreenExitLabel() : fullscreenEnterLabel();
+            if (label) {
+                fullscreenToggle.setAttribute("aria-label", label);
+                if (window.MoneySnapshotUi?.setTooltip) {
+                    window.MoneySnapshotUi.setTooltip(fullscreenToggle, label);
+                } else {
+                    fullscreenToggle.setAttribute("title", label);
+                }
+            }
+            syncModalWidth();
+        }
+
+        function toggleFullscreen() {
+            applyFullscreenState(!isFullscreen());
         }
 
         function renderEmpty(message) {
@@ -146,6 +198,9 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             const balanceInput = document.createElement("input");
             const error = document.createElement("span");
             const lastBalance = document.createElement("span");
+            const lastBalanceDate = document.createElement("span");
+            const lastBalanceSeparator = document.createElement("span");
+            const lastBalanceAmount = document.createElement("span");
 
             cell.className = `bulk-balance-cell bulk-value-cell${compact ? " bulk-compact-value-cell" : ""}`;
             spacer.className = "bulk-balance-spacer";
@@ -169,7 +224,18 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             error.setAttribute("aria-live", "polite");
             error.hidden = true;
             lastBalance.className = "bulk-last-balance";
-            lastBalance.textContent = formatLastSnapshot(account);
+            lastBalanceDate.className = "bulk-last-balance-date";
+            lastBalanceSeparator.className = "bulk-last-balance-separator";
+            lastBalanceAmount.className = "bulk-last-balance-amount";
+            const lastSnapshot = lastSnapshotDetails(account);
+            lastBalanceDate.textContent = lastSnapshot.date;
+            lastBalanceSeparator.textContent = "\u00b7";
+            lastBalanceAmount.textContent = lastSnapshot.amount;
+            if (!lastSnapshot.amount) {
+                lastBalanceSeparator.hidden = true;
+                lastBalanceAmount.hidden = true;
+            }
+            lastBalance.append(lastBalanceDate, lastBalanceSeparator, lastBalanceAmount);
             cell.append(spacer, balanceInput, error, lastBalance);
             return cell;
         }
@@ -211,7 +277,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
                 return null;
             }
 
-            if (compactBulkLayout) {
+            if (compactBulkLayout || isFullscreen()) {
                 return null;
             }
 
@@ -511,6 +577,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
 
         function handleLanguageChange(nextMessages) {
             currentMessages = nextMessages;
+            applyFullscreenState(isFullscreen());
             renderAccounts();
         }
 
@@ -538,6 +605,20 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             });
             bulkSnapshotForm.addEventListener("submit", submit);
             window.addEventListener("resize", handleResize);
+            fullscreenToggle?.addEventListener("click", toggleFullscreen);
+            applyFullscreenState(false);
+
+            if (modalBackdrop && !hiddenObserver) {
+                hiddenObserver = new MutationObserver(() => {
+                    if (modalBackdrop.hidden) {
+                        applyFullscreenState(false);
+                    }
+                });
+                hiddenObserver.observe(modalBackdrop, {
+                    attributes: true,
+                    attributeFilter: ["hidden"]
+                });
+            }
 
             initializedPromise = Promise.resolve();
             return initializedPromise;

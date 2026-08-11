@@ -81,7 +81,7 @@
             }
 
             const script = document.createElement("script");
-            script.src = `${src}?v=20260703-launchbar-shortcut-actions`;
+            script.src = `${src}?v=20260811-launchbar-shortcut-actions-bulk-fullscreen`;
             script.onload = resolve;
             script.onerror = reject;
             document.head.append(script);
