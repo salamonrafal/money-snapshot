@@ -14,6 +14,11 @@
             </p>
             <div class="hero-actions">
                 <a href="/snapshots/new.html" class="button primary" id="open-snapshot-form-modal" data-i18n="home.hero.primaryAction">Dodaj migawkę</a>
+                <a href="/snapshots/bulk.html"
+                   class="button secondary"
+                   id="open-bulk-snapshot-form-modal"
+                   data-shortcut-action="bulk-snapshots"
+                   data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
             </div>
         </div>
 
@@ -322,6 +327,6 @@
     </div>
 </div>
 <script th:src="@{/js/snapshot-form.js(v='20260605-snapshot-modal')}"></script>
-<script th:src="@{/js/snapshot-bulk.js(v='20260605-snapshot-modal-bulk')}"></script>
+<script th:src="@{/js/snapshot-bulk.js(v='20260811-snapshot-modal-bulk-fullscreen')}"></script>
 </body>
 </html>

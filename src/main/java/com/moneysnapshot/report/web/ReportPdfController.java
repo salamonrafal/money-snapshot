@@ -1,6 +1,6 @@
 package com.moneysnapshot.report.web;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.moneysnapshot.report.ReportPdfService;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
@@ -107,9 +107,7 @@ public class ReportPdfController {
         }
 
         if (node.isObject()) {
-            Iterator<Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Entry<String, JsonNode> field = fields.next();
+            for (Entry<String, JsonNode> field : node.properties()) {
                 if (field.getKey().length() > 120) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Report chart payload is too large.");
                 }

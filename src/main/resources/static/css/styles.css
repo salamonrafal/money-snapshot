@@ -4033,13 +4033,33 @@ td:nth-child(5) {
 }
 
 .bulk-last-balance {
-    display: block;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
     margin-top: 8px;
     color: var(--muted);
-    font-size: clamp(0.64rem, 0.72vw, 0.82rem);
-    font-weight: 800;
+    font-size: clamp(0.6rem, 0.68vw, 0.76rem);
+    font-weight: 700;
+    overflow: hidden;
+}
+
+.bulk-last-balance-date,
+.bulk-last-balance-separator,
+.bulk-last-balance-amount {
+    display: block;
+    min-width: 0;
+}
+
+.bulk-last-balance-date {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bulk-last-balance-separator,
+.bulk-last-balance-amount {
+    white-space: nowrap;
+    flex: 0 0 auto;
 }
 
 .bulk-input-error {
@@ -4629,7 +4649,7 @@ td:nth-child(5) {
 
 .app-tooltip {
     position: fixed;
-    z-index: 50;
+    z-index: 200;
     pointer-events: none;
     border: 1px solid var(--tooltip-border);
     border-radius: 8px;
@@ -4873,6 +4893,34 @@ td:nth-child(5) {
     flex: 0 0 auto;
 }
 
+.snapshot-form-modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.snapshot-bulk-fullscreen-icon-enter,
+.snapshot-bulk-fullscreen-icon-exit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 0;
+}
+
+.snapshot-bulk-fullscreen-icon-exit {
+    display: none;
+}
+
+.snapshot-bulk-modal.is-fullscreen .snapshot-bulk-fullscreen-icon-enter {
+    display: none;
+}
+
+.snapshot-bulk-modal.is-fullscreen .snapshot-bulk-fullscreen-icon-exit {
+    display: inline-flex;
+}
+
 .snapshot-form-modal-message {
     display: flex;
     align-items: center;
@@ -4988,6 +5036,8 @@ td:nth-child(5) {
 .snapshot-bulk-modal {
     --bulk-snapshot-modal-width: 960px;
     width: min(var(--bulk-snapshot-modal-width), calc(100vw - 32px));
+    height: min(calc(100vh - 32px), 820px);
+    height: min(calc(100dvh - 32px), 820px);
     max-height: min(calc(100vh - 32px), 960px);
     max-height: min(calc(100dvh - 32px), 960px);
     display: flex;
@@ -4997,10 +5047,24 @@ td:nth-child(5) {
 }
 
 .snapshot-bulk-modal .snapshot-form-modal-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     padding-bottom: 18px;
 }
 
+.snapshot-bulk-modal .snapshot-form-modal-header,
+.snapshot-bulk-modal .snapshot-form-modal-footer,
+.snapshot-bulk-modal .bulk-snapshot-controls {
+    flex: 0 0 auto;
+}
+
 .snapshot-bulk-modal .bulk-snapshot-form {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     min-width: 0;
 }
 
@@ -5009,6 +5073,8 @@ td:nth-child(5) {
 }
 
 .snapshot-bulk-modal .bulk-snapshot-table-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: min(56vh, 560px);
     margin-top: 20px;
 }
@@ -5016,6 +5082,71 @@ td:nth-child(5) {
 .snapshot-bulk-modal .bulk-snapshot-table tr:last-child th,
 .snapshot-bulk-modal .bulk-snapshot-table tr:last-child td {
     border-bottom: 0;
+}
+
+.modal-backdrop.is-bulk-snapshot-fullscreen {
+    padding: 4px;
+    padding-top: max(4px, env(safe-area-inset-top, 0px));
+    padding-right: max(4px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(4px, env(safe-area-inset-left, 0px));
+}
+
+.snapshot-bulk-modal.is-fullscreen {
+    width: min(calc(100vw - 8px), 100%);
+    width: min(calc(100dvw - 8px), 100%);
+    height: min(calc(100vh - 8px), 100%);
+    height: min(calc(100dvh - 8px), 100%);
+    max-height: min(calc(100vh - 8px), 100%);
+    max-height: min(calc(100dvh - 8px), 100%);
+}
+
+.snapshot-bulk-modal.is-fullscreen .bulk-snapshot-table-wrap {
+    max-height: none;
+}
+
+@media (max-width: 1024px) {
+    .snapshot-bulk-modal-backdrop {
+        align-items: stretch;
+        padding: 8px;
+        padding-top: max(8px, env(safe-area-inset-top, 0px));
+        padding-right: max(8px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+        padding-left: max(8px, env(safe-area-inset-left, 0px));
+    }
+
+    .snapshot-bulk-modal {
+        width: 100%;
+        height: min(calc(100vh - 16px), 960px);
+        height: min(calc(100dvh - 16px), 960px);
+        max-height: calc(100vh - 16px);
+        max-height: calc(100dvh - 16px);
+    }
+
+    .snapshot-bulk-modal .snapshot-form-modal-body {
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .snapshot-bulk-modal .bulk-snapshot-form {
+        display: block;
+    }
+
+    .snapshot-bulk-modal .bulk-snapshot-controls {
+        row-gap: 10px;
+    }
+
+    .snapshot-bulk-modal .bulk-snapshot-control-note textarea {
+        height: 58px;
+        min-height: 58px;
+        max-height: 92px;
+    }
+
+    .snapshot-bulk-modal .bulk-snapshot-table-wrap {
+        max-height: none;
+        overflow-y: visible;
+        overscroll-behavior: contain;
+    }
 }
 
 .info-list {

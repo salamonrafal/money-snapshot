@@ -1,8 +1,5 @@
 package com.moneysnapshot.report;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moneysnapshot.report.web.ReportPdfRequest;
 import com.moneysnapshot.report.web.ReportPdfTableRequest;
 import com.moneysnapshot.security.CurrentUserService;
@@ -31,6 +28,9 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class ReportPdfService {
@@ -116,7 +116,7 @@ public class ReportPdfService {
     private String requestHash(ReportPdfRequest request) {
         try {
             return sha256(objectMapper.writeValueAsBytes(request));
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalStateException("Failed to serialize report PDF request.", exception);
         }
     }
