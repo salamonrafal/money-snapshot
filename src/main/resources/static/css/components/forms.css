@@ -1,0 +1,133 @@
+.editor-panel,
+.table-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.table-panel-wide {
+    margin-top: 40px;
+}
+
+.inline-form-message-panel {
+    margin: 16px 0 40px;
+}
+
+.inline-form-message-panel .form-message {
+    min-height: 0;
+    margin: 0;
+}
+
+.editor-panel h2,
+.table-panel h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.field {
+    display: grid;
+    gap: 8px;
+    margin-top: 24px;
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.field[hidden] {
+    display: none !important;
+}
+
+.field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.required-mark {
+    color: var(--danger-strong);
+    font-weight: 900;
+    line-height: 1;
+}
+
+.required-mark[hidden] {
+    display: none;
+}
+
+.field input,
+.field select,
+.field textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.field input,
+.field select {
+    min-height: 46px;
+    padding: 0 12px;
+}
+
+.field textarea {
+    min-height: 132px;
+    padding: 12px;
+    resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: var(--accent);
+    outline: 3px solid var(--focus-ring);
+}
+
+.field input[readonly] {
+    background: var(--surface-tint);
+    color: var(--muted);
+}
+
+.field-hint {
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.field-hint-reserved {
+    min-height: 1.5em;
+}
+
+.field-hint-reserved.is-empty {
+    visibility: hidden;
+}
+
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+    border-color: var(--danger-strong);
+}
+
+.field input[aria-invalid="true"]:focus,
+.field select[aria-invalid="true"]:focus,
+.field textarea[aria-invalid="true"]:focus {
+    border-color: var(--danger-strong);
+    outline-color: var(--danger-focus);
+}
+
+.checkbox-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    color: var(--muted);
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.checkbox-field input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+}

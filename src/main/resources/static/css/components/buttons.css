@@ -1,0 +1,90 @@
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border: 0;
+    border-radius: 8px;
+    padding: 0 20px;
+    cursor: pointer;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.button:disabled {
+    cursor: wait;
+    opacity: 0.68;
+}
+
+.button.primary {
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+.button.secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--line);
+}
+
+.button.danger {
+    background: var(--danger);
+    color: var(--danger-text);
+}
+
+.button.compact {
+    min-height: 40px;
+    padding: 0 14px;
+}
+
+.icon-button {
+    display: inline-grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.14s ease, background-color 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+}
+
+.icon-button.secondary {
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.icon-button.secondary:hover,
+.icon-button.secondary:focus-visible {
+    color: var(--accent-strong);
+    border-color: var(--accent-border);
+    background: var(--accent-wash-subtle);
+}
+
+.icon-button svg {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.icon-button.danger {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.icon-button.danger:hover {
+    background: var(--danger-soft-strong);
+}
+
+.icon-button:disabled {
+    opacity: 0.56;
+    cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+    .button {
+        width: 100%;
+    }
+}

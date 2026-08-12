@@ -21,6 +21,13 @@ spring:
     basename: messages
     encoding: UTF-8
     fallback-to-system-locale: false
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
 
 server:
   port: ${SERVER_PORT:5081}

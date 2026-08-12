@@ -1,0 +1,108 @@
+.accounts-table th:nth-child(1),
+.accounts-table td:nth-child(1) {
+    width: 15%;
+}
+
+.accounts-table th:nth-child(2),
+.accounts-table td:nth-child(2) {
+    width: 12%;
+}
+
+.accounts-table th:nth-child(3),
+.accounts-table td:nth-child(3) {
+    width: 13%;
+}
+
+.accounts-table th:nth-child(4),
+.accounts-table td:nth-child(4),
+.accounts-table th:nth-child(5),
+.accounts-table td:nth-child(5) {
+    width: 8%;
+}
+
+.accounts-table th:nth-child(6),
+.accounts-table td:nth-child(6),
+.accounts-table th:nth-child(7),
+.accounts-table td:nth-child(7) {
+    width: 15%;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.accounts-table th:nth-child(8),
+.accounts-table td:nth-child(8) {
+    width: 8%;
+    text-align: center;
+}
+
+.snapshots-table th:nth-child(1),
+.snapshots-table td:nth-child(1) {
+    width: 24%;
+}
+
+.snapshots-table th:nth-child(2),
+.snapshots-table td:nth-child(2),
+.snapshots-table th:nth-child(3),
+.snapshots-table td:nth-child(3),
+.snapshots-table th:nth-child(5),
+.snapshots-table td:nth-child(5) {
+    width: 15%;
+    white-space: nowrap;
+}
+
+.snapshots-table th:nth-child(4),
+.snapshots-table td:nth-child(4) {
+    width: 14%;
+}
+
+.snapshots-table th:nth-child(6),
+.snapshots-table td:nth-child(6) {
+    width: 8%;
+    text-align: center;
+}
+
+.snapshot-type-select {
+    width: 100%;
+    min-width: 132px;
+}
+
+.snapshots-table {
+    min-width: 760px;
+    table-layout: auto;
+}
+
+.snapshots-table th,
+.snapshots-table td {
+    overflow-wrap: break-word;
+}
+
+.snapshots-table th:nth-child(1),
+.snapshots-table td:nth-child(1) {
+    white-space: normal;
+}
+
+@media (max-width: 768px) {
+    .snapshots-table {
+        min-width: 700px;
+    }
+
+    .snapshots-table th,
+    .snapshots-table td {
+        padding: 10px 8px;
+        font-size: 0.82rem;
+    }
+
+    .snapshot-type-select {
+        min-width: 120px;
+    }
+}
+
+@media (max-width: 560px) {
+    .snapshots-table {
+        min-width: 640px;
+    }
+
+    .snapshot-type-select {
+        min-width: 108px;
+    }
+}

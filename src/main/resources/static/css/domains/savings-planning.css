@@ -1,0 +1,470 @@
+.savings-planning-settings-panel {
+    width: min(100%, 980px);
+    margin-inline: auto;
+}
+
+.savings-planning-settings-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.savings-planning-settings-table {
+    min-width: 760px;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(1),
+.reports-table.savings-planning-settings-table td:nth-child(1) {
+    width: 34%;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(2),
+.reports-table.savings-planning-settings-table td:nth-child(2) {
+    width: 20%;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(3),
+.reports-table.savings-planning-settings-table td:nth-child(3) {
+    width: 16%;
+    text-align: center;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(4),
+.reports-table.savings-planning-settings-table td:nth-child(4) {
+    width: 30%;
+    text-align: left;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(3),
+.reports-table.savings-planning-settings-table td:nth-child(3) {
+    padding-right: 18px;
+}
+
+.reports-table.savings-planning-settings-table th:nth-child(4),
+.reports-table.savings-planning-settings-table td:nth-child(4) {
+    padding-left: 18px;
+}
+
+.savings-planning-settings-table .forecast-input {
+    width: min(100%, 160px);
+}
+
+.planner-warning {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--warning-line);
+    border-radius: 8px;
+    background: var(--warning-bg);
+}
+
+.planner-warning[hidden] {
+    display: none;
+}
+
+.planner-warning-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    color: var(--warning-text);
+}
+
+.planner-warning-icon svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+.planner-warning-copy {
+    min-width: 0;
+}
+
+.planner-warning strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.planner-warning p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.range-control {
+    --range-thumb-offset: 10px;
+    display: grid;
+    gap: 2px;
+    position: relative;
+}
+
+.duration-range-input {
+    width: 100%;
+    margin: 0;
+    --range-thumb-offset: 10px;
+}
+
+.field input.duration-range-input:focus {
+    outline: none;
+}
+
+.field input.duration-range-input:focus-visible {
+    outline: none;
+}
+
+.range-control:focus-within {
+    border-radius: 8px;
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 4px;
+}
+
+.range-ticks {
+    position: relative;
+    height: 1.9em;
+    margin-top: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.74rem;
+}
+
+.range-ticks span {
+    position: absolute;
+    top: 0;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: var(--muted);
+    font-weight: 700;
+    transition: color 0.14s ease, font-weight 0.14s ease, text-shadow 0.14s ease;
+}
+
+.range-ticks span.is-active {
+    color: var(--text);
+    font-weight: 900;
+    text-shadow: 0 0 0 currentColor;
+}
+
+.savings-forecast-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin: 0 0 18px;
+    color: var(--muted);
+}
+
+.savings-forecast-summary[hidden] {
+    display: none;
+}
+
+.savings-forecast-empty {
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 24px;
+    background: var(--accent-wash-muted);
+}
+
+.savings-forecast-empty h3 {
+    margin: 0 0 12px;
+}
+
+.savings-forecast-empty p {
+    margin: 0 0 18px;
+    color: var(--muted);
+}
+
+.savings-planning-tool-menu {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: linear-gradient(180deg, var(--surface-raised), var(--accent-wash-soft));
+    box-shadow: inset 0 1px 0 var(--surface-highlight);
+}
+
+.savings-planning-tool-menu .button,
+.savings-planning-tool-menu .icon-button {
+    flex: 0 0 auto;
+}
+
+.savings-planning-tool-menu .icon-button {
+    width: 32px;
+    height: 32px;
+}
+
+.savings-planning-tool-menu .icon-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.button.compact.savings-planning-generate-button {
+    min-height: 32px;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.82rem;
+}
+
+.savings-forecast-sticky-head-wrap {
+    position: sticky;
+    top: var(--savings-planning-sticky-top, 0px);
+    z-index: 12;
+    margin-top: 22px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+    padding-bottom: 44px;
+    margin-bottom: -44px;
+}
+
+.savings-forecast-table {
+    --savings-forecast-column-count: 1;
+    --savings-forecast-column-min-width: 9rem;
+    border-top: 1px solid var(--line);
+    border-collapse: separate;
+    border-spacing: 0;
+    width: max(100%, calc(var(--savings-forecast-column-count) * var(--savings-forecast-column-min-width)));
+    min-width: 100%;
+    table-layout: fixed;
+    font-size: 0.82rem;
+}
+
+.savings-forecast-date-col {
+    width: calc(100% / var(--savings-forecast-column-count));
+}
+
+.savings-forecast-account-col {
+    width: calc(100% / var(--savings-forecast-column-count));
+}
+
+.savings-forecast-summary-col {
+    width: calc(100% / var(--savings-forecast-column-count));
+}
+
+.savings-forecast-table th,
+.savings-forecast-table td {
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    padding: 10px 8px;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.savings-forecast-table th:first-child,
+.savings-forecast-table td:first-child {
+    border-left: 1px solid var(--line);
+}
+
+.savings-forecast-table th {
+    background: var(--surface);
+    background-clip: padding-box;
+    color: var(--text);
+    font-weight: 800;
+    white-space: normal;
+    line-height: 1.2;
+    font-size: clamp(0.68rem, 0.42vw + 0.58rem, 0.82rem);
+}
+
+.savings-forecast-table td {
+    line-height: 1.35;
+}
+
+.savings-forecast-table thead th:first-child {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.savings-forecast-table thead th:not(:first-child) {
+    text-align: center;
+}
+
+.savings-forecast-accessible-head th {
+    position: relative;
+    padding: 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    border-bottom: 0;
+    background: transparent;
+    color: inherit;
+}
+
+.savings-forecast-accessible-head .savings-forecast-accessible-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+.savings-forecast-table tbody td:first-child {
+    text-align: left;
+}
+
+.savings-forecast-table tbody td:not(:first-child) {
+    text-align: right;
+}
+
+.savings-forecast-table td.numeric-cell {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+#savings-planning-table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+    margin-top: 0;
+}
+
+.savings-forecast-account-head {
+    text-align: center;
+}
+
+.savings-forecast-head-content {
+    position: relative;
+    display: block;
+    width: 100%;
+    overflow: visible;
+}
+
+.savings-forecast-sticky-head-table,
+.savings-forecast-sticky-head-table thead,
+.savings-forecast-sticky-head-table tr,
+.savings-forecast-sticky-head-table th {
+    overflow: visible;
+}
+
+.savings-forecast-sticky-head-table .has-app-tooltip::after {
+    z-index: 20;
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: var(--sticky-tooltip-center-x, 50%);
+    transform: translateX(-50%) translateY(-4px);
+    width: max-content;
+    max-width: var(--sticky-tooltip-max-width, min(24rem, calc(100vw - 24px)));
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.savings-forecast-sticky-head-table .has-app-tooltip:hover::after,
+.savings-forecast-sticky-head-table .has-app-tooltip:focus-visible::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+.savings-forecast-summary-head .savings-forecast-head-content > span:first-child {
+    color: var(--accent-strong);
+}
+
+.savings-forecast-head-content > span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.savings-forecast-head-content > span:first-child {
+    font-weight: 800;
+    line-height: 1.2;
+    font-size: clamp(0.68rem, 0.4vw + 0.58rem, 0.8rem);
+}
+
+.savings-forecast-head-content > span:nth-child(2) {
+    color: var(--muted);
+    font-size: clamp(0.62rem, 0.28vw + 0.56rem, 0.72rem);
+    margin-top: 4px;
+    line-height: 1.2;
+}
+
+.savings-forecast-date-cell {
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.savings-forecast-summary-cell {
+    background: var(--accent-wash-muted);
+    font-weight: 800;
+}
+
+@media (max-width: 1180px) {
+    .savings-forecast-table {
+        --savings-forecast-column-min-width: 8rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 860px) {
+    .savings-forecast-summary {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 760px) {
+    .savings-forecast-sticky-head-wrap {
+        display: none;
+    }
+
+    .savings-forecast-table,
+    .savings-forecast-table thead,
+    .savings-forecast-table tbody,
+    .savings-forecast-table tr,
+    .savings-forecast-table th,
+    .savings-forecast-table td {
+        display: block;
+    }
+
+    .savings-forecast-table {
+        min-width: 100%;
+        table-layout: auto;
+        font-size: 0.9rem;
+    }
+
+    .savings-forecast-table thead {
+        display: none;
+    }
+
+    .savings-forecast-table tbody {
+        display: grid;
+        gap: 12px;
+    }
+
+    .savings-forecast-table tr {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--accent-wash-bare);
+        padding: 10px 12px;
+    }
+
+    .savings-forecast-table td {
+        width: 100% !important;
+        border: 0;
+        padding: 7px 0;
+        text-align: left !important;
+        white-space: normal;
+    }
+
+    .savings-forecast-table td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .savings-forecast-table td.savings-forecast-empty-cell::before {
+        content: none;
+    }
+}

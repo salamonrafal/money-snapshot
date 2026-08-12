@@ -1,0 +1,511 @@
+.liabilities-layout {
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.9fr);
+}
+
+.liabilities-main-panel {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.liability-form-panel {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top right, var(--accent-wash-strong), transparent 32%),
+        linear-gradient(180deg, var(--surface-raised), var(--surface));
+}
+
+.liability-form-panel .form-message {
+    min-height: 0;
+    margin-top: 12px;
+}
+
+.liability-form-panel .form-message:empty {
+    display: none;
+}
+
+.liability-form-panel .inline-form-message-panel {
+    margin-bottom: 0;
+}
+
+.liability-form-panel .inline-form-message-panel:not([hidden]) + .liability-form-sections {
+    margin-top: 28px;
+}
+
+.bill-form-panel {
+    overflow: hidden;
+}
+
+.form-grid.bill-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+}
+
+.form-grid.bill-form-grid .field {
+    min-width: 0;
+}
+
+.liability-form-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.liability-form-header .eyebrow {
+    margin: 0 0 8px;
+}
+
+.liability-form-sections {
+    display: grid;
+    gap: 18px;
+}
+
+.liability-form-group {
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: linear-gradient(180deg, var(--surface-glass), var(--surface));
+    padding: 22px 22px 26px;
+    box-shadow: inset 0 1px 0 var(--surface-highlight);
+}
+
+.liability-form-group legend {
+    padding: 0 10px;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.liability-form-group-copy {
+    margin: 0 0 6px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.liability-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+}
+
+.liability-form-grid .field,
+.liability-form-note-field {
+    margin-top: 18px;
+}
+
+.liability-form-group-amounts .field input {
+    font-variant-numeric: tabular-nums;
+}
+
+.liabilities-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.bills-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.reports-table.liabilities-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
+}
+
+.reports-table.liabilities-table col.liabilities-col-name {
+    width: 24%;
+}
+
+.reports-table.liabilities-table col.liabilities-col-original-amount,
+.reports-table.liabilities-table col.liabilities-col-repayment-amount,
+.reports-table.liabilities-table col.liabilities-col-current-amount {
+    width: 14%;
+}
+
+.reports-table.liabilities-table col.liabilities-col-end-date {
+    width: 11%;
+}
+
+.reports-table.liabilities-table col.liabilities-col-status {
+    width: 11%;
+}
+
+.reports-table.liabilities-table col.liabilities-col-actions {
+    width: 1%;
+}
+
+.reports-table.liabilities-table th:nth-child(1),
+.reports-table.liabilities-table td:nth-child(1) {
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.reports-table.liabilities-table th:nth-child(2),
+.reports-table.liabilities-table th:nth-child(3),
+.reports-table.liabilities-table th:nth-child(4),
+.reports-table.liabilities-table th:nth-child(5) {
+    text-align: right;
+    white-space: normal;
+}
+
+.reports-table.liabilities-table td:nth-child(2),
+.reports-table.liabilities-table td:nth-child(3),
+.reports-table.liabilities-table td:nth-child(4),
+.reports-table.liabilities-table td:nth-child(5) {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.reports-table.liabilities-table th:nth-child(6),
+.reports-table.liabilities-table td:nth-child(6) {
+    text-align: left;
+}
+
+.reports-table.liabilities-table th:nth-child(7),
+.reports-table.liabilities-table td:nth-child(7) {
+    text-align: center;
+}
+
+.reports-table.liabilities-table th:nth-child(7) {
+    white-space: normal;
+}
+
+.reports-table.liabilities-table td:nth-child(7) {
+    white-space: nowrap;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.liability-summary-row:not(:first-of-type) td {
+    border-top: 1px solid var(--line);
+}
+
+.liability-summary-row td {
+    vertical-align: middle;
+}
+
+.liability-row-meta {
+    margin-top: 0;
+    color: var(--muted);
+    font-size: 0.76rem;
+}
+
+.liability-toggle {
+    width: 100%;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    padding: 0;
+    font: inherit;
+    font-weight: 800;
+    text-align: left;
+}
+
+.liability-toggle-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.liability-toggle-copy strong {
+    display: block;
+    min-width: 0;
+    overflow-wrap: normal;
+    word-break: normal;
+    white-space: normal;
+    line-height: 1.2;
+}
+
+.liability-toggle-chevron {
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.16s ease;
+    flex: 0 0 auto;
+}
+
+.liability-row-actions {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 4px;
+    width: max-content;
+    margin-inline: auto;
+}
+
+.liability-toggle[aria-expanded="true"] .liability-toggle-chevron {
+    transform: rotate(45deg);
+}
+
+.liability-details-row td {
+    padding: 0;
+    background: var(--surface-alt);
+}
+
+.liability-details-panel {
+    padding: 16px 18px 18px;
+}
+
+.liability-details-panel h3 {
+    margin: 0 0 12px;
+    font-size: 0.88rem;
+}
+
+.liability-repayments-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.liability-repayment-item {
+    display: grid;
+    grid-template-columns: minmax(110px, auto) minmax(120px, auto) minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 12px 12px 12px 14px;
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.liability-repayment-item strong {
+    color: var(--text);
+}
+
+.liability-repayment-note-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.liability-repayment-note {
+    min-width: 0;
+}
+
+.liability-repayment-actions {
+    flex: 0 0 auto;
+}
+
+.liability-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.liability-status-active {
+    background: var(--accent-wash-soft);
+    color: var(--accent-strong);
+}
+
+.liability-status-completed {
+    background: var(--success-soft);
+    color: var(--success-strong);
+}
+
+.liability-status-suspended {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.liability-status-muted {
+    background: var(--surface-muted);
+    color: var(--text-muted);
+}
+
+.reports-table.bills-table {
+    min-width: 820px;
+}
+
+.reports-table.bills-table th:nth-child(1),
+.reports-table.bills-table td:nth-child(1) {
+    width: 30%;
+    text-align: left;
+    white-space: normal;
+}
+
+.reports-table.bills-table th:nth-child(2),
+.reports-table.bills-table td:nth-child(2) {
+    width: 16%;
+    text-align: right;
+}
+
+.reports-table.bills-table th:nth-child(3),
+.reports-table.bills-table td:nth-child(3) {
+    width: 16%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bills-table th:nth-child(4),
+.reports-table.bills-table td:nth-child(4) {
+    width: 22%;
+    text-align: left;
+    white-space: normal;
+}
+
+.reports-table.bills-table th:nth-child(5),
+.reports-table.bills-table td:nth-child(5) {
+    width: 14%;
+    text-align: center;
+}
+
+.reports-table.bills-table th:nth-child(6),
+.reports-table.bills-table td:nth-child(6) {
+    width: 180px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.bills-amount-cell {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.bill-schedule-summary-note {
+    margin: 14px 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.reports-table.bill-schedule-table {
+    min-width: 860px;
+}
+
+.reports-table.bill-schedule-table th:nth-child(1),
+.reports-table.bill-schedule-table td:nth-child(1) {
+    width: 12%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(2),
+.reports-table.bill-schedule-table td:nth-child(2) {
+    width: 18%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(3),
+.reports-table.bill-schedule-table td:nth-child(3) {
+    width: 18%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(4),
+.reports-table.bill-schedule-table td:nth-child(4) {
+    width: 14%;
+    text-align: center;
+}
+
+.reports-table.bill-schedule-table th:nth-child(5),
+.reports-table.bill-schedule-table td:nth-child(5) {
+    width: 18%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.reports-table.bill-schedule-table th:nth-child(6),
+.reports-table.bill-schedule-table td:nth-child(6) {
+    width: 20%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+@media (max-width: 1280px) {
+    .reports-table.liabilities-table col.liabilities-col-name {
+        width: 22%;
+    }
+
+    .reports-table.liabilities-table col.liabilities-col-original-amount,
+    .reports-table.liabilities-table col.liabilities-col-repayment-amount,
+    .reports-table.liabilities-table col.liabilities-col-current-amount {
+        width: 14%;
+    }
+
+    .reports-table.liabilities-table col.liabilities-col-end-date,
+    .reports-table.liabilities-table col.liabilities-col-status {
+        width: 11%;
+    }
+
+    .reports-table.liabilities-table col.liabilities-col-actions {
+        width: 1%;
+    }
+
+    .reports-table.liabilities-table th,
+    .reports-table.liabilities-table td {
+        padding: 9px 6px;
+    }
+}
+
+.liability-preview-values {
+    gap: 18px 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 820px) {
+    .liability-repayment-item {
+        grid-template-columns: minmax(96px, auto) minmax(104px, auto) minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .liability-repayment-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 560px) {
+    .liability-repayment-item {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 860px) {
+    .liability-form-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .liability-form-header-badge {
+        width: fit-content;
+    }
+
+    .liability-form-group {
+        padding: 18px 16px 20px;
+    }
+
+    .bill-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
