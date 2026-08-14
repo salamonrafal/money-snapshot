@@ -3,6 +3,7 @@ package com.moneysnapshot.report;
 import com.moneysnapshot.account.AccountChangedEvent;
 import com.moneysnapshot.account.BankChangedEvent;
 import com.moneysnapshot.savings.SavingsForecastChangedEvent;
+import com.moneysnapshot.security.UserSettingsUpdatedEvent;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,11 @@ public class ReportCacheRefreshCoordinator {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onForecastChanged(SavingsForecastChangedEvent event) {
         refreshOwnerCache(event.ownerId());
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onUserSettingsUpdated(UserSettingsUpdatedEvent event) {
+        refreshOwnerCache(event.userId());
     }
 
     @Scheduled(fixedDelay = 30000L, initialDelay = 10000L)

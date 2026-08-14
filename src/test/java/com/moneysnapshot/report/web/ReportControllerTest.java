@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.moneysnapshot.report.ReportCacheMaintenanceService;
 import com.moneysnapshot.report.ReportQueryService;
+import com.moneysnapshot.report.BillingPeriodComparisonQueryService;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,12 @@ class ReportControllerTest {
 
     private final ReportQueryService reportQueryService = mock(ReportQueryService.class);
     private final ReportCacheMaintenanceService reportCacheMaintenanceService = mock(ReportCacheMaintenanceService.class);
-    private final ReportController controller = new ReportController(reportQueryService, reportCacheMaintenanceService);
+    private final BillingPeriodComparisonQueryService billingPeriodComparisonQueryService = mock(BillingPeriodComparisonQueryService.class);
+    private final ReportController controller = new ReportController(
+            reportQueryService,
+            reportCacheMaintenanceService,
+            billingPeriodComparisonQueryService
+    );
 
     @Test
     void historyRejectsReversedDateRange() {
@@ -58,5 +64,12 @@ class ReportControllerTest {
         controller.history(fromDate, toDate, 0, 200);
 
         verify(reportQueryService).history(fromDate, toDate, 0, 100);
+    }
+
+    @Test
+    void billingPeriodComparisonDelegatesSelectedPeriodCount() {
+        controller.billingPeriodComparison(6);
+
+        verify(billingPeriodComparisonQueryService).comparison(6);
     }
 }

@@ -289,8 +289,105 @@
     grid-template-columns: minmax(0, 1fr);
 }
 
+.billing-comparison-content {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .average-contributions-content .table-wrap {
     width: 100%;
+}
+
+.billing-comparison-content .report-chart {
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.billing-comparison-chart-layout {
+    width: fit-content;
+    min-width: 0;
+    max-width: none;
+    padding: 12px 16px 8px;
+    margin: 0 auto;
+}
+
+.billing-comparison-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+    align-items: center;
+    padding: 0 0 10px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.billing-comparison-chart-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.billing-comparison-chart-legend-bar {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 78%, white 22%);
+}
+
+.billing-comparison-chart-legend-line {
+    width: 18px;
+    height: 0;
+    border-top: 2.5px dashed color-mix(in srgb, white 18%, var(--danger-strong) 82%);
+}
+
+.billing-comparison-chart-svg {
+    display: block;
+    width: auto;
+    min-width: 0;
+    height: auto;
+}
+
+.billing-comparison-axis {
+    stroke: var(--line);
+    stroke-width: 1.2;
+}
+
+.billing-comparison-axis-value {
+    fill: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.billing-comparison-reference-marker {
+    stroke: color-mix(in srgb, white 18%, var(--danger-strong) 82%);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-dasharray: 5 3;
+}
+
+.billing-comparison-chart-bar {
+    fill: color-mix(in srgb, var(--accent) 78%, white 22%);
+}
+
+.billing-comparison-chart-value {
+    fill: var(--text);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.billing-comparison-chart-period {
+    fill: var(--text);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.billing-comparison-chart-currency {
+    fill: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
 }
 
 .planning-content {

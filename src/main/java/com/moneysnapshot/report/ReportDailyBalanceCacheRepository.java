@@ -29,6 +29,11 @@ public interface ReportDailyBalanceCacheRepository extends JpaRepository<ReportD
 
     List<ReportDailyBalanceCache> findAllByOwnerIdAndBalanceDateOrderByAccountNameAsc(UUID ownerId, LocalDate balanceDate);
 
+    List<ReportDailyBalanceCache> findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateOrderByAccountNameAsc(
+            UUID ownerId,
+            LocalDate balanceDate
+    );
+
     @Query("""
             select max(entry.balanceDate)
             from ReportDailyBalanceCache entry

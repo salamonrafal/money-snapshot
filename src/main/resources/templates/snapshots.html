@@ -14,7 +14,36 @@
     <section class="table-panel table-panel-wide" aria-labelledby="snapshot-list-title">
         <div class="section-header">
             <h2 id="snapshot-list-title" data-i18n="snapshots.table.title">Lista migawek</h2>
-            <div class="section-actions topbar-account-actions icon-toolbar" role="toolbar" aria-label="Akcje migawek">
+            <div class="section-actions topbar-account-actions icon-toolbar snapshots-toolbar" role="toolbar" aria-label="Akcje migawek">
+                <div class="snapshots-filter-menu">
+                    <button type="button"
+                            class="icon-button secondary topbar-icon-link snapshots-filter-button"
+                            id="snapshots-filter-button"
+                            aria-expanded="false"
+                            data-i18n-title="snapshots.actions.filters"
+                            data-i18n-aria-label="snapshots.actions.filters">
+                        <span class="visually-hidden" data-i18n="snapshots.actions.filters">Filtry</span>
+                    </button>
+                    <div class="snapshots-filter-popover" hidden>
+                        <label class="compact-field snapshots-account-filter">
+                            <span data-i18n="snapshots.filter.account">Konto</span>
+                            <select id="snapshots-account-filter">
+                                <option value="" data-i18n="snapshots.filter.allAccounts">Wszystkie konta</option>
+                            </select>
+                        </label>
+                        <label class="compact-field">
+                            <span data-i18n="snapshots.filter.date">Data</span>
+                            <input id="snapshots-date-filter" type="date">
+                        </label>
+                        <button type="button"
+                                class="icon-button secondary filter-reset-button"
+                                id="clear-snapshots-filters"
+                                data-i18n-title="snapshots.filter.clear"
+                                data-i18n-aria-label="snapshots.filter.clear"
+                                aria-label="Wyczyść filtry"
+                                hidden></button>
+                    </div>
+                </div>
                 <a href="/snapshots/new.html"
                    class="icon-button secondary topbar-icon-link"
                    id="new-snapshot-action"
@@ -58,24 +87,18 @@
             </div>
         </div>
         <p class="form-message" id="snapshots-list-message" role="status"></p>
-        <div class="snapshot-list-controls">
-            <label class="compact-field snapshots-account-filter">
-                <span data-i18n="snapshots.filter.account">Konto</span>
-                <select id="snapshots-account-filter">
-                    <option value="" data-i18n="snapshots.filter.allAccounts">Wszystkie konta</option>
-                </select>
-            </label>
-            <label class="compact-field">
-                <span data-i18n="snapshots.filter.date">Data</span>
-                <input id="snapshots-date-filter" type="date">
-            </label>
-            <button type="button"
-                    class="icon-button secondary filter-reset-button"
-                    id="clear-snapshots-filters"
-                    data-i18n-title="snapshots.filter.clear"
-                    data-i18n-aria-label="snapshots.filter.clear"
-                    aria-label="Wyczyść filtry"
-                    hidden></button>
+        <div class="planner-warning snapshots-warning-panel" id="snapshots-final-warning-panel" hidden>
+            <span class="planner-warning-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 10v6"></path>
+                    <path d="M12 7h.01"></path>
+                </svg>
+            </span>
+            <div class="planner-warning-copy">
+                <strong data-i18n="snapshots.warning.title">Ostrzeżenia o migawkach FINAL</strong>
+                <div id="snapshots-final-warning-content"></div>
+            </div>
         </div>
         <div class="pagination-bar" aria-label="Stronicowanie migawek">
             <button type="button" class="button secondary compact" id="snapshots-prev-page" data-i18n="snapshots.pagination.previous">Poprzednia</button>

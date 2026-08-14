@@ -12,6 +12,10 @@ const tableBody = document.querySelector("#reports-table-body");
 const overviewMessageElement = document.querySelector("#overview-message");
 const overviewChartElement = document.querySelector("#overview-chart");
 const overviewTableBody = document.querySelector("#overview-table-body");
+const billingComparisonChartElement = document.querySelector("#billing-comparison-chart");
+const billingComparisonPeriodsSelect = document.querySelector("#billing-comparison-periods");
+const billingComparisonMessageElement = document.querySelector("#billing-comparison-message");
+const billingComparisonTableBody = document.querySelector("#billing-comparison-table-body");
 const averageContributionsMessageElement = document.querySelector("#average-contributions-message");
 const averageContributionsTableBody = document.querySelector("#average-contributions-table-body");
 const averageContributionsTableFoot = document.querySelector("#average-contributions-table-foot");
@@ -80,6 +84,12 @@ const reportSections = {
     },
     overview: {
         element: document.querySelector("#reports-overview-section"),
+        dirty: true,
+        loading: false,
+        visible: false
+    },
+    billingComparison: {
+        element: document.querySelector("#reports-billing-comparison-section"),
         dirty: true,
         loading: false,
         visible: false
@@ -263,12 +273,72 @@ function formatDate(value) {
     return MoneySnapshotUi.formatDateValue(value, userSettings);
 }
 
+function formatMonthYear(value) {
+    const date = new Date(`${value}T00:00:00Z`);
+    const formatted = new Intl.DateTimeFormat(locale(), {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC"
+    }).format(date);
+
+    return formatted.charAt(0).toLocaleUpperCase(locale()) + formatted.slice(1);
+}
+
+function formatBillingPeriodLabel(periodStartDate) {
+    return formatMonthYear(periodStartDate);
+}
+
+function billingComparisonBaselineLabel(periodStartDate) {
+    return `${formatBillingPeriodLabel(periodStartDate)} (${messages["reports.billingComparison.referenceLabel"] ?? "okres bazowy"})`;
+}
+
+function billingComparisonBaselineRows(rows) {
+    const rowsByCurrency = new Map();
+    rows.forEach((row) => {
+        if (!rowsByCurrency.has(row.currencyCode)) {
+            rowsByCurrency.set(row.currencyCode, {
+                periodLabel: billingComparisonBaselineLabel(row.referenceStartDate),
+                currencyCode: row.currencyCode,
+                periodChange: row.referenceChange,
+                referenceChange: row.referenceChange,
+                difference: 0,
+                differencePercent: 0
+            });
+        }
+    });
+    return Array.from(rowsByCurrency.values());
+}
+
 function formatAmount(value) {
     return MoneySnapshotUi.formatMoneyValue(value, userSettings);
 }
 
+function topRoundedBarPath(x, y, width, height, radius) {
+    const safeRadius = Math.max(0, Math.min(radius, width / 2, height));
+    const bottomY = y + height;
+    const rightX = x + width;
+
+    return [
+        `M ${x} ${bottomY}`,
+        `L ${x} ${y + safeRadius}`,
+        `Q ${x} ${y} ${x + safeRadius} ${y}`,
+        `L ${rightX - safeRadius} ${y}`,
+        `Q ${rightX} ${y} ${rightX} ${y + safeRadius}`,
+        `L ${rightX} ${bottomY}`,
+        "Z"
+    ].join(" ");
+}
+
 function displayRangeLabel(range, periodValue) {
     return `${formatDate(range.fromDate)} - ${formatDate(range.toDate)}`;
+}
+
+function displaySummaryPeriodLabel(range, periodValue) {
+    if (periodValue === "billing") {
+        return formatBillingPeriodLabel(range.fromDate);
+    }
+
+    return displayRangeLabel(range, periodValue);
 }
 
 function formatChange(value) {
@@ -404,6 +474,11 @@ function setOverviewMessage(text, type = "") {
     overviewMessageElement.dataset.type = type;
 }
 
+function setBillingComparisonMessage(text, type = "") {
+    billingComparisonMessageElement.textContent = text;
+    billingComparisonMessageElement.dataset.type = type;
+}
+
 function setAverageContributionsMessage(text, type = "") {
     averageContributionsMessageElement.textContent = text;
     averageContributionsMessageElement.dataset.type = type;
@@ -532,6 +607,138 @@ function renderOverviewTable(rows) {
             row.currencyCode,
             formatAmount(row.balance),
             formatPercent(row.sharePercent)
+        ].forEach((value, index) => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            if (index >= 2) {
+                cell.className = "numeric-cell";
+            }
+            tableRow.append(cell);
+        });
+        return tableRow;
+    }));
+}
+
+function renderBillingComparisonEmpty(message) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 6;
+    cell.textContent = message;
+    row.append(cell);
+    billingComparisonTableBody.replaceChildren(row);
+    billingComparisonChartElement.innerHTML = `<div class="chart-empty">${escapeHtml(message)}</div>`;
+}
+
+function renderBillingComparisonChart(rows) {
+    if (rows.length === 0) {
+        billingComparisonChartElement.innerHTML = `<div class="chart-empty">${escapeHtml(messages["reports.chart.empty"])}</div>`;
+        return;
+    }
+
+    const values = rows.flatMap((row) => [Number(row.periodChange), Number(row.difference)]);
+    const minValue = Math.min(...values, 0);
+    const maxValue = Math.max(...values, 0);
+    const valueRange = maxValue - minValue || 1;
+    const width = Math.max(560, rows.length * 148 + 88);
+    const height = 272;
+    const leftPadding = 58;
+    const rightPadding = 18;
+    const topPadding = 24;
+    const bottomPadding = 42;
+    const plotWidth = width - leftPadding - rightPadding;
+    const plotHeight = height - topPadding - bottomPadding;
+    const zeroY = topPadding + ((maxValue - 0) * plotHeight) / valueRange;
+    const slotWidth = plotWidth / rows.length;
+    const barWidth = Math.min(34, Math.max(24, slotWidth * 0.32));
+
+    function yForValue(value) {
+        return topPadding + ((maxValue - value) * plotHeight) / valueRange;
+    }
+
+    const columns = rows.map((row, index) => {
+        const periodValue = Number(row.periodChange);
+        const differenceValue = Number(row.difference);
+        const centerX = leftPadding + slotWidth * index + slotWidth / 2;
+        const barX = centerX - barWidth / 2;
+        const barY = Math.min(yForValue(periodValue), zeroY);
+        const barHeight = Math.max(1.5, Math.abs(zeroY - yForValue(periodValue)));
+        const differenceY = yForValue(differenceValue);
+        const barPath = topRoundedBarPath(barX, barY, barWidth, barHeight, 6);
+        const valueLabel = formatChange(periodValue);
+        const differenceLabel = formatChange(differenceValue);
+        const monthYearLabel = formatBillingPeriodLabel(row.periodStartDate);
+        const labelY = height - 18;
+        const currencyY = height - 4;
+        const valueLabelY = periodValue >= 0
+                ? Math.max(18, barY - 8)
+                : Math.min(height - bottomPadding - 8, barY + barHeight + 16);
+        const ariaLabel = `${formatBillingPeriodLabel(row.periodStartDate)} ${row.currencyCode}. `
+                + `${messages["reports.billingComparison.periodChange"] ?? "Period change"}: ${valueLabel}. `
+                + `${messages["reports.billingComparison.difference"] ?? "Difference"}: ${differenceLabel}. `
+                + `${messages["reports.billingComparison.referenceChange"] ?? "Baseline period change"}: ${formatChange(row.referenceChange)}.`;
+
+        return `
+            <g class="billing-comparison-chart-column" aria-label="${escapeHtml(ariaLabel)}">
+                <path class="billing-comparison-chart-bar" d="${barPath}"></path>
+                <line class="billing-comparison-reference-marker" x1="${barX - 6}" x2="${barX + barWidth + 6}" y1="${differenceY}" y2="${differenceY}"></line>
+                <text class="billing-comparison-chart-value" x="${centerX}" y="${valueLabelY}" text-anchor="middle">${escapeHtml(valueLabel)}</text>
+                <text class="billing-comparison-chart-period" x="${centerX}" y="${labelY}" text-anchor="middle">${escapeHtml(monthYearLabel)}</text>
+                <text class="billing-comparison-chart-currency" x="${centerX}" y="${currencyY}" text-anchor="middle">${escapeHtml(row.currencyCode)}</text>
+                <title>${escapeHtml(ariaLabel)}</title>
+            </g>
+        `;
+    }).join("");
+
+    const zeroAxisLabel = formatAmount(0);
+    const yAxisTopLabel = maxValue === 0 ? "" : formatChange(maxValue);
+    const yAxisBottomLabel = minValue === 0 ? "" : formatChange(minValue);
+
+    billingComparisonChartElement.innerHTML = `
+        <div class="billing-comparison-chart-layout">
+            <div class="billing-comparison-chart-legend" aria-hidden="true">
+                <span class="billing-comparison-chart-legend-item">
+                    <span class="billing-comparison-chart-legend-bar"></span>
+                    <span>${escapeHtml(messages["reports.billingComparison.periodChange"] ?? "Period change")}</span>
+                </span>
+                <span class="billing-comparison-chart-legend-item">
+                    <span class="billing-comparison-chart-legend-line"></span>
+                    <span>${escapeHtml(messages["reports.billingComparison.difference"] ?? "Difference")}</span>
+                </span>
+            </div>
+            <svg class="billing-comparison-chart-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(messages["reports.chart.aria.billingComparison"] ?? "Billing period comparison chart")}">
+                <line class="billing-comparison-axis" x1="${leftPadding}" x2="${leftPadding}" y1="${topPadding}" y2="${height - bottomPadding}"></line>
+                <line class="billing-comparison-axis" x1="${leftPadding}" x2="${width - rightPadding}" y1="${zeroY}" y2="${zeroY}"></line>
+                ${yAxisTopLabel ? `<text class="billing-comparison-axis-value" x="${leftPadding - 8}" y="${topPadding + 4}" text-anchor="end">${escapeHtml(yAxisTopLabel)}</text>` : ""}
+                <text class="billing-comparison-axis-value" x="${leftPadding - 8}" y="${zeroY + 3}" text-anchor="end">${escapeHtml(zeroAxisLabel)}</text>
+                ${yAxisBottomLabel ? `<text class="billing-comparison-axis-value" x="${leftPadding - 8}" y="${height - bottomPadding + 4}" text-anchor="end">${escapeHtml(yAxisBottomLabel)}</text>` : ""}
+                ${columns}
+            </svg>
+        </div>
+    `;
+}
+
+function renderBillingComparisonTable(rows) {
+    const tableRows = [
+        ...billingComparisonBaselineRows(rows),
+        ...rows.map((row) => ({
+            periodLabel: formatBillingPeriodLabel(row.periodStartDate),
+            currencyCode: row.currencyCode,
+            periodChange: row.periodChange,
+            referenceChange: row.referenceChange,
+            difference: row.difference,
+            differencePercent: row.differencePercent
+        }))
+    ];
+
+    billingComparisonTableBody.replaceChildren(...tableRows.map((row) => {
+        const tableRow = document.createElement("tr");
+        [
+            row.periodLabel,
+            row.currencyCode,
+            formatChange(row.periodChange),
+            formatChange(row.referenceChange),
+            formatChange(row.difference),
+            formatPercent(row.differencePercent)
         ].forEach((value, index) => {
             const cell = document.createElement("td");
             cell.textContent = value;
@@ -1140,7 +1347,7 @@ async function renderSummaryReportSection() {
     const baselineQuery = baselineDate ? `&baselineDate=${encodeURIComponent(baselineDate)}` : "";
     const summary = await fetchReportJson(`/api/reports/summary?scope=${encodeURIComponent(currentScope)}&fromDate=${encodeURIComponent(range.fromDate)}&toDate=${encodeURIComponent(range.toDate)}${baselineQuery}`);
     setMessage("");
-    setMessage(displayRangeLabel(range, periodSelect.value));
+    setMessage(displaySummaryPeriodLabel(range, periodSelect.value));
 
     if (!summary.rows || summary.rows.length === 0) {
         clearReportPdfData("summary");
@@ -1150,7 +1357,7 @@ async function renderSummaryReportSection() {
 
     reportPdfData.summary = {
         title: messages["reports.table.title"],
-        subtitle: displayRangeLabel(range, periodSelect.value),
+        subtitle: displaySummaryPeriodLabel(range, periodSelect.value),
         chartType: "line",
         chart: {rows: summary.rows, checkpoints: summary.checkpoints},
         table: {
@@ -1179,6 +1386,70 @@ async function renderSummaryReportSection() {
 async function renderOverviewReportSection() {
     const overview = await fetchReportJson(`/api/reports/overview?scope=${encodeURIComponent(currentOverviewScope)}&toDate=${encodeURIComponent(todayIsoDate())}`);
     renderOverview(overview.rows ?? []);
+}
+
+async function renderBillingComparisonReportSection() {
+    const periods = Math.max(1, Math.min(Number(billingComparisonPeriodsSelect.value), 6));
+    const comparison = await fetchReportJson(`/api/reports/billing-period-comparison?periods=${periods}`);
+    const rows = comparison.rows ?? [];
+    if (rows.length === 0) {
+        clearReportPdfData("billingComparison");
+        renderBillingComparisonEmpty(messages["reports.billingComparison.empty"]);
+        setBillingComparisonMessage("");
+        return;
+    }
+
+    reportPdfData.billingComparison = {
+        title: messages["reports.billingComparison.title"],
+        subtitle: (messages["reports.billingComparison.reference"] ?? "")
+                .replace("{period}", formatBillingPeriodLabel(rows[0].referenceStartDate)),
+        chartType: "billingCompare",
+        chart: {
+            periodChangeLabel: messages["reports.billingComparison.periodChange"],
+            differenceLabel: messages["reports.billingComparison.difference"],
+            rows: rows.map((row) => ({
+                periodLabel: formatBillingPeriodLabel(row.periodStartDate),
+                currencyCode: row.currencyCode,
+                periodChange: row.periodChange,
+                referenceChange: row.referenceChange,
+                difference: row.difference
+            }))
+        },
+        table: {
+            columns: [
+                messages["reports.billingComparison.period"],
+                messages["reports.table.currency"],
+                messages["reports.billingComparison.periodChange"],
+                messages["reports.billingComparison.referenceChange"],
+                messages["reports.billingComparison.difference"],
+                messages["reports.table.percent"]
+            ],
+            rows: [
+                ...billingComparisonBaselineRows(rows).map((row) => [
+                    row.periodLabel,
+                    row.currencyCode,
+                    formatChange(row.periodChange),
+                    formatChange(row.referenceChange),
+                    formatChange(row.difference),
+                    formatPercent(row.differencePercent)
+                ]),
+                ...rows.map((row) => [
+                    formatBillingPeriodLabel(row.periodStartDate),
+                    row.currencyCode,
+                    formatChange(row.periodChange),
+                    formatChange(row.referenceChange),
+                    formatChange(row.difference),
+                    formatPercent(row.differencePercent)
+                ])
+            ]
+        }
+    };
+
+    renderBillingComparisonChart(rows);
+    renderBillingComparisonTable(rows);
+    const reference = rows[0];
+    setBillingComparisonMessage((messages["reports.billingComparison.reference"] ?? "")
+            .replace("{period}", formatBillingPeriodLabel(reference.referenceStartDate)));
 }
 
 async function renderAverageContributionsReportSection() {
@@ -1385,6 +1656,9 @@ function renderReportSectionError(key, error) {
     } else if (key === "overview") {
         renderOverviewEmpty(error.message);
         setOverviewMessage(error.message, "error");
+    } else if (key === "billingComparison") {
+        renderBillingComparisonEmpty(error.message);
+        setBillingComparisonMessage(error.message, "error");
     } else if (key === "averageContributions") {
         renderAverageContributionsEmpty(error.message);
         setAverageContributionsMessage(error.message, "error");
@@ -1402,6 +1676,8 @@ function showReportPdfError(key, error) {
         setMessage(error.message, "error");
     } else if (key === "overview") {
         setOverviewMessage(error.message, "error");
+    } else if (key === "billingComparison") {
+        setBillingComparisonMessage(error.message, "error");
     } else if (key === "averageContributions") {
         setAverageContributionsMessage(error.message, "error");
     } else if (key === "planning") {
@@ -1416,6 +1692,8 @@ async function renderReportSection(key) {
         await renderSummaryReportSection();
     } else if (key === "overview") {
         await renderOverviewReportSection();
+    } else if (key === "billingComparison") {
+        await renderBillingComparisonReportSection();
     } else if (key === "averageContributions") {
         await renderAverageContributionsReportSection();
     } else if (key === "planning") {
@@ -1705,6 +1983,11 @@ overviewTabs.forEach((tab) => {
         markReportSectionsDirty(["overview"]);
         renderVisibleReportSections(["overview"]);
     });
+});
+
+billingComparisonPeriodsSelect.addEventListener("change", () => {
+    markReportSectionsDirty(["billingComparison"]);
+    renderVisibleReportSections(["billingComparison"]);
 });
 
 refreshButton.addEventListener("click", () => {

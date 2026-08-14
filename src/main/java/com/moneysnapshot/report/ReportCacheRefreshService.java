@@ -2,10 +2,13 @@ package com.moneysnapshot.report;
 
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.AppUserRepository;
+import com.moneysnapshot.security.UserSettingRepository;
+import com.moneysnapshot.security.UserSettingsService;
 import com.moneysnapshot.snapshot.AccountSnapshot;
 import com.moneysnapshot.snapshot.AccountSnapshotRepository;
 import com.moneysnapshot.snapshot.SnapshotType;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
+import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,12 +38,15 @@ public class ReportCacheRefreshService {
 
     private static final Logger log = LoggerFactory.getLogger(ReportCacheRefreshService.class);
     private static final int MAX_DIRTY_OWNER_BATCH = 20;
+    private static final int MAX_BILLING_COMPARISON_PERIODS = 6;
 
     private final ReportCacheRefreshStateRepository refreshStateRepository;
     private final ReportDailyBalanceCacheRepository dailyBalanceCacheRepository;
     private final ReportAverageContributionCacheRepository averageContributionCacheRepository;
     private final ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository;
+    private final ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository;
     private final AppUserRepository appUserRepository;
+    private final UserSettingRepository userSettingRepository;
     private final AccountSnapshotRepository snapshotRepository;
     private final TransactionOperations failureStateTransaction;
     private final Clock clock;
@@ -50,7 +58,9 @@ public class ReportCacheRefreshService {
             ReportDailyBalanceCacheRepository dailyBalanceCacheRepository,
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
+            ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
             AppUserRepository appUserRepository,
+            UserSettingRepository userSettingRepository,
             AccountSnapshotRepository snapshotRepository,
             PlatformTransactionManager transactionManager
     ) {
@@ -59,7 +69,9 @@ public class ReportCacheRefreshService {
                 dailyBalanceCacheRepository,
                 averageContributionCacheRepository,
                 finalSnapshotCacheRepository,
+                billingPeriodComparisonCacheRepository,
                 appUserRepository,
+                userSettingRepository,
                 snapshotRepository,
                 newRequiresNewTransaction(transactionManager),
                 Clock.systemUTC()
@@ -71,7 +83,9 @@ public class ReportCacheRefreshService {
             ReportDailyBalanceCacheRepository dailyBalanceCacheRepository,
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
+            ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
             AppUserRepository appUserRepository,
+            UserSettingRepository userSettingRepository,
             AccountSnapshotRepository snapshotRepository,
             TransactionOperations failureStateTransaction,
             Clock clock
@@ -80,7 +94,9 @@ public class ReportCacheRefreshService {
         this.dailyBalanceCacheRepository = dailyBalanceCacheRepository;
         this.averageContributionCacheRepository = averageContributionCacheRepository;
         this.finalSnapshotCacheRepository = finalSnapshotCacheRepository;
+        this.billingPeriodComparisonCacheRepository = billingPeriodComparisonCacheRepository;
         this.appUserRepository = appUserRepository;
+        this.userSettingRepository = userSettingRepository;
         this.snapshotRepository = snapshotRepository;
         this.failureStateTransaction = failureStateTransaction;
         this.clock = clock;
@@ -130,6 +146,7 @@ public class ReportCacheRefreshService {
             dailyBalanceCacheRepository.deleteByOwnerId(ownerId);
             averageContributionCacheRepository.deleteByOwnerId(ownerId);
             finalSnapshotCacheRepository.deleteByOwnerId(ownerId);
+            billingPeriodComparisonCacheRepository.deleteByOwnerId(ownerId);
 
             ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
                     .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
@@ -152,7 +169,8 @@ public class ReportCacheRefreshService {
             boolean cacheMissing = hasSnapshots && !dailyBalanceCacheRepository.existsByOwnerIdAndBalanceDate(ownerId, requiredDate);
             boolean hasFinalSnapshots = snapshotRepository.existsByOwnerIdAndSnapshotType(ownerId, SnapshotType.FINAL);
             boolean finalCacheMissing = hasFinalSnapshots && !finalSnapshotCacheRepository.existsByOwnerId(ownerId);
-            if (state.isDirty() || cacheMissing || finalCacheMissing) {
+            boolean billingComparisonCacheMissing = hasSnapshots && !state.isBillingPeriodComparisonReady();
+            if (state.isDirty() || cacheMissing || finalCacheMissing || billingComparisonCacheMissing) {
                 refreshOwnerInternal(ownerId, state, owner);
             }
         });
@@ -176,6 +194,7 @@ public class ReportCacheRefreshService {
             List<AccountSnapshot> snapshots = snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId);
             rebuildDailyBalances(owner, snapshots);
             rebuildFinalSnapshots(owner, snapshots);
+            rebuildBillingPeriodComparisons(owner, snapshots);
             rebuildAverageContributions(owner, snapshots);
             state.markRefreshed();
             refreshStateRepository.save(state);
@@ -257,6 +276,142 @@ public class ReportCacheRefreshService {
         });
 
         dailyBalanceCacheRepository.saveAll(entries);
+        dailyBalanceCacheRepository.flush();
+    }
+
+    private void rebuildBillingPeriodComparisons(AppUser owner, List<AccountSnapshot> snapshots) {
+        billingPeriodComparisonCacheRepository.deleteByOwnerId(owner.getId());
+        billingPeriodComparisonCacheRepository.flush();
+
+        int billingMonthEndDay = userSettingRepository
+                .findByUserIdAndKey(owner.getId(), UserSettingsService.BILLING_MONTH_START_DAY)
+                .map(setting -> parseBillingMonthEndDay(setting.getValue()))
+                .orElse(1);
+        List<CompletedBillingPeriod> completedPeriods = completedBillingPeriodsFromFinalSnapshots(snapshots, billingMonthEndDay);
+        if (completedPeriods.size() < 2) {
+            return;
+        }
+
+        CompletedBillingPeriod referencePeriod = completedPeriods.get(0);
+        Map<String, BigDecimal> referenceChanges = referencePeriod.changes();
+
+        List<ReportBillingPeriodComparisonCache> entries = new ArrayList<>();
+        for (int completedIndex = 1; completedIndex < completedPeriods.size(); completedIndex += 1) {
+            CompletedBillingPeriod period = completedPeriods.get(completedIndex);
+            int periodIndex = completedIndex;
+            Map<String, BigDecimal> changes = period.changes();
+            Set<String> currencies = new TreeSet<>(period.currencies());
+            currencies.addAll(referencePeriod.currencies());
+            for (String currencyCode : currencies) {
+                BigDecimal periodChange = changes.getOrDefault(currencyCode, BigDecimal.ZERO);
+                BigDecimal referenceChange = referenceChanges.getOrDefault(currencyCode, BigDecimal.ZERO);
+                BigDecimal difference = periodChange.subtract(referenceChange);
+                BigDecimal differencePercent = referenceChange.compareTo(BigDecimal.ZERO) == 0
+                        ? null
+                        : difference.multiply(BigDecimal.valueOf(100))
+                                .divide(referenceChange.abs(), 4, RoundingMode.HALF_UP);
+                entries.add(new ReportBillingPeriodComparisonCache(
+                        owner, periodIndex, period.periodStart(), period.periodEnd(),
+                        referencePeriod.periodStart(), referencePeriod.periodEnd(),
+                        currencyCode, periodChange, referenceChange, difference, differencePercent
+                ));
+            }
+        }
+        billingPeriodComparisonCacheRepository.saveAll(entries);
+    }
+
+    private List<CompletedBillingPeriod> completedBillingPeriodsFromFinalSnapshots(
+            List<AccountSnapshot> snapshots,
+            int billingMonthEndDay
+    ) {
+        LocalDate today = LocalDate.now(clock);
+        Map<PeriodKey, Map<String, BigDecimal>> changesByPeriod = new java.util.TreeMap<>(
+                Comparator.comparing(PeriodKey::periodEnd).thenComparing(PeriodKey::periodStart)
+        );
+        Map<PeriodKey, Set<String>> currenciesByPeriod = new HashMap<>();
+        Map<String, AccountSnapshot> previousFinalByAccount = new HashMap<>();
+
+        snapshots.stream()
+                .filter(snapshot -> snapshot.getSnapshotType() == SnapshotType.FINAL)
+                .filter(snapshot -> snapshot.getAccount().isShowInSnapshots())
+                .sorted(Comparator.comparing(AccountSnapshot::getSnapshotDate))
+                .forEach(snapshot -> {
+                    PeriodKey period = resolveBillingPeriod(snapshot.getSnapshotDate(), billingMonthEndDay);
+                    if (!period.periodEnd().isBefore(today)) {
+                        return;
+                    }
+
+                    String accountKey = snapshot.getAccount().getId() + "|" + snapshot.getAccount().getCurrencyCode();
+                    AccountSnapshot previousFinal = previousFinalByAccount.put(accountKey, snapshot);
+                    if (previousFinal == null) {
+                        return;
+                    }
+
+                    changesByPeriod.computeIfAbsent(period, ignored -> new HashMap<>());
+                    currenciesByPeriod.computeIfAbsent(period, ignored -> new TreeSet<>())
+                            .add(snapshot.getAccount().getCurrencyCode());
+                    BigDecimal diff = snapshot.getBalance().subtract(previousFinal.getBalance());
+                    if (diff.compareTo(BigDecimal.ZERO) == 0) {
+                        return;
+                    }
+
+                    changesByPeriod.get(period).merge(snapshot.getAccount().getCurrencyCode(), diff, BigDecimal::add);
+                });
+
+        return changesByPeriod.entrySet().stream()
+                .sorted(Comparator
+                        .<Map.Entry<PeriodKey, Map<String, BigDecimal>>, LocalDate>comparing(entry -> entry.getKey().periodEnd())
+                        .reversed()
+                        .thenComparing(entry -> entry.getKey().periodStart(), Comparator.reverseOrder()))
+                .limit(MAX_BILLING_COMPARISON_PERIODS + 1L)
+                .map(entry -> new CompletedBillingPeriod(
+                        entry.getKey().periodStart(),
+                        entry.getKey().periodEnd(),
+                        currenciesByPeriod.getOrDefault(entry.getKey(), Set.of()),
+                        entry.getValue()
+                ))
+                .toList();
+    }
+
+    private PeriodKey resolveBillingPeriod(LocalDate snapshotDate, int billingMonthEndDay) {
+        LocalDate periodStart = resolvePeriodStart(snapshotDate, billingMonthEndDay);
+        return new PeriodKey(periodStart, resolvePeriodEnd(periodStart, billingMonthEndDay));
+    }
+
+    private LocalDate resolvePeriodEnd(LocalDate periodStart, int billingMonthEndDay) {
+        LocalDate currentMonthEnd = periodStart.withDayOfMonth(Math.min(billingMonthEndDay, periodStart.lengthOfMonth()));
+        if (!currentMonthEnd.isBefore(periodStart)) {
+            return currentMonthEnd;
+        }
+
+        LocalDate nextMonth = periodStart.plusMonths(1);
+        return nextMonth.withDayOfMonth(Math.min(billingMonthEndDay, nextMonth.lengthOfMonth()));
+    }
+
+    private Map<String, BigDecimal> balancesByCurrency(UUID ownerId, LocalDate date) {
+        Map<String, BigDecimal> result = new HashMap<>();
+        dailyBalanceCacheRepository
+                .findAllByOwnerIdAndAccountShowInSnapshotsTrueAndBalanceDateOrderByAccountNameAsc(ownerId, date)
+                .forEach(row -> result.merge(row.getCurrencyCode(), row.getBalance(), BigDecimal::add));
+        return result;
+    }
+
+    private int parseBillingMonthEndDay(String value) {
+        try {
+            int day = Integer.parseInt(value);
+            return Math.max(1, Math.min(day, 31));
+        } catch (NumberFormatException ignored) {
+            return 1;
+        }
+    }
+
+    private LocalDate resolvePeriodStart(LocalDate date, int billingMonthEndDay) {
+        LocalDate currentMonthEnd = date.withDayOfMonth(Math.min(billingMonthEndDay, date.lengthOfMonth()));
+        if (date.isAfter(currentMonthEnd)) {
+            return currentMonthEnd.plusDays(1);
+        }
+        LocalDate previousMonth = date.minusMonths(1);
+        return previousMonth.withDayOfMonth(Math.min(billingMonthEndDay, previousMonth.lengthOfMonth())).plusDays(1);
     }
 
     private void rebuildAverageContributions(AppUser owner, List<AccountSnapshot> snapshots) {
@@ -320,5 +475,19 @@ public class ReportCacheRefreshService {
                 .toList();
 
         finalSnapshotCacheRepository.saveAll(entries);
+    }
+
+    private record CompletedBillingPeriod(
+            LocalDate periodStart,
+            LocalDate periodEnd,
+            Set<String> currencies,
+            Map<String, BigDecimal> changes
+    ) {
+    }
+
+    private record PeriodKey(
+            LocalDate periodStart,
+            LocalDate periodEnd
+    ) {
     }
 }

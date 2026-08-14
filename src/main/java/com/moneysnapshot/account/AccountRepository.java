@@ -49,6 +49,29 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     long countTrackedAccountsVisibleInSnapshotsByOwnerId(@Param("ownerId") UUID ownerId);
 
     @Query("""
+            select account
+            from Account account
+            left join fetch account.bank
+            left join account.owner owner
+            where (
+                    owner.id = :ownerId
+                    and account.showInSnapshots = true
+                )
+                or (
+                    account.owner is null
+                    and account.showInSnapshots = true
+                    and exists (
+                        select trackedSnapshot.id
+                        from AccountSnapshot trackedSnapshot
+                        where trackedSnapshot.account = account
+                            and trackedSnapshot.owner.id = :ownerId
+                    )
+                )
+            order by account.name
+            """)
+    List<Account> findTrackedAccountsVisibleInSnapshotsByOwnerId(@Param("ownerId") UUID ownerId);
+
+    @Query("""
             select count(account)
             from Account account
             left join account.owner owner

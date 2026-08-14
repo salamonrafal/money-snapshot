@@ -2,6 +2,7 @@ package com.moneysnapshot.report.web;
 
 import com.moneysnapshot.report.ReportCacheMaintenanceService;
 import com.moneysnapshot.report.ReportQueryService;
+import com.moneysnapshot.report.BillingPeriodComparisonQueryService;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import org.springframework.http.HttpStatus;
@@ -21,13 +22,16 @@ public class ReportController {
 
     private final ReportQueryService reportQueryService;
     private final ReportCacheMaintenanceService reportCacheMaintenanceService;
+    private final BillingPeriodComparisonQueryService billingPeriodComparisonQueryService;
 
     public ReportController(
             ReportQueryService reportQueryService,
-            ReportCacheMaintenanceService reportCacheMaintenanceService
+            ReportCacheMaintenanceService reportCacheMaintenanceService,
+            BillingPeriodComparisonQueryService billingPeriodComparisonQueryService
     ) {
         this.reportQueryService = reportQueryService;
         this.reportCacheMaintenanceService = reportCacheMaintenanceService;
+        this.billingPeriodComparisonQueryService = billingPeriodComparisonQueryService;
     }
 
     @GetMapping("/summary")
@@ -56,6 +60,13 @@ public class ReportController {
     @GetMapping("/planning")
     public PlanningReportResponse planning() {
         return reportQueryService.planning();
+    }
+
+    @GetMapping("/billing-period-comparison")
+    public BillingPeriodComparisonResponse billingPeriodComparison(
+            @RequestParam(defaultValue = "3") int periods
+    ) {
+        return billingPeriodComparisonQueryService.comparison(periods);
     }
 
     @GetMapping("/history")

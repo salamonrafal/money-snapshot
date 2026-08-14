@@ -122,6 +122,59 @@
         </div>
     </section>
 
+    <section class="table-panel table-panel-wide report-panel" id="reports-billing-comparison-section" aria-labelledby="billing-comparison-title">
+        <div class="section-header">
+            <div>
+                <h2 id="billing-comparison-title" data-i18n="reports.billingComparison.title">Porównanie okresów rozliczeniowych</h2>
+                <p class="section-description" data-i18n="reports.billingComparison.description">Zmiany w poprzednich okresach względem ostatniego zakończonego okresu.</p>
+            </div>
+            <div class="section-actions topbar-account-actions icon-toolbar report-controls" role="toolbar" aria-label="Akcje porównania okresów rozliczeniowych">
+                <div class="report-filter-menu">
+                    <button type="button" class="icon-button secondary topbar-icon-link report-filter-button" aria-expanded="false" data-i18n-title="reports.actions.filters" data-i18n-aria-label="reports.actions.filters">
+                        <span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span>
+                    </button>
+                    <div class="report-filter-popover" hidden>
+                        <label class="compact-field">
+                            <span data-i18n="reports.billingComparison.periods">Liczba okresów</span>
+                            <select id="billing-comparison-periods">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <button type="button" class="icon-button secondary topbar-icon-link report-pdf-button" data-report-section="billingComparison" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
+                    <span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span>
+                </button>
+            </div>
+        </div>
+        <p class="form-message" id="billing-comparison-message" role="status"></p>
+        <div class="report-content billing-comparison-content">
+            <div class="report-chart" id="billing-comparison-chart" aria-label="Wykres porównania okresów rozliczeniowych"></div>
+            <div class="table-wrap">
+                <table class="reports-table billing-comparison-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="reports.billingComparison.period">Porównywany okres</th>
+                        <th data-i18n="reports.table.currency">Waluta</th>
+                        <th data-i18n="reports.billingComparison.periodChange">Zmiana w okresie</th>
+                        <th data-i18n="reports.billingComparison.referenceChange">Zmiana w ostatnim okresie</th>
+                        <th data-i18n="reports.billingComparison.difference">Różnica</th>
+                        <th data-i18n="reports.table.percent">Zmiana %</th>
+                    </tr>
+                    </thead>
+                    <tbody id="billing-comparison-table-body">
+                    <tr><td colspan="6" data-i18n="reports.loading">Ładowanie...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
     <section class="table-panel table-panel-wide report-panel" id="reports-average-contributions-section" aria-labelledby="average-contributions-title">
         <div class="section-header">
             <h2 id="average-contributions-title" data-i18n="reports.average.title">Średnie wpłaty</h2>
@@ -287,6 +340,7 @@
             <nav class="reports-nav" aria-label="Raporty">
                 <a href="#reports-summary-section" data-target="reports-summary-section" data-i18n="reports.table.title">Zestawienie zmian</a>
                 <a href="#reports-overview-section" data-target="reports-overview-section" data-i18n="reports.overview.title">Przegląd sald</a>
+                <a href="#reports-billing-comparison-section" data-target="reports-billing-comparison-section" data-i18n="reports.billingComparison.title">Porównanie okresów rozliczeniowych</a>
                 <a href="#reports-average-contributions-section" data-target="reports-average-contributions-section" data-i18n="reports.average.title">Średnie wpłaty</a>
                 <a href="#reports-planning-section" data-target="reports-planning-section" data-i18n="reports.planning.title">Planowanie</a>
                 <a href="#reports-history-section" data-target="reports-history-section" data-i18n="reports.history.title">Historia środków</a>

@@ -7,9 +7,12 @@ const previousPageButton = document.querySelector("#snapshots-prev-page");
 const nextPageButton = document.querySelector("#snapshots-next-page");
 const pageInfo = document.querySelector("#snapshots-page-info");
 const pageSizeSelect = document.querySelector("#snapshots-page-size");
+const filterButton = document.querySelector("#snapshots-filter-button");
 const accountFilterSelect = document.querySelector("#snapshots-account-filter");
 const dateFilterInput = document.querySelector("#snapshots-date-filter");
 const clearFiltersButton = document.querySelector("#clear-snapshots-filters");
+const finalWarningPanel = document.querySelector("#snapshots-final-warning-panel");
+const finalWarningContent = document.querySelector("#snapshots-final-warning-content");
 const snapshotFormModalElement = document.querySelector("#snapshot-form-modal");
 const bulkSnapshotFormModalElement = document.querySelector("#bulk-snapshot-form-modal");
 const snapshotFormModal = snapshotFormModalElement
@@ -52,6 +55,7 @@ let snapshotsLoaded = false;
 let currentPage = 0;
 let currentPageData = null;
 let cachedAccounts = [];
+let currentFinalWarnings = null;
 let userSettings = null;
 let snapshotFormController = null;
 let editSnapshotFormController = null;
@@ -65,6 +69,64 @@ if (clearFiltersButton) {
 }
 
 listMessage?.classList.add("visually-hidden");
+
+function createFilterIcon() {
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("fill", "none");
+    icon.setAttribute("stroke", "currentColor");
+    icon.setAttribute("stroke-width", "2");
+    icon.setAttribute("stroke-linecap", "round");
+    icon.setAttribute("stroke-linejoin", "round");
+    icon.setAttribute("aria-hidden", "true");
+
+    [
+        "M3 6h18",
+        "M7 12h10",
+        "M10 18h4"
+    ].forEach((value) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", value);
+        icon.append(path);
+    });
+
+    return icon;
+}
+
+function closeFilterMenu(restoreFocus = false) {
+    if (!filterButton) {
+        return;
+    }
+
+    const popover = filterButton.closest(".snapshots-filter-menu")?.querySelector(".snapshots-filter-popover");
+    const shouldRestoreFocus = restoreFocus
+            && popover
+            && document.activeElement instanceof Element
+            && popover.contains(document.activeElement);
+    filterButton.setAttribute("aria-expanded", "false");
+    if (popover) {
+        popover.hidden = true;
+    }
+    if (shouldRestoreFocus) {
+        filterButton.focus();
+    }
+}
+
+function toggleFilterMenu() {
+    if (!filterButton) {
+        return;
+    }
+
+    const popover = filterButton.closest(".snapshots-filter-menu")?.querySelector(".snapshots-filter-popover");
+    if (!popover) {
+        return;
+    }
+
+    const shouldOpen = popover.hidden;
+    closeFilterMenu();
+    popover.hidden = !shouldOpen;
+    filterButton.setAttribute("aria-expanded", String(shouldOpen));
+}
 
 function saveListState() {
     try {
@@ -115,11 +177,15 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     MoneySnapshotUi.setTooltip(newSnapshotAction, messages["snapshots.actions.add"]);
     newBulkSnapshotsActions.forEach((action) => MoneySnapshotUi.setTooltip(action, messages["snapshots.actions.addBulk"]));
     MoneySnapshotUi.setTooltip(refreshButton, messages["snapshots.actions.refresh"]);
+    if (filterButton) {
+        MoneySnapshotUi.setTooltip(filterButton, messages["snapshots.actions.filters"]);
+    }
     updateClearFiltersButton();
     if (snapshotsLoaded) {
         renderAccountFilterOptions();
         renderSnapshots(cachedSnapshots);
         renderPagination(currentPageData);
+        renderFinalWarnings(currentFinalWarnings);
     }
     snapshotFormController?.handleLanguageChange(messages);
     editSnapshotFormController?.handleLanguageChange(messages);
@@ -203,6 +269,87 @@ function formatDateTime(value) {
     }
 
     return MoneySnapshotUi.formatDateTimeValue(value, userSettings);
+}
+
+function formatPeriodRange(periodStartDate, periodEndDate) {
+    const fromDate = periodStartDate ? MoneySnapshotUi.formatDateValue(periodStartDate, userSettings) : "";
+    const toDate = periodEndDate ? MoneySnapshotUi.formatDateValue(periodEndDate, userSettings) : "";
+    return formatMessage(messages["snapshots.warning.period"] ?? "", {fromDate, toDate});
+}
+
+function formatWarningAccounts(accounts, includeCounts = false) {
+    return (Array.isArray(accounts) ? accounts : [])
+            .map((account) => {
+                const accountName = `${account?.accountName ?? ""}`.trim();
+                if (!includeCounts) {
+                    return accountName;
+                }
+                return `${accountName} (${formatMessage(messages["snapshots.warning.multipleFinalCount"] ?? "", {
+                    count: account?.finalSnapshots ?? 0
+                })})`;
+            })
+            .filter((value) => value.length > 0)
+            .join(", ");
+}
+
+function renderFinalWarnings(data) {
+    if (!finalWarningPanel || !finalWarningContent) {
+        return;
+    }
+
+    if (data?.errorMessage) {
+        const message = document.createElement("p");
+        message.className = "snapshots-warning-heading";
+        message.textContent = data.errorMessage;
+        finalWarningContent.replaceChildren(message);
+        finalWarningPanel.hidden = false;
+        return;
+    }
+
+    const missingPeriods = Array.isArray(data?.missingFinalPeriods) ? data.missingFinalPeriods : [];
+    const multiplePeriods = Array.isArray(data?.multipleFinalPeriods) ? data.multipleFinalPeriods : [];
+    if (missingPeriods.length === 0 && multiplePeriods.length === 0) {
+        finalWarningPanel.hidden = true;
+        finalWarningContent.replaceChildren();
+        return;
+    }
+
+    const fragments = [];
+
+    if (missingPeriods.length > 0) {
+        const section = document.createElement("div");
+        const heading = document.createElement("p");
+        const list = document.createElement("ul");
+        heading.className = "snapshots-warning-heading";
+        heading.textContent = messages["snapshots.warning.missingFinal"] ?? "";
+        list.className = "snapshots-warning-list";
+        missingPeriods.forEach((period) => {
+            const item = document.createElement("li");
+            item.textContent = `${formatPeriodRange(period.periodStartDate, period.periodEndDate)}: ${formatWarningAccounts(period.accounts)}`;
+            list.append(item);
+        });
+        section.append(heading, list);
+        fragments.push(section);
+    }
+
+    if (multiplePeriods.length > 0) {
+        const section = document.createElement("div");
+        const heading = document.createElement("p");
+        const list = document.createElement("ul");
+        heading.className = "snapshots-warning-heading";
+        heading.textContent = messages["snapshots.warning.multipleFinal"] ?? "";
+        list.className = "snapshots-warning-list";
+        multiplePeriods.forEach((period) => {
+            const item = document.createElement("li");
+            item.textContent = `${formatPeriodRange(period.periodStartDate, period.periodEndDate)}: ${formatWarningAccounts(period.accounts, true)}`;
+            list.append(item);
+        });
+        section.append(heading, list);
+        fragments.push(section);
+    }
+
+    finalWarningContent.replaceChildren(...fragments);
+    finalWarningPanel.hidden = false;
 }
 
 function formatBalance(snapshot) {
@@ -311,7 +458,7 @@ async function ensureSnapshotFormController() {
         userSettings,
         onSuccess: async ({rememberAccountEnabled, resetForm, setFormMessage}) => {
             resetForm();
-            await loadSnapshots();
+            await reloadSnapshotsAndFinalWarnings();
             if (!rememberAccountEnabled) {
                 snapshotFormModal?.close();
                 return true;
@@ -356,7 +503,7 @@ async function ensureEditSnapshotFormController() {
         onSuccess: async () => {
             editSnapshotFormModal?.close();
             setListMessage(messages["snapshots.edit.success"] ?? "", "success");
-            await loadSnapshots();
+            await reloadSnapshotsAndFinalWarnings();
             return true;
         }
     })
@@ -396,7 +543,7 @@ async function ensureBulkSnapshotFormController() {
             bulkSnapshotFormModal?.close();
             const successMessageTemplate = messages["snapshots.bulk.success"] ?? "";
             setListMessage(formatMessage(successMessageTemplate, {count: savedSnapshots.length}), "success");
-            await loadSnapshots();
+            await reloadSnapshotsAndFinalWarnings();
         }
     })
         .then((controller) => {
@@ -553,6 +700,34 @@ async function loadSnapshots() {
     renderPagination(pageData);
 }
 
+async function reloadSnapshotsAndFinalWarnings() {
+    await loadSnapshots();
+    await loadFinalWarningsSafely();
+}
+
+async function loadFinalWarningsSafely() {
+    try {
+        await loadFinalWarnings();
+    } catch (error) {
+        console.warn("Cannot load FINAL snapshot warnings", error);
+        const warningData = {
+            errorMessage: error.message || messages["snapshots.warning.loadError"] || messages["snapshots.error.load"]
+        };
+        currentFinalWarnings = warningData;
+        renderFinalWarnings(warningData);
+    }
+}
+
+async function loadFinalWarnings() {
+    const response = await fetch("/api/snapshots/final-warnings");
+    if (!response.ok) {
+        throw new Error(messages["snapshots.warning.loadError"] ?? messages["snapshots.error.load"]);
+    }
+
+    currentFinalWarnings = await response.json();
+    renderFinalWarnings(currentFinalWarnings);
+}
+
 async function loadAccounts() {
     const response = await fetch("/api/accounts/snapshots");
     if (!response.ok) {
@@ -608,7 +783,7 @@ async function deleteSnapshot(id) {
 
 refreshButton.addEventListener("click", () => {
     setListMessage("");
-    loadSnapshots().catch((error) => {
+    reloadSnapshotsAndFinalWarnings().catch((error) => {
         setListMessage(error.message, "error");
     });
 });
@@ -734,13 +909,29 @@ newBulkSnapshotsActions.forEach((trigger) => {
     });
 });
 
+filterButton?.addEventListener("click", () => {
+    toggleFilterMenu();
+});
+
+document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest(".snapshots-filter-menu")) {
+        closeFilterMenu();
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeFilterMenu(true);
+    }
+});
+
 window.addEventListener("money-snapshot:shortcut-action-saved", (event) => {
     if (event.detail?.type !== "bulk-snapshots") {
         return;
     }
 
     setListMessage("");
-    loadSnapshots().catch((error) => {
+    reloadSnapshotsAndFinalWarnings().catch((error) => {
         setListMessage(error.message, "error");
     });
 });
@@ -758,7 +949,7 @@ deleteModal.confirmButton.addEventListener("click", async () => {
         await deleteSnapshot(selectedSnapshot.id);
         deleteModal.close();
         setListMessage(messages["snapshots.delete.success"], "success");
-        await loadSnapshots();
+        await reloadSnapshotsAndFinalWarnings();
     } catch (error) {
         deleteModal.close();
         setListMessage(error.message, "error");
@@ -781,10 +972,17 @@ MoneySnapshotI18n.init({
             editSnapshotFormController?.updateUserSettings(settings);
             bulkSnapshotFormController?.updateUserSettings(settings);
         })
+        .then(() => {
+            if (filterButton) {
+                filterButton.append(createFilterIcon());
+                MoneySnapshotUi.setTooltip(filterButton, filterButton.textContent.trim());
+            }
+        })
         .then(updateClearFiltersButton)
         .then(showBulkSnapshotSuccessMessage)
         .then(loadAccounts)
         .then(loadSnapshots)
+        .then(loadFinalWarningsSafely)
         .catch((error) => {
             renderEmpty(error.message);
         });

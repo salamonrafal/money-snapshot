@@ -183,6 +183,8 @@ public class ReportPdfService {
             try (PdfCanvas canvas = new PdfCanvas(document, regularFont, boldFont, request.title(), request.subtitle())) {
                 if ("line".equals(request.chartType())) {
                     drawLineChart(canvas, request.chart());
+                } else if ("billingCompare".equals(request.chartType())) {
+                    drawBillingComparisonChart(canvas, request.chart());
                 } else if ("pie".equals(request.chartType())) {
                     drawPieChart(canvas, request.chart());
                 }
@@ -305,6 +307,111 @@ public class ReportPdfService {
             return normalized;
         }
         return normalized.substring(0, Math.max(0, maxLength - 1)) + "…";
+    }
+
+    private void drawBillingComparisonChart(PdfCanvas canvas, JsonNode chart) throws IOException {
+        JsonNode rows = chart == null ? null : chart.path("rows");
+        if (rows == null || !rows.isArray() || rows.isEmpty()) {
+            return;
+        }
+        String periodChangeLabel = chart.path("periodChangeLabel").asText("Period change");
+        String differenceLabelText = chart.path("differenceLabel").asText("Difference");
+
+        double minValue = 0d;
+        double maxValue = 0d;
+        for (JsonNode row : rows) {
+            double periodChange = row.path("periodChange").asDouble(0d);
+            double difference = row.path("difference").asDouble(0d);
+            minValue = Math.min(minValue, Math.min(periodChange, difference));
+            maxValue = Math.max(maxValue, Math.max(periodChange, difference));
+        }
+        double valueRange = Math.max(1d, maxValue - minValue);
+
+        float chartH = 164f;
+        canvas.ensureSpace(chartH + 24f);
+        float chartX = MARGIN;
+        float chartY = canvas.currentY() - chartH;
+        float chartW = USABLE_WIDTH;
+        canvas.rect(chartX, chartY, chartW, chartH, WASH, LINE, true, true);
+
+        float plotX = chartX + 52f;
+        float plotY = chartY + 34f;
+        float plotW = chartW - 74f;
+        float plotH = chartH - 60f;
+        float zeroY = (float) (plotY + ((0d - minValue) * plotH) / valueRange);
+
+        canvas.line(plotX, plotY, plotX, plotY + plotH, LINE, 0.5f);
+        canvas.line(plotX, zeroY, plotX + plotW, zeroY, MUTED, 0.5f);
+        String zeroLabel = formatPdfAmount(0d);
+        String topLabel = maxValue == 0d ? "" : formatPdfChange(maxValue);
+        String bottomLabel = minValue == 0d ? "" : formatPdfChange(minValue);
+        if (!topLabel.isBlank()) {
+            canvas.text(topLabel, chartX + 8f, plotY + plotH - 3f, 7f, false, MUTED);
+        }
+        canvas.text(zeroLabel, chartX + 8f, zeroY - 3f, 7f, false, MUTED);
+        if (!bottomLabel.isBlank()) {
+            canvas.text(bottomLabel, chartX + 8f, plotY - 3f, 7f, false, MUTED);
+        }
+
+        int rowCount = rows.size();
+        float slotWidth = plotW / Math.max(1, rowCount);
+        float barWidth = Math.min(30f, Math.max(20f, slotWidth * 0.34f));
+
+        for (int index = 0; index < rowCount; index += 1) {
+            JsonNode row = rows.get(index);
+            double periodChange = row.path("periodChange").asDouble(0d);
+            double difference = row.path("difference").asDouble(0d);
+            float centerX = plotX + slotWidth * index + slotWidth / 2f;
+            float barX = centerX - barWidth / 2f;
+            float valueY = (float) (plotY + ((periodChange - minValue) * plotH) / valueRange);
+            float differenceY = (float) (plotY + ((difference - minValue) * plotH) / valueRange);
+            float barBottom = zeroY;
+            float barTop = valueY;
+            if (periodChange < 0d) {
+                barTop = zeroY;
+                barBottom = valueY;
+            }
+            canvas.rect(barX, Math.min(barTop, barBottom), barWidth, Math.max(1.5f, Math.abs(barBottom - barTop)), HEADER, null, true, false);
+            canvas.dashedLine(barX - 6f, differenceY, barX + barWidth + 6f, differenceY, new PdfColor(163, 59, 47), 1.5f, new float[]{4f, 3f});
+
+            String valueLabel = formatPdfChange(periodChange);
+            float valueLabelWidth = canvas.textWidth(valueLabel, 7f, true);
+            float valueLabelX = centerX - valueLabelWidth / 2f;
+            float barVisualTop = Math.max(barTop, barBottom);
+            float valueLabelY = Math.min(chartY + chartH - 18f, barVisualTop + 10f);
+            canvas.text(valueLabel, valueLabelX, valueLabelY, 7f, true, TEXT);
+
+            String periodLabel = trimLabel(row.path("periodLabel").asText(row.path("periodStartDate").asText("")), 18);
+            float periodLabelWidth = canvas.textWidth(periodLabel, 6.5f, true);
+            canvas.text(periodLabel, centerX - periodLabelWidth / 2f, chartY + 18f, 6.5f, true, TEXT);
+            String currencyCode = trimLabel(row.path("currencyCode").asText(""), 5);
+            float currencyWidth = canvas.textWidth(currencyCode, 6f, false);
+            canvas.text(currencyCode, centerX - currencyWidth / 2f, chartY + 8f, 6f, false, MUTED);
+        }
+
+        float legendBaselineY = chartY + chartH - 10f;
+        float legendFontSize = 7f;
+        float legendBarX = chartX + 14f;
+        float legendBarSize = 8f;
+        float legendFirstTextX = chartX + 28f;
+        float legendLineX1 = chartX + 144f;
+        float legendLineX2 = legendLineX1 + 16f;
+        float legendSecondTextX = chartX + 166f;
+        float legendSymbolCenterY = legendBaselineY + (legendFontSize * 0.28f);
+        canvas.rect(legendBarX, legendSymbolCenterY - (legendBarSize / 2f), legendBarSize, legendBarSize, HEADER, null, true, false);
+        canvas.text(periodChangeLabel, legendFirstTextX, legendBaselineY, legendFontSize, false, TEXT);
+        canvas.dashedLine(legendLineX1, legendSymbolCenterY, legendLineX2, legendSymbolCenterY, new PdfColor(163, 59, 47), 1.5f, new float[]{4f, 3f});
+        canvas.text(differenceLabelText, legendSecondTextX, legendBaselineY, legendFontSize, false, TEXT);
+
+        canvas.setCurrentY(chartY - 16f);
+    }
+
+    private String formatPdfChange(double value) {
+        return value > 0d ? "+" + formatPdfAmount(value) : formatPdfAmount(value);
+    }
+
+    private String formatPdfAmount(double value) {
+        return String.format(Locale.US, "%.2f", value);
     }
 
     private void drawPieChart(PdfCanvas canvas, JsonNode chart) throws IOException {
@@ -655,6 +762,16 @@ public class ReportPdfService {
             stream.moveTo(x1, y1);
             stream.lineTo(x2, y2);
             stream.stroke();
+        }
+
+        private void dashedLine(float x1, float y1, float x2, float y2, PdfColor color, float width, float[] dashPattern) throws IOException {
+            stream.setStrokingColor(color.awt());
+            stream.setLineWidth(width);
+            stream.setLineDashPattern(dashPattern, 0f);
+            stream.moveTo(x1, y1);
+            stream.lineTo(x2, y2);
+            stream.stroke();
+            stream.setLineDashPattern(new float[]{}, 0f);
         }
 
         private void rect(float x, float y, float width, float height, PdfColor fillColor, PdfColor strokeColor, boolean fill, boolean stroke) throws IOException {

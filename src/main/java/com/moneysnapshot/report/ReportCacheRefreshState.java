@@ -28,6 +28,9 @@ public class ReportCacheRefreshState {
     @Column(name = "last_error", length = 1000)
     private String lastError;
 
+    @Column(name = "billing_period_comparison_ready", nullable = false)
+    private boolean billingPeriodComparisonReady;
+
     protected ReportCacheRefreshState() {
     }
 
@@ -45,6 +48,10 @@ public class ReportCacheRefreshState {
         return dirty;
     }
 
+    public boolean isBillingPeriodComparisonReady() {
+        return billingPeriodComparisonReady;
+    }
+
     public void markDirty() {
         dirty = true;
         refreshRequestedAt = OffsetDateTime.now(ZoneOffset.UTC);
@@ -53,6 +60,7 @@ public class ReportCacheRefreshState {
 
     public void markRefreshed() {
         dirty = false;
+        billingPeriodComparisonReady = true;
         refreshedAt = OffsetDateTime.now(ZoneOffset.UTC);
         lastError = null;
     }
