@@ -329,7 +329,7 @@ public class ReportCacheRefreshService {
                 Comparator.comparing(PeriodKey::periodEnd).thenComparing(PeriodKey::periodStart)
         );
         Map<PeriodKey, Set<String>> currenciesByPeriod = new HashMap<>();
-        Map<String, AccountSnapshot> previousFinalByAccount = new HashMap<>();
+        Map<String, PreviousFinalSnapshot> previousFinalByAccount = new HashMap<>();
 
         snapshots.stream()
                 .filter(snapshot -> snapshot.getSnapshotType() == SnapshotType.FINAL)
@@ -342,15 +342,21 @@ public class ReportCacheRefreshService {
                     }
 
                     String accountKey = snapshot.getAccount().getId() + "|" + snapshot.getAccount().getCurrencyCode();
-                    AccountSnapshot previousFinal = previousFinalByAccount.put(accountKey, snapshot);
+                    PreviousFinalSnapshot previousFinal = previousFinalByAccount.put(
+                            accountKey,
+                            new PreviousFinalSnapshot(snapshot, period)
+                    );
                     if (previousFinal == null) {
+                        return;
+                    }
+                    if (!previousFinal.period().periodEnd().plusDays(1).equals(period.periodStart())) {
                         return;
                     }
 
                     changesByPeriod.computeIfAbsent(period, ignored -> new HashMap<>());
                     currenciesByPeriod.computeIfAbsent(period, ignored -> new TreeSet<>())
                             .add(snapshot.getAccount().getCurrencyCode());
-                    BigDecimal diff = snapshot.getBalance().subtract(previousFinal.getBalance());
+                    BigDecimal diff = snapshot.getBalance().subtract(previousFinal.snapshot().getBalance());
                     if (diff.compareTo(BigDecimal.ZERO) == 0) {
                         return;
                     }
@@ -482,6 +488,12 @@ public class ReportCacheRefreshService {
             LocalDate periodEnd,
             Set<String> currencies,
             Map<String, BigDecimal> changes
+    ) {
+    }
+
+    private record PreviousFinalSnapshot(
+            AccountSnapshot snapshot,
+            PeriodKey period
     ) {
     }
 

@@ -283,6 +283,39 @@ class ReportCacheRefreshServiceTest {
     }
 
     @Test
+    void refreshOwnerRejectsChangesSpanningMissingBillingPeriods() {
+        UUID ownerId = UUID.randomUUID();
+        AppUser owner = mock(AppUser.class);
+        ReportCacheRefreshState state = mock(ReportCacheRefreshState.class);
+        UUID accountId = UUID.randomUUID();
+        List<AccountSnapshot> snapshots = List.of(
+                finalSnapshot(accountId, LocalDate.of(2026, 1, 1), "100"),
+                finalSnapshot(accountId, LocalDate.of(2026, 3, 1), "130"),
+                finalSnapshot(accountId, LocalDate.of(2026, 4, 1), "140"),
+                finalSnapshot(accountId, LocalDate.of(2026, 5, 1), "160")
+        );
+
+        when(owner.getId()).thenReturn(ownerId);
+        when(appUserRepository.findByIdForUpdate(ownerId)).thenReturn(Optional.of(owner));
+        when(refreshStateRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(state));
+        when(snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId)).thenReturn(snapshots);
+
+        service.refreshOwner(ownerId);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<ReportBillingPeriodComparisonCache>> captor = ArgumentCaptor.forClass(List.class);
+        verify(billingPeriodComparisonCacheRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        ReportBillingPeriodComparisonCache row = captor.getValue().get(0);
+        assertThat(row.getPeriodStartDate()).isEqualTo(LocalDate.of(2026, 3, 2));
+        assertThat(row.getPeriodEndDate()).isEqualTo(LocalDate.of(2026, 4, 1));
+        assertThat(row.getPeriodChange()).isEqualByComparingTo("10");
+        assertThat(row.getReferenceStartDate()).isEqualTo(LocalDate.of(2026, 4, 2));
+        assertThat(row.getReferenceEndDate()).isEqualTo(LocalDate.of(2026, 5, 1));
+        assertThat(row.getReferenceChange()).isEqualByComparingTo("20");
+    }
+
+    @Test
     void refreshOwnerExcludesUnfinishedPeriodFromBillingComparison() {
         UUID ownerId = UUID.randomUUID();
         AppUser owner = mock(AppUser.class);
@@ -373,12 +406,11 @@ class ReportCacheRefreshServiceTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ReportBillingPeriodComparisonCache>> captor = ArgumentCaptor.forClass(List.class);
         verify(billingPeriodComparisonCacheRepository).saveAll(captor.capture());
-        assertThat(captor.getValue()).hasSize(6);
+        assertThat(captor.getValue()).hasSize(5);
         assertThat(captor.getValue())
                 .extracting(ReportBillingPeriodComparisonCache::getPeriodStartDate)
                 .containsExactly(
                         LocalDate.of(2026, 4, 1),
-                        LocalDate.of(2026, 3, 1),
                         LocalDate.of(2026, 1, 1),
                         LocalDate.of(2025, 12, 1),
                         LocalDate.of(2025, 11, 1),
@@ -388,7 +420,6 @@ class ReportCacheRefreshServiceTest {
                 .extracting(ReportBillingPeriodComparisonCache::getPeriodEndDate)
                 .containsExactly(
                         LocalDate.of(2026, 4, 30),
-                        LocalDate.of(2026, 3, 31),
                         LocalDate.of(2026, 1, 31),
                         LocalDate.of(2025, 12, 31),
                         LocalDate.of(2025, 11, 30),
