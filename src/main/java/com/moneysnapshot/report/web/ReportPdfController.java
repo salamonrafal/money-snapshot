@@ -38,6 +38,7 @@ public class ReportPdfController {
     private static final Set<String> SUPPORTED_SECTION_KEYS = Set.of(
             "summary",
             "overview",
+            "billingComparison",
             "averageContributions",
             "planning",
             "history"

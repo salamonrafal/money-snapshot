@@ -3,6 +3,7 @@ package com.moneysnapshot.snapshot.web;
 import com.moneysnapshot.account.AccountNotFoundException;
 import com.moneysnapshot.snapshot.AccountSnapshotNotFoundException;
 import com.moneysnapshot.snapshot.AccountSnapshotService;
+import com.moneysnapshot.snapshot.SnapshotFinalWarningQueryService;
 import com.moneysnapshot.snapshot.DuplicateAccountSnapshotException;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -31,9 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountSnapshotController {
 
     private final AccountSnapshotService snapshotService;
+    private final SnapshotFinalWarningQueryService snapshotFinalWarningQueryService;
 
-    public AccountSnapshotController(AccountSnapshotService snapshotService) {
+    public AccountSnapshotController(
+            AccountSnapshotService snapshotService,
+            SnapshotFinalWarningQueryService snapshotFinalWarningQueryService
+    ) {
         this.snapshotService = snapshotService;
+        this.snapshotFinalWarningQueryService = snapshotFinalWarningQueryService;
     }
 
     @GetMapping
@@ -58,6 +64,11 @@ public class AccountSnapshotController {
     @GetMapping("/{id}")
     public AccountSnapshotResponse getSnapshot(@PathVariable UUID id) {
         return AccountSnapshotResponse.from(snapshotService.getSnapshot(id));
+    }
+
+    @GetMapping("/final-warnings")
+    public SnapshotFinalWarningsResponse finalWarnings() {
+        return snapshotFinalWarningQueryService.warnings();
     }
 
     @PostMapping
