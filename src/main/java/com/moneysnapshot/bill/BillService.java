@@ -145,6 +145,7 @@ public class BillService {
         Counterparty counterparty = counterpartyRepository.findByIdAndOwnerId(request.counterpartyId(), ownerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Counterparty not found."));
         boolean scheduleStructureChanged = scheduleStructureChanged(bill, request, account);
+        boolean repaymentDayChanged = !Objects.equals(bill.getRepaymentDay(), request.repaymentDay());
 
         bill.updateDetails(
                 counterparty,
@@ -171,7 +172,9 @@ public class BillService {
         // Status-only transitions are intentionally non-destructive. Regenerate
         // the schedule only when the schedule structure changes.
         if (scheduleStructureChanged && saved.getStatus() != BillStatus.COMPLETED) {
-            eventPublisher.publishEvent(new BillScheduleRegenerationRequestedEvent(saved.getId(), true));
+            LocalDate effectiveFrom = repaymentDayChanged
+                    ? LocalDate.now(clock).withDayOfMonth(1).plusMonths(1) : null;
+            eventPublisher.publishEvent(new BillScheduleRegenerationRequestedEvent(saved.getId(), true, effectiveFrom));
         }
         return saved;
     }

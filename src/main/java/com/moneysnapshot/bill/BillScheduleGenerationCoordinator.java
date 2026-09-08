@@ -14,7 +14,9 @@ public class BillScheduleGenerationCoordinator {
 
     @EventListener
     public void onBillScheduleRegenerationRequested(BillScheduleRegenerationRequestedEvent event) {
-        if (event.regenerateFromCurrentDate()) {
+        if (event.effectiveFrom() != null) {
+            billScheduleService.regenerateScheduleFromDate(event.billId(), event.effectiveFrom());
+        } else if (event.regenerateFromCurrentDate()) {
             billScheduleService.regenerateScheduleFromCurrentDate(event.billId());
         } else {
             billScheduleService.regenerateSchedule(event.billId());

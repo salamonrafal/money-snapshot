@@ -310,6 +310,57 @@ class BillScheduleServiceTest {
         verify(billScheduleEntryRepository, never()).deleteByBillId(any());
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "5, 6, true", "5, 6, false", "20, 5, false", "5, 31, true"
+    })
+    void repaymentDayEditPreservesCurrentMonthAndDoesNotBackfillDuplicate(int oldDay, int newDay, boolean paid) {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+        Bank bank = new Bank(owner, "Bank", "bank");
+        Account account = new Account(bank, owner, "Account", "account", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        var counterparty = new com.moneysnapshot.counterparty.Counterparty(owner, "Provider", "provider",
+                "12121212121212121212121212121212", null, null);
+        Bill bill = new Bill(owner, counterparty, account, "Internet", "internet", "PLN", new BigDecimal("100"),
+                BillDurationType.OPEN_ENDED, null, null, newDay, LocalDate.of(2026, 8, 1), BillStatus.ACTIVE);
+        ReflectionTestUtils.setField(bill, "id", billId);
+        var historical = new BillScheduleEntry(owner, bill, 1, LocalDate.of(2026, 8, oldDay), new BigDecimal("90"), "PLN");
+        var current = new BillScheduleEntry(owner, bill, 2, LocalDate.of(2026, 9, oldDay), new BigDecimal("90"), "PLN");
+        current.setPaid(paid);
+        var paidAt = current.getPaidAt();
+        List<BillScheduleEntry> stored = new ArrayList<>(List.of(historical, current));
+        when(billRepository.findByIdWithAccountAndCounterparty(billId)).thenReturn(Optional.of(bill));
+        when(billScheduleEntryRepository.findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(billId))
+                .thenAnswer(invocation -> List.copyOf(stored));
+        when(billScheduleEntryRepository.saveAll(any())).thenAnswer(invocation -> {
+            List<BillScheduleEntry> added = invocation.getArgument(0);
+            stored.addAll(added);
+            return added;
+        });
+        var service = new BillScheduleService(billRepository, billScheduleEntryRepository, currentUserService,
+                Clock.fixed(Instant.parse("2026-09-08T09:00:00Z"), ZoneId.of("Europe/Warsaw")));
+
+        service.regenerateScheduleFromDate(billId, LocalDate.of(2026, 10, 1));
+
+        verify(billScheduleEntryRepository).deleteByBillIdAndDueDateGreaterThanEqualAndPaidFalse(billId, LocalDate.of(2026, 10, 1));
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)).thenReturn(List.of(bill));
+        when(billRepository.findByIdAndOwnerIdForUpdate(billId, ownerId)).thenReturn(Optional.of(bill));
+        service.listUpcomingPayments(PERIOD_START, PERIOD_END);
+        service.listUpcomingPayments(PERIOD_START, PERIOD_END);
+
+        assertThat(stored).hasSize(14);
+        assertThat(stored.subList(0, 2)).containsExactly(historical, current);
+        assertThat(historical.getDueDate()).isEqualTo(LocalDate.of(2026, 8, oldDay));
+        assertThat(current.getDueDate()).isEqualTo(LocalDate.of(2026, 9, oldDay));
+        assertThat(current.isPaid()).isEqualTo(paid);
+        assertThat(current.getPaidAt()).isEqualTo(paidAt);
+        assertThat(current.getAmount()).isEqualByComparingTo("90");
+        assertThat(stored.get(2).getDueDate()).isEqualTo(LocalDate.of(2026, 10, newDay));
+        assertThat(stored.get(6).getDueDate()).isEqualTo(LocalDate.of(2027, 2, Math.min(newDay, 28)));
+    }
+
     @Test
     void regenerateScheduleCreatesTwelveUpcomingEntriesForOpenEndedBill() {
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);

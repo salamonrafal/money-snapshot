@@ -378,7 +378,8 @@ class BillServiceTest {
         assertThat(updated.getStatus()).isEqualTo(BillStatus.SUSPENDED);
         verify(billRepository).save(existingBill);
         verify(eventPublisher).publishEvent(argThat((Object event) -> event instanceof BillScheduleRegenerationRequestedEvent changedEvent
-                && changedEvent.regenerateFromCurrentDate()));
+                && changedEvent.regenerateFromCurrentDate()
+                && changedEvent.effectiveFrom().equals(LocalDate.now().withDayOfMonth(1).plusMonths(1))));
         verify(billRepository).flush();
     }
 
