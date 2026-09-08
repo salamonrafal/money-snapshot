@@ -133,6 +133,9 @@ public class BillService {
         validateRequest(request);
         UUID ownerId = currentUserService.currentUserId();
         Bill bill = getBill(id);
+        if (!Objects.equals(bill.getRepaymentDay(), request.repaymentDay())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Repayment day cannot be changed for an existing bill.");
+        }
         String normalizedName = normalizer.normalize(request.name());
         billRepository.findByOwnerIdAndNormalizedName(ownerId, normalizedName)
                 .filter(existing -> !existing.getId().equals(id))

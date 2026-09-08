@@ -422,6 +422,14 @@ function renderBillReferenceOptions() {
 }
 
 function setBillModalMode(isEdit) {
+    const repaymentDay = billForm?.elements.namedItem("repaymentDay");
+    if (repaymentDay) {
+        repaymentDay.readOnly = isEdit;
+    }
+    const repaymentDayInfo = document.querySelector("#bill-repayment-day-info");
+    if (repaymentDayInfo) {
+        repaymentDayInfo.hidden = !isEdit;
+    }
     if (!billFormModalTitle) {
         return;
     }
@@ -661,6 +669,10 @@ async function saveBill(payload) {
 
     if (response.status === 400 && errorPayload?.message === "End date must be on or after start date.") {
         throw new Error(billsMessages["bills.form.error.endDateBeforeStartDate"] ?? errorPayload.message);
+    }
+
+    if (response.status === 400 && errorPayload?.message === "Repayment day cannot be changed for an existing bill.") {
+        throw new Error(billsMessages["bills.form.repaymentDayLocked"] ?? errorPayload.message);
     }
 
     if (response.status === 409) {

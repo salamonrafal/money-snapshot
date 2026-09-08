@@ -83,6 +83,11 @@ public class PageController {
         return "bills";
     }
 
+    @GetMapping("/bills/upcoming-payments.html")
+    public String upcomingBillPayments() {
+        return "upcoming-bill-payments";
+    }
+
     @GetMapping("/bills/new.html")
     public String newBill() {
         return "bill-form";

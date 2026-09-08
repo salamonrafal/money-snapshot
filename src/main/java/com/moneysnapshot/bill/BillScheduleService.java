@@ -3,10 +3,12 @@ package com.moneysnapshot.bill;
 import com.moneysnapshot.bill.web.BillScheduleEntryResponse;
 import com.moneysnapshot.bill.web.BillScheduleSummaryResponse;
 import com.moneysnapshot.bill.web.PagedBillScheduleResponse;
+import com.moneysnapshot.bill.web.UpcomingBillPaymentResponse;
 import com.moneysnapshot.security.CurrentUserService;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -60,9 +62,14 @@ public class BillScheduleService {
 
     @Transactional
     public void regenerateScheduleFromCurrentDate(UUID billId) {
+        regenerateScheduleFromDate(billId, LocalDate.now(clock));
+    }
+
+    @Transactional
+    public void regenerateScheduleFromDate(UUID billId, LocalDate effectiveFrom) {
         Bill bill = billRepository.findByIdWithAccountAndCounterparty(billId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bill not found."));
-        regenerateSchedule(bill, true);
+        regenerateSchedule(bill, true, effectiveFrom);
     }
 
     @Transactional
@@ -105,8 +112,55 @@ public class BillScheduleService {
         return BillScheduleEntryResponse.from(billScheduleEntryRepository.save(entry));
     }
 
+    @Transactional
+    public List<UpcomingBillPaymentResponse> listUpcomingPayments(LocalDate periodStart, LocalDate periodEnd) {
+        UUID ownerId = currentUserService.currentUserId();
+        for (Bill bill : billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)) {
+            if (bill.getStatus() != BillStatus.ACTIVE) {
+                continue;
+            }
+            if (bill.getDurationType() == BillDurationType.OPEN_ENDED) {
+                ensureOpenEndedPaymentsInPeriod(bill, ownerId, periodStart, periodEnd);
+            } else if (billScheduleEntryRepository.countByBillId(bill.getId()) == 0) {
+                regenerateSchedule(bill, false);
+            }
+        }
+        return billScheduleEntryRepository.findPendingByOwnerId(ownerId, periodStart, periodEnd).stream()
+                .map(UpcomingBillPaymentResponse::from)
+                .toList();
+    }
+
+    private void ensureOpenEndedPaymentsInPeriod(Bill bill, UUID ownerId, LocalDate periodStart, LocalDate periodEnd) {
+        billRepository.findByIdAndOwnerIdForUpdate(bill.getId(), ownerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bill not found."));
+        List<BillScheduleEntry> existing = billScheduleEntryRepository
+                .findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(bill.getId());
+        // A monthly payment keeps covering its month after a repayment-day edit.
+        Set<YearMonth> existingMonths = existing.stream()
+                .map(entry -> YearMonth.from(entry.getDueDate()))
+                .collect(Collectors.toSet());
+        int nextNumber = existing.stream().mapToInt(BillScheduleEntry::getInstallmentNumber).max().orElse(0) + 1;
+        LocalDate start = regenerationReferenceDate(bill, periodStart);
+        List<BillScheduleEntry> missing = new ArrayList<>();
+        for (int monthOffset = 0; ; monthOffset++) {
+            LocalDate dueDate = dueDateForMonth(start, monthOffset, bill.getRepaymentDay());
+            if (dueDate.isAfter(periodEnd)) {
+                break;
+            }
+            if (!dueDate.isBefore(start) && !existingMonths.contains(YearMonth.from(dueDate))) {
+                missing.add(createEntry(bill, nextNumber++, dueDate));
+            }
+        }
+        if (!missing.isEmpty()) {
+            billScheduleEntryRepository.saveAll(missing);
+        }
+    }
+
     private void regenerateSchedule(Bill bill, boolean fromCurrentDate) {
-        LocalDate today = LocalDate.now(clock);
+        regenerateSchedule(bill, fromCurrentDate, LocalDate.now(clock));
+    }
+
+    private void regenerateSchedule(Bill bill, boolean fromCurrentDate, LocalDate today) {
         if (!fromCurrentDate) {
             billScheduleEntryRepository.deleteByBillId(bill.getId());
             billScheduleEntryRepository.flush();
@@ -128,21 +182,20 @@ public class BillScheduleService {
     }
 
     private List<BillScheduleEntry> filterOutPreservedInstallments(Bill bill, LocalDate today, List<BillScheduleEntry> entries) {
-        Set<LocalDate> preservedDueDates = billScheduleEntryRepository
+        Set<YearMonth> preservedMonths = billScheduleEntryRepository
                 .findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(bill.getId())
                 .stream()
                 .filter(entry -> entry.isPaid() || entry.getDueDate().isBefore(today))
-                // Structural edits can remap installment numbers to different months.
-                // Preserve only rows that still point to the same due date.
-                .map(BillScheduleEntry::getDueDate)
+                // A paid monthly installment remains covered even if its day changes.
+                .map(entry -> YearMonth.from(entry.getDueDate()))
                 .collect(Collectors.toSet());
 
-        if (preservedDueDates.isEmpty()) {
+        if (preservedMonths.isEmpty()) {
             return entries;
         }
 
         return entries.stream()
-                .filter(entry -> !preservedDueDates.contains(entry.getDueDate()))
+                .filter(entry -> !preservedMonths.contains(YearMonth.from(entry.getDueDate())))
                 .toList();
     }
 
@@ -169,7 +222,7 @@ public class BillScheduleService {
         return (int) Math.max(OPEN_ENDED_SCHEDULE_LENGTH, missingEntries);
     }
 
-    private void appendOpenEndedScheduleEntries(Bill bill, UUID ownerId, LocalDate today, int entriesToGenerate, boolean bootstrap) {
+    private void appendOpenEndedScheduleEntries(Bill bill, UUID ownerId, LocalDate minimumDueDate, int entriesToGenerate, boolean bootstrap) {
         if (bill.getStatus() == BillStatus.COMPLETED) {
             return;
         }
@@ -183,13 +236,15 @@ public class BillScheduleService {
                 return;
             }
         }
-        int nextInstallmentNumber = lastEntry == null ? 1 : lastEntry.getInstallmentNumber() + 1;
+        // Period backfills can have higher numbers than the chronologically last row.
+        int nextInstallmentNumber = Math.max(lastEntry == null ? 0 : lastEntry.getInstallmentNumber(),
+                billScheduleEntryRepository.findMaxInstallmentNumberByBillId(bill.getId())) + 1;
         LocalDate referenceDate = lastEntry == null
-                ? regenerationReferenceDate(bill, today)
+                ? regenerationReferenceDate(bill, minimumDueDate)
                 : lastEntry.getDueDate().plusDays(1);
         List<BillScheduleEntry> entries = buildOpenEndedScheduleEntriesFromReferenceDate(
                 bill,
-                today,
+                minimumDueDate,
                 referenceDate,
                 nextInstallmentNumber,
                 entriesToGenerate
@@ -216,7 +271,7 @@ public class BillScheduleService {
         int installmentNumber = 1;
         LocalDate referenceDate = fromCurrentDate ? regenerationReferenceDate(bill, today) : bill.getStartFrom();
         if (fromCurrentDate) {
-            installmentNumber = countScheduleEntriesBefore(bill, referenceDate) + 1;
+            installmentNumber = nextInstallmentNumberAfterPreservedEntries(bill, referenceDate);
         }
         List<BillScheduleEntry> entries = new ArrayList<>(Math.max(installmentCount - installmentNumber + 1, 0));
 
@@ -239,8 +294,8 @@ public class BillScheduleService {
         }
 
         List<BillScheduleEntry> entries = new ArrayList<>();
-        int installmentNumber = fromCurrentDate ? countScheduleEntriesBefore(bill, regenerationReferenceDate(bill, today)) + 1 : 1;
         LocalDate referenceDate = fromCurrentDate ? regenerationReferenceDate(bill, today) : bill.getStartFrom();
+        int installmentNumber = fromCurrentDate ? nextInstallmentNumberAfterPreservedEntries(bill, referenceDate) : 1;
 
         for (int monthOffset = 0; ; monthOffset += 1) {
             LocalDate dueDate = dueDateForMonth(referenceDate, monthOffset, bill.getRepaymentDay());
@@ -264,14 +319,21 @@ public class BillScheduleService {
                 bill,
                 today,
                 referenceDate,
-                fromCurrentDate ? countScheduleEntriesBefore(bill, referenceDate) + 1 : 1,
+                fromCurrentDate ? nextInstallmentNumberAfterPreservedEntries(bill, referenceDate) : 1,
                 OPEN_ENDED_SCHEDULE_LENGTH
         );
     }
 
+    private int nextInstallmentNumberAfterPreservedEntries(Bill bill, LocalDate referenceDate) {
+        return Math.max(
+                countScheduleEntriesBefore(bill, referenceDate),
+                billScheduleEntryRepository.findMaxInstallmentNumberByBillId(bill.getId())
+        ) + 1;
+    }
+
     private List<BillScheduleEntry> buildOpenEndedScheduleEntriesFromReferenceDate(
             Bill bill,
-            LocalDate today,
+            LocalDate minimumDueDate,
             LocalDate referenceDate,
             int startingInstallmentNumber,
             int entriesToGenerate
@@ -281,7 +343,7 @@ public class BillScheduleService {
 
         for (int monthOffset = 0; entries.size() < entriesToGenerate; monthOffset += 1) {
             LocalDate dueDate = dueDateForMonth(referenceDate, monthOffset, bill.getRepaymentDay());
-            if (dueDate.isBefore(referenceDate) || dueDate.isBefore(today)) {
+            if (dueDate.isBefore(referenceDate) || dueDate.isBefore(minimumDueDate)) {
                 continue;
             }
 

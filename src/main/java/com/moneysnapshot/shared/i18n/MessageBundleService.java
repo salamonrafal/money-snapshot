@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 public class MessageBundleService {
 
     private static final Set<String> COMMON_KEYS = Set.of(
+            "home.feature.bills.upcomingAction",
             "app.name",
             "common.close",
             "common.shortcuts.close",
@@ -780,6 +781,7 @@ public class MessageBundleService {
             "bills.form.endDate",
             "bills.form.installments",
             "bills.form.repaymentDay",
+            "bills.form.repaymentDayLocked",
             "bills.form.startFrom",
             "bills.form.counterparty",
             "bills.form.normalizedName",
@@ -1087,6 +1089,9 @@ public class MessageBundleService {
             "bills.status.SUSPENDED",
             "bills.status.COMPLETED",
             "billSchedule.heading.eyebrow",
+            "upcomingPayments.title",
+            "upcomingPayments.subtitle",
+            "upcomingPayments.empty",
             "billSchedule.heading.title",
             "billSchedule.heading.subtitle",
             "billSchedule.summary.title",
