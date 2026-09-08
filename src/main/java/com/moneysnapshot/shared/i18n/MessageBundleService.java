@@ -781,6 +781,7 @@ public class MessageBundleService {
             "bills.form.endDate",
             "bills.form.installments",
             "bills.form.repaymentDay",
+            "bills.form.repaymentDayLocked",
             "bills.form.startFrom",
             "bills.form.counterparty",
             "bills.form.normalizedName",

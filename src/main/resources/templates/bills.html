@@ -164,10 +164,20 @@
                             <option value="OPEN_ENDED" data-i18n="bills.form.durationModeOpenEnded">Bezterminowo</option>
                         </select>
                     </label>
-                    <label class="field">
-                        <span class="field-label"><span data-i18n="bills.form.repaymentDay">Dzień spłaty</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <input type="number" name="repaymentDay" min="1" max="31" step="1" required>
-                    </label>
+                    <div class="field">
+                        <div class="field-label bill-repayment-day-label">
+                            <label for="bill-repayment-day"><span data-i18n="bills.form.repaymentDay">Dzień spłaty</span><span class="required-mark" aria-hidden="true">*</span></label>
+                            <button type="button" id="bill-repayment-day-info" class="bill-field-help"
+                                    data-i18n-title="bills.form.repaymentDayLocked"
+                                    data-i18n-aria-label="bills.form.repaymentDayLocked" hidden>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5M12 16h.01"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <input id="bill-repayment-day" type="number" name="repaymentDay" min="1" max="31" step="1" required>
+                    </div>
                     <label class="field" id="bill-end-date-field">
                         <span class="field-label"><span data-i18n="bills.form.endDate">Do daty</span><span class="required-mark" aria-hidden="true">*</span></span>
                         <input type="date" name="endDate" required>

@@ -1,3 +1,43 @@
+.bill-repayment-day-label,
+.bill-repayment-day-label > label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.5;
+}
+
+.bill-field-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    align-self: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: help;
+}
+
+.bill-field-help[hidden] {
+    display: none;
+}
+
+.bill-field-help svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.bill-field-help:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
 .upcoming-payments-panel {
     margin-top: 40px;
 }

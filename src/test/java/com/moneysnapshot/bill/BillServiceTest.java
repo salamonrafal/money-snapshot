@@ -323,6 +323,34 @@ class BillServiceTest {
     }
 
     @Test
+    void updateBillRejectsRepaymentDayChangeBeforeMutatingBill() {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        Bill existingBill = new Bill(null, null, null, "Bill", "bill", "PLN",
+                new BigDecimal("10.00"), BillDurationType.INSTALLMENTS, null, 3,
+                20, LocalDate.of(2026, 9, 10), BillStatus.ACTIVE);
+        BillService service = new BillService(billRepository, billScheduleEntryRepository,
+                accountRepository, counterpartyRepository, normalizer, currentUserService, eventPublisher);
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findByIdAndOwnerId(billId, ownerId)).thenReturn(Optional.of(existingBill));
+        CreateBillRequest request = new CreateBillRequest("Changed", new BigDecimal("20.00"),
+                BillDurationType.INSTALLMENTS, null, 3, 5, LocalDate.of(2026, 9, 10),
+                UUID.randomUUID(), UUID.randomUUID(), BillStatus.ACTIVE);
+
+        assertThatThrownBy(() -> service.updateBill(billId, request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400 BAD_REQUEST")
+                .hasMessageContaining("Repayment day cannot be changed for an existing bill.");
+        assertThat(existingBill.getRepaymentDay()).isEqualTo(20);
+        assertThat(existingBill.getName()).isEqualTo("Bill");
+        assertThat(existingBill.getAmount()).isEqualByComparingTo("10.00");
+        verify(billRepository, never()).save(any());
+        verify(billRepository, never()).flush();
+        verify(eventPublisher, never()).publishEvent(any());
+        org.mockito.Mockito.verifyNoInteractions(billScheduleEntryRepository);
+    }
+
+    @Test
     void updateBillReplacesCurrentValues() {
         UUID ownerId = UUID.randomUUID();
         UUID billId = UUID.randomUUID();
@@ -355,7 +383,7 @@ class BillServiceTest {
                 BillDurationType.INSTALLMENTS,
                 null,
                 12,
-                12,
+                3,
                 LocalDate.of(2026, 1, 12),
                 counterpartyId,
                 accountId,
@@ -374,12 +402,12 @@ class BillServiceTest {
 
         assertThat(updated.getName()).isEqualTo("Energia");
         assertThat(updated.getInstallmentCount()).isEqualTo(12);
-        assertThat(updated.getRepaymentDay()).isEqualTo(12);
+        assertThat(updated.getRepaymentDay()).isEqualTo(3);
         assertThat(updated.getStatus()).isEqualTo(BillStatus.SUSPENDED);
         verify(billRepository).save(existingBill);
         verify(eventPublisher).publishEvent(argThat((Object event) -> event instanceof BillScheduleRegenerationRequestedEvent changedEvent
                 && changedEvent.regenerateFromCurrentDate()
-                && changedEvent.effectiveFrom().equals(LocalDate.now().withDayOfMonth(1).plusMonths(1))));
+                && changedEvent.effectiveFrom() == null));
         verify(billRepository).flush();
     }
 
@@ -416,7 +444,7 @@ class BillServiceTest {
                 BillDurationType.INSTALLMENTS,
                 null,
                 12,
-                12,
+                3,
                 LocalDate.of(2026, 1, 12),
                 counterpartyId,
                 accountId,
