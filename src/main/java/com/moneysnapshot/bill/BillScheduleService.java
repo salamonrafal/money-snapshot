@@ -271,7 +271,7 @@ public class BillScheduleService {
         int installmentNumber = 1;
         LocalDate referenceDate = fromCurrentDate ? regenerationReferenceDate(bill, today) : bill.getStartFrom();
         if (fromCurrentDate) {
-            installmentNumber = countScheduleEntriesBefore(bill, referenceDate) + 1;
+            installmentNumber = nextInstallmentNumberAfterPreservedEntries(bill, referenceDate);
         }
         List<BillScheduleEntry> entries = new ArrayList<>(Math.max(installmentCount - installmentNumber + 1, 0));
 
@@ -294,8 +294,8 @@ public class BillScheduleService {
         }
 
         List<BillScheduleEntry> entries = new ArrayList<>();
-        int installmentNumber = fromCurrentDate ? countScheduleEntriesBefore(bill, regenerationReferenceDate(bill, today)) + 1 : 1;
         LocalDate referenceDate = fromCurrentDate ? regenerationReferenceDate(bill, today) : bill.getStartFrom();
+        int installmentNumber = fromCurrentDate ? nextInstallmentNumberAfterPreservedEntries(bill, referenceDate) : 1;
 
         for (int monthOffset = 0; ; monthOffset += 1) {
             LocalDate dueDate = dueDateForMonth(referenceDate, monthOffset, bill.getRepaymentDay());
@@ -319,10 +319,16 @@ public class BillScheduleService {
                 bill,
                 today,
                 referenceDate,
-                fromCurrentDate ? Math.max(countScheduleEntriesBefore(bill, referenceDate),
-                        billScheduleEntryRepository.findMaxInstallmentNumberByBillId(bill.getId())) + 1 : 1,
+                fromCurrentDate ? nextInstallmentNumberAfterPreservedEntries(bill, referenceDate) : 1,
                 OPEN_ENDED_SCHEDULE_LENGTH
         );
+    }
+
+    private int nextInstallmentNumberAfterPreservedEntries(Bill bill, LocalDate referenceDate) {
+        return Math.max(
+                countScheduleEntriesBefore(bill, referenceDate),
+                billScheduleEntryRepository.findMaxInstallmentNumberByBillId(bill.getId())
+        ) + 1;
     }
 
     private List<BillScheduleEntry> buildOpenEndedScheduleEntriesFromReferenceDate(

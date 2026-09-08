@@ -794,6 +794,77 @@ class BillScheduleServiceTest {
     }
 
     @Test
+    void regenerateScheduleFromCurrentDateStartsInstallmentsAfterBackfilledMaxNumber() {
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        Account account = new Account(bank, owner, "Personal PLN", "personal-pln", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+
+        com.moneysnapshot.counterparty.Counterparty counterparty = new com.moneysnapshot.counterparty.Counterparty(
+                owner,
+                "Orange Polska",
+                "orange-polska",
+                "12121212121212121212121212",
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(counterparty, "id", UUID.randomUUID());
+
+        Bill bill = new Bill(
+                owner,
+                counterparty,
+                account,
+                "Internet domowy",
+                "internet-domowy",
+                "PLN",
+                new BigDecimal("189.99"),
+                BillDurationType.INSTALLMENTS,
+                null,
+                24,
+                5,
+                LocalDate.of(2026, 9, 1),
+                BillStatus.ACTIVE
+        );
+        UUID billId = UUID.randomUUID();
+        ReflectionTestUtils.setField(bill, "id", billId);
+
+        BillScheduleEntry historicalBackfill = new BillScheduleEntry(
+                owner,
+                bill,
+                13,
+                LocalDate.of(2026, 9, 5),
+                new BigDecimal("189.99"),
+                "PLN"
+        );
+
+        BillScheduleService service = new BillScheduleService(
+                billRepository,
+                billScheduleEntryRepository,
+                currentUserService,
+                Clock.fixed(Instant.parse("2026-09-08T09:00:00Z"), ZoneId.of("Europe/Warsaw"))
+        );
+
+        when(billRepository.findByIdWithAccountAndCounterparty(billId)).thenReturn(Optional.of(bill));
+        when(billScheduleEntryRepository.findMaxInstallmentNumberByBillId(billId)).thenReturn(13);
+        when(billScheduleEntryRepository.findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(billId))
+                .thenReturn(List.of(historicalBackfill));
+
+        service.regenerateScheduleFromCurrentDate(billId);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<BillScheduleEntry>> entriesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(billScheduleEntryRepository).saveAll(entriesCaptor.capture());
+        List<BillScheduleEntry> entries = entriesCaptor.getValue();
+
+        assertThat(entries).hasSize(11);
+        assertThat(entries.get(0).getInstallmentNumber()).isEqualTo(14);
+        assertThat(entries.get(0).getDueDate()).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThat(entries.get(10).getInstallmentNumber()).isEqualTo(24);
+        assertThat(entries.get(10).getDueDate()).isEqualTo(LocalDate.of(2027, 8, 5));
+    }
+
+    @Test
     void regenerateScheduleFromCurrentDateKeepsUntilDateInstallmentNumberingAfterPastEntries() {
         AppUser owner = org.mockito.Mockito.mock(AppUser.class);
         Bank bank = new Bank(owner, "Main bank", "main-bank");
