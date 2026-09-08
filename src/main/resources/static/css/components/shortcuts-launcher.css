@@ -120,6 +120,10 @@
     box-shadow: 0 0 0 2px var(--background);
 }
 
+.shortcuts-launcher-events-badge[hidden] {
+    display: none;
+}
+
 .shortcuts-events-panel {
     position: absolute;
     left: 0;

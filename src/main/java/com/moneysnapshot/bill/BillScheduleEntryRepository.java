@@ -16,6 +16,19 @@ import org.springframework.data.repository.query.Param;
 public interface BillScheduleEntryRepository extends JpaRepository<BillScheduleEntry, UUID> {
 
     @Query("""
+            select entry from BillScheduleEntry entry
+            join fetch entry.bill bill
+            join fetch bill.account
+            join fetch bill.counterparty
+            where entry.owner.id = :ownerId and bill.owner.id = :ownerId
+              and entry.paid = false and bill.status = com.moneysnapshot.bill.BillStatus.ACTIVE
+              and entry.dueDate between :periodStart and :periodEnd
+            order by entry.dueDate asc, bill.name asc, entry.id asc
+            """)
+    List<BillScheduleEntry> findPendingByOwnerId(@Param("ownerId") UUID ownerId,
+            @Param("periodStart") LocalDate periodStart, @Param("periodEnd") LocalDate periodEnd);
+
+    @Query("""
             select entry
             from BillScheduleEntry entry
             where entry.bill.id = :billId

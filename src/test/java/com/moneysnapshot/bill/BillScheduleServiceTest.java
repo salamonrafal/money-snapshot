@@ -31,6 +31,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class BillScheduleServiceTest {
+    private static final LocalDate PERIOD_START = LocalDate.of(2026, 8, 11);
+    private static final LocalDate PERIOD_END = LocalDate.of(2026, 9, 10);
 
     @Mock
     private BillRepository billRepository;
@@ -40,6 +42,218 @@ class BillScheduleServiceTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Test
+    void upcomingPaymentsUseCurrentOwnerAndIncludeBillDetails() {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        Bill bill = org.mockito.Mockito.mock(Bill.class);
+        Account account = org.mockito.Mockito.mock(Account.class);
+        var counterparty = org.mockito.Mockito.mock(com.moneysnapshot.counterparty.Counterparty.class);
+        when(bill.getId()).thenReturn(billId);
+        when(bill.getStatus()).thenReturn(BillStatus.ACTIVE);
+        when(bill.getName()).thenReturn("Internet");
+        when(bill.getAccount()).thenReturn(account);
+        when(bill.getCounterparty()).thenReturn(counterparty);
+        when(account.getName()).thenReturn("Personal PLN");
+        when(counterparty.getName()).thenReturn("Provider");
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)).thenReturn(List.of(bill));
+        when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(1L);
+        var entry = new BillScheduleEntry(null, bill, 1, LocalDate.of(2026, 9, 10), new BigDecimal("100.00"), "PLN");
+        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END)).thenReturn(List.of(entry));
+
+        var result = new BillScheduleService(billRepository, billScheduleEntryRepository, currentUserService)
+                .listUpcomingPayments(PERIOD_START, PERIOD_END);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).billId()).isEqualTo(billId);
+        assertThat(result.get(0).billName()).isEqualTo("Internet");
+        assertThat(result.get(0).accountName()).isEqualTo("Personal PLN");
+        assertThat(result.get(0).counterpartyName()).isEqualTo("Provider");
+        assertThat(result.get(0).payment().amount()).isEqualByComparingTo("100.00");
+        assertThat(result.get(0).payment().currencyCode()).isEqualTo("PLN");
+        verify(billScheduleEntryRepository).findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END);
+        verify(billScheduleEntryRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void upcomingPaymentsDoNotGenerateSchedulesForInactiveBills() {
+        UUID ownerId = UUID.randomUUID();
+        Bill suspended = org.mockito.Mockito.mock(Bill.class);
+        Bill completed = org.mockito.Mockito.mock(Bill.class);
+        when(suspended.getStatus()).thenReturn(BillStatus.SUSPENDED);
+        when(completed.getStatus()).thenReturn(BillStatus.COMPLETED);
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)).thenReturn(List.of(suspended, completed));
+        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END)).thenReturn(List.of());
+
+        assertThat(new BillScheduleService(billRepository, billScheduleEntryRepository, currentUserService)
+                .listUpcomingPayments(PERIOD_START, PERIOD_END)).isEmpty();
+
+        verify(billScheduleEntryRepository, never()).countByBillId(any());
+        verify(billScheduleEntryRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void upcomingPaymentsGenerateMissingOpenEndedEntriesFromCurrentPeriodStart() {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        Account account = new Account(bank, owner, "Personal PLN", "personal-pln", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+
+        com.moneysnapshot.counterparty.Counterparty counterparty = new com.moneysnapshot.counterparty.Counterparty(
+                owner,
+                "Orange Polska",
+                "orange-polska",
+                "12121212121212121212121212",
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(counterparty, "id", UUID.randomUUID());
+
+        Bill bill = new Bill(
+                owner,
+                counterparty,
+                account,
+                "Internet domowy",
+                "internet-domowy",
+                "PLN",
+                new BigDecimal("189.99"),
+                BillDurationType.OPEN_ENDED,
+                null,
+                null,
+                5,
+                LocalDate.of(2025, 1, 15),
+                BillStatus.ACTIVE
+        );
+        ReflectionTestUtils.setField(bill, "id", billId);
+
+        BillScheduleEntry lastEntry = new BillScheduleEntry(
+                owner,
+                bill,
+                8,
+                LocalDate.of(2026, 8, 5),
+                new BigDecimal("189.99"),
+                "PLN"
+        );
+
+        BillScheduleService service = new BillScheduleService(
+                billRepository,
+                billScheduleEntryRepository,
+                currentUserService,
+                Clock.fixed(Instant.parse("2026-09-08T09:00:00Z"), ZoneId.of("Europe/Warsaw"))
+        );
+
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)).thenReturn(List.of(bill));
+        when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(1L);
+        when(billScheduleEntryRepository.existsByBillIdAndOwnerIdAndDueDateGreaterThanEqual(
+                billId,
+                ownerId,
+                PERIOD_END
+        )).thenReturn(false);
+        when(billScheduleEntryRepository.findFirstByBillIdAndOwnerIdOrderByDueDateDescInstallmentNumberDesc(billId, ownerId))
+                .thenReturn(Optional.of(lastEntry));
+        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END)).thenReturn(List.of());
+
+        service.listUpcomingPayments(PERIOD_START, PERIOD_END);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<BillScheduleEntry>> entriesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(billScheduleEntryRepository).saveAll(entriesCaptor.capture());
+        List<BillScheduleEntry> entries = entriesCaptor.getValue();
+
+        assertThat(entries).hasSize(12);
+        assertThat(entries.get(0).getInstallmentNumber()).isEqualTo(9);
+        assertThat(entries.get(0).getDueDate()).isEqualTo(LocalDate.of(2026, 9, 5));
+        assertThat(entries.get(11).getDueDate()).isEqualTo(LocalDate.of(2027, 8, 5));
+    }
+
+    @Test
+    void upcomingPaymentsGenerateOpenEndedEntriesThroughCurrentPeriodEnd() {
+        UUID ownerId = UUID.randomUUID();
+        UUID billId = UUID.randomUUID();
+        AppUser owner = org.mockito.Mockito.mock(AppUser.class);
+
+        Bank bank = new Bank(owner, "Main bank", "main-bank");
+        Account account = new Account(bank, owner, "Personal PLN", "personal-pln", "BANK_ACCOUNT", "PLN", null, null, AccountStatus.ACTIVE);
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(bank, "id", UUID.randomUUID());
+
+        com.moneysnapshot.counterparty.Counterparty counterparty = new com.moneysnapshot.counterparty.Counterparty(
+                owner,
+                "Orange Polska",
+                "orange-polska",
+                "12121212121212121212121212",
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(counterparty, "id", UUID.randomUUID());
+
+        Bill bill = new Bill(
+                owner,
+                counterparty,
+                account,
+                "Internet domowy",
+                "internet-domowy",
+                "PLN",
+                new BigDecimal("189.99"),
+                BillDurationType.OPEN_ENDED,
+                null,
+                null,
+                31,
+                LocalDate.of(2025, 1, 31),
+                BillStatus.ACTIVE
+        );
+        ReflectionTestUtils.setField(bill, "id", billId);
+
+        BillScheduleEntry lastEntry = new BillScheduleEntry(
+                owner,
+                bill,
+                12,
+                LocalDate.of(2026, 1, 31),
+                new BigDecimal("189.99"),
+                "PLN"
+        );
+
+        BillScheduleService service = new BillScheduleService(
+                billRepository,
+                billScheduleEntryRepository,
+                currentUserService,
+                Clock.fixed(Instant.parse("2026-01-31T09:00:00Z"), ZoneId.of("Europe/Warsaw"))
+        );
+
+        LocalDate periodStart = LocalDate.of(2026, 1, 31);
+        LocalDate periodEnd = LocalDate.of(2026, 2, 28);
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)).thenReturn(List.of(bill));
+        when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(1L);
+        when(billScheduleEntryRepository.existsByBillIdAndOwnerIdAndDueDateGreaterThanEqual(
+                billId,
+                ownerId,
+                periodEnd
+        )).thenReturn(false);
+        when(billScheduleEntryRepository.findFirstByBillIdAndOwnerIdOrderByDueDateDescInstallmentNumberDesc(billId, ownerId))
+                .thenReturn(Optional.of(lastEntry));
+        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, periodStart, periodEnd)).thenReturn(List.of());
+
+        service.listUpcomingPayments(periodStart, periodEnd);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<BillScheduleEntry>> entriesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(billScheduleEntryRepository).saveAll(entriesCaptor.capture());
+        List<BillScheduleEntry> entries = entriesCaptor.getValue();
+
+        assertThat(entries).hasSize(12);
+        assertThat(entries.get(0).getInstallmentNumber()).isEqualTo(13);
+        assertThat(entries.get(0).getDueDate()).isEqualTo(LocalDate.of(2026, 2, 28));
+        assertThat(entries.get(11).getDueDate()).isEqualTo(LocalDate.of(2027, 1, 31));
+    }
 
     @Test
     void regenerateScheduleCreatesTwelveUpcomingEntriesForOpenEndedBill() {

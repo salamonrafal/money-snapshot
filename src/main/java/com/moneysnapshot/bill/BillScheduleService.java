@@ -3,6 +3,7 @@ package com.moneysnapshot.bill;
 import com.moneysnapshot.bill.web.BillScheduleEntryResponse;
 import com.moneysnapshot.bill.web.BillScheduleSummaryResponse;
 import com.moneysnapshot.bill.web.PagedBillScheduleResponse;
+import com.moneysnapshot.bill.web.UpcomingBillPaymentResponse;
 import com.moneysnapshot.security.CurrentUserService;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
@@ -105,6 +106,30 @@ public class BillScheduleService {
         return BillScheduleEntryResponse.from(billScheduleEntryRepository.save(entry));
     }
 
+    @Transactional
+    public List<UpcomingBillPaymentResponse> listUpcomingPayments(LocalDate periodStart, LocalDate periodEnd) {
+        UUID ownerId = currentUserService.currentUserId();
+        LocalDate today = LocalDate.now(clock);
+        for (Bill bill : billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)) {
+            if (bill.getStatus() != BillStatus.ACTIVE) {
+                continue;
+            }
+            if (billScheduleEntryRepository.countByBillId(bill.getId()) == 0) {
+                if (bill.getDurationType() == BillDurationType.OPEN_ENDED) {
+                    appendOpenEndedScheduleEntries(bill, ownerId, periodStart, OPEN_ENDED_SCHEDULE_LENGTH, true);
+                } else {
+                    regenerateSchedule(bill, false);
+                }
+            } else if (bill.getDurationType() == BillDurationType.OPEN_ENDED
+                    && !billScheduleEntryRepository.existsByBillIdAndOwnerIdAndDueDateGreaterThanEqual(bill.getId(), ownerId, periodEnd)) {
+                appendOpenEndedScheduleEntries(bill, ownerId, periodStart, OPEN_ENDED_SCHEDULE_LENGTH, false);
+            }
+        }
+        return billScheduleEntryRepository.findPendingByOwnerId(ownerId, periodStart, periodEnd).stream()
+                .map(UpcomingBillPaymentResponse::from)
+                .toList();
+    }
+
     private void regenerateSchedule(Bill bill, boolean fromCurrentDate) {
         LocalDate today = LocalDate.now(clock);
         if (!fromCurrentDate) {
@@ -169,7 +194,7 @@ public class BillScheduleService {
         return (int) Math.max(OPEN_ENDED_SCHEDULE_LENGTH, missingEntries);
     }
 
-    private void appendOpenEndedScheduleEntries(Bill bill, UUID ownerId, LocalDate today, int entriesToGenerate, boolean bootstrap) {
+    private void appendOpenEndedScheduleEntries(Bill bill, UUID ownerId, LocalDate minimumDueDate, int entriesToGenerate, boolean bootstrap) {
         if (bill.getStatus() == BillStatus.COMPLETED) {
             return;
         }
@@ -185,11 +210,11 @@ public class BillScheduleService {
         }
         int nextInstallmentNumber = lastEntry == null ? 1 : lastEntry.getInstallmentNumber() + 1;
         LocalDate referenceDate = lastEntry == null
-                ? regenerationReferenceDate(bill, today)
+                ? regenerationReferenceDate(bill, minimumDueDate)
                 : lastEntry.getDueDate().plusDays(1);
         List<BillScheduleEntry> entries = buildOpenEndedScheduleEntriesFromReferenceDate(
                 bill,
-                today,
+                minimumDueDate,
                 referenceDate,
                 nextInstallmentNumber,
                 entriesToGenerate
@@ -271,7 +296,7 @@ public class BillScheduleService {
 
     private List<BillScheduleEntry> buildOpenEndedScheduleEntriesFromReferenceDate(
             Bill bill,
-            LocalDate today,
+            LocalDate minimumDueDate,
             LocalDate referenceDate,
             int startingInstallmentNumber,
             int entriesToGenerate
@@ -281,7 +306,7 @@ public class BillScheduleService {
 
         for (int monthOffset = 0; entries.size() < entriesToGenerate; monthOffset += 1) {
             LocalDate dueDate = dueDateForMonth(referenceDate, monthOffset, bill.getRepaymentDay());
-            if (dueDate.isBefore(referenceDate) || dueDate.isBefore(today)) {
+            if (dueDate.isBefore(referenceDate) || dueDate.isBefore(minimumDueDate)) {
                 continue;
             }
 
