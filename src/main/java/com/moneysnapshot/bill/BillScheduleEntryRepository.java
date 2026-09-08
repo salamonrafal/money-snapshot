@@ -59,9 +59,10 @@ public interface BillScheduleEntryRepository extends JpaRepository<BillScheduleE
 
     long countByBillId(UUID billId);
 
-    long countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(UUID billId, UUID ownerId, LocalDate dueDate);
+    @Query("select coalesce(max(entry.installmentNumber), 0) from BillScheduleEntry entry where entry.bill.id = :billId")
+    int findMaxInstallmentNumberByBillId(@Param("billId") UUID billId);
 
-    boolean existsByBillIdAndOwnerIdAndDueDateGreaterThanEqual(UUID billId, UUID ownerId, LocalDate dueDate);
+    long countByBillIdAndOwnerIdAndDueDateGreaterThanEqual(UUID billId, UUID ownerId, LocalDate dueDate);
 
     @Modifying
     void deleteByBillId(UUID billId);

@@ -109,25 +109,45 @@ public class BillScheduleService {
     @Transactional
     public List<UpcomingBillPaymentResponse> listUpcomingPayments(LocalDate periodStart, LocalDate periodEnd) {
         UUID ownerId = currentUserService.currentUserId();
-        LocalDate today = LocalDate.now(clock);
         for (Bill bill : billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)) {
             if (bill.getStatus() != BillStatus.ACTIVE) {
                 continue;
             }
-            if (billScheduleEntryRepository.countByBillId(bill.getId()) == 0) {
-                if (bill.getDurationType() == BillDurationType.OPEN_ENDED) {
-                    appendOpenEndedScheduleEntries(bill, ownerId, periodStart, OPEN_ENDED_SCHEDULE_LENGTH, true);
-                } else {
-                    regenerateSchedule(bill, false);
-                }
-            } else if (bill.getDurationType() == BillDurationType.OPEN_ENDED
-                    && !billScheduleEntryRepository.existsByBillIdAndOwnerIdAndDueDateGreaterThanEqual(bill.getId(), ownerId, periodEnd)) {
-                appendOpenEndedScheduleEntries(bill, ownerId, periodStart, OPEN_ENDED_SCHEDULE_LENGTH, false);
+            if (bill.getDurationType() == BillDurationType.OPEN_ENDED) {
+                ensureOpenEndedPaymentsInPeriod(bill, ownerId, periodStart, periodEnd);
+            } else if (billScheduleEntryRepository.countByBillId(bill.getId()) == 0) {
+                regenerateSchedule(bill, false);
             }
         }
         return billScheduleEntryRepository.findPendingByOwnerId(ownerId, periodStart, periodEnd).stream()
                 .map(UpcomingBillPaymentResponse::from)
                 .toList();
+    }
+
+    private void ensureOpenEndedPaymentsInPeriod(Bill bill, UUID ownerId, LocalDate periodStart, LocalDate periodEnd) {
+        billRepository.findByIdAndOwnerIdForUpdate(bill.getId(), ownerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bill not found."));
+        List<BillScheduleEntry> existing = billScheduleEntryRepository
+                .findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(bill.getId());
+        // Paid rows also cover their dates: never recreate them as unpaid payments.
+        Set<LocalDate> existingDates = existing.stream()
+                .map(BillScheduleEntry::getDueDate)
+                .collect(Collectors.toSet());
+        int nextNumber = existing.stream().mapToInt(BillScheduleEntry::getInstallmentNumber).max().orElse(0) + 1;
+        LocalDate start = regenerationReferenceDate(bill, periodStart);
+        List<BillScheduleEntry> missing = new ArrayList<>();
+        for (int monthOffset = 0; ; monthOffset++) {
+            LocalDate dueDate = dueDateForMonth(start, monthOffset, bill.getRepaymentDay());
+            if (dueDate.isAfter(periodEnd)) {
+                break;
+            }
+            if (!dueDate.isBefore(start) && !existingDates.contains(dueDate)) {
+                missing.add(createEntry(bill, nextNumber++, dueDate));
+            }
+        }
+        if (!missing.isEmpty()) {
+            billScheduleEntryRepository.saveAll(missing);
+        }
     }
 
     private void regenerateSchedule(Bill bill, boolean fromCurrentDate) {
@@ -208,7 +228,9 @@ public class BillScheduleService {
                 return;
             }
         }
-        int nextInstallmentNumber = lastEntry == null ? 1 : lastEntry.getInstallmentNumber() + 1;
+        // Period backfills can have higher numbers than the chronologically last row.
+        int nextInstallmentNumber = Math.max(lastEntry == null ? 0 : lastEntry.getInstallmentNumber(),
+                billScheduleEntryRepository.findMaxInstallmentNumberByBillId(bill.getId())) + 1;
         LocalDate referenceDate = lastEntry == null
                 ? regenerationReferenceDate(bill, minimumDueDate)
                 : lastEntry.getDueDate().plusDays(1);
