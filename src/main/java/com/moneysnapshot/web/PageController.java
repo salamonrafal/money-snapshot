@@ -131,6 +131,11 @@ public class PageController {
         return "savings-planning";
     }
 
+    @GetMapping("/retirement.html")
+    public String retirement() {
+        return "retirement";
+    }
+
     @GetMapping("/savings-planning/settings.html")
     public String savingsPlanningSettings() {
         return "savings-planning-settings";
