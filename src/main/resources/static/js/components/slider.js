@@ -59,6 +59,10 @@ window.MoneySnapshotSlider = (() => {
         }, {passive: true});
         trackElement.addEventListener("scrollend", syncFromScroll, {passive: true});
         trackElement.addEventListener("wheel", (event) => {
+            if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
             if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
                 return;
             }
