@@ -15,6 +15,7 @@ public record SnapshotPanelResponse(
         long trackedAccounts,
         List<SnapshotPanelAmountResponse> currentBalances,
         List<SnapshotPanelAmountResponse> monthlyChanges,
-        List<SnapshotPanelChartPointResponse> chartPoints
+        List<SnapshotPanelChartPointResponse> chartPoints,
+        List<SnapshotPanelAmountResponse> retirementBalances
 ) {
 }

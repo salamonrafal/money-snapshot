@@ -28,12 +28,14 @@
                 <strong id="snapshot-panel-change-percent">-</strong>
             </div>
             <div class="balance-line" id="snapshot-panel-chart" aria-label="Wykres salda w czasie"></div>
-            <dl class="summary-grid">
-                <div>
+            <div class="summary-slider" id="snapshot-panel-summary-slider" tabindex="0" aria-label="Podsumowania panelu">
+                <div class="summary-slider-track">
+                    <dl class="summary-grid summary-slide" data-summary-slide>
+                        <div>
                     <dt data-i18n="home.summary.accounts">Śledzone konta</dt>
                     <dd id="snapshot-panel-accounts">0</dd>
-                </div>
-                <div>
+                        </div>
+                        <div>
                     <dt data-i18n="home.summary.daysUntilPeriodEnd">Dni do końca okresu</dt>
                     <dd class="summary-value-with-status">
                         <span id="snapshot-panel-days-until-period-end">-</span>
@@ -49,28 +51,44 @@
                             <span class="visually-hidden" data-i18n="home.summary.finalSnapshotsWarning">Brak finalnych migawek</span>
                         </button>
                     </dd>
-                </div>
-                <div>
+                        </div>
+                        <div>
                     <dt data-i18n="home.summary.balance">Aktualne saldo</dt>
                     <dd id="snapshot-panel-balance" class="summary-value-positive">-</dd>
-                </div>
-                <div>
+                        </div>
+                        <div>
+                    <dt data-i18n="home.summary.retirement">Środki emerytalne</dt>
+                    <dd id="snapshot-panel-retirement" class="summary-value-positive">-</dd>
+                        </div>
+                        <div>
                     <dt data-i18n="home.summary.change">Zmiana miesięczna</dt>
                     <dd id="snapshot-panel-change" class="summary-value-positive">-</dd>
-                </div>
-                <div>
+                        </div>
+                    </dl>
+                    <dl class="summary-grid summary-slide" data-summary-slide>
+                        <div>
                     <dt data-i18n="home.summary.liabilities">Suma obciążeń</dt>
                     <dd id="snapshot-panel-liabilities" class="summary-value-negative">-</dd>
-                </div>
-                <div>
+                        </div>
+                        <div>
                     <dt data-i18n="home.summary.installments">Suma rat</dt>
                     <dd id="snapshot-panel-installments" class="summary-value-negative">-</dd>
-                </div>
-                <div>
+                        </div>
+                        <div>
                     <dt data-i18n="home.summary.bills">Suma aktywnych rachunków</dt>
                     <dd id="snapshot-panel-bills" class="summary-value-negative">-</dd>
+                        </div>
+                    </dl>
                 </div>
-            </dl>
+                <div class="summary-slider-controls">
+                    <button type="button" class="summary-slider-arrow" id="snapshot-panel-previous-slide" data-summary-slide-previous data-i18n-aria-label="home.summary.previousSlide" aria-label="Poprzednia grupa">‹</button>
+                    <div class="summary-slider-dots" role="tablist" aria-label="Grupy podsumowania">
+                        <button type="button" class="summary-slider-dot is-active" data-summary-slide-to="0" role="tab" aria-selected="true" aria-label="Grupa 1"></button>
+                        <button type="button" class="summary-slider-dot" data-summary-slide-to="1" role="tab" aria-selected="false" aria-label="Grupa 2"></button>
+                    </div>
+                    <button type="button" class="summary-slider-arrow" id="snapshot-panel-next-slide" data-summary-slide-next data-i18n-aria-label="home.summary.nextSlide" aria-label="Następna grupa">›</button>
+                </div>
+            </div>
         </div>
     </section>
 

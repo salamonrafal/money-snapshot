@@ -14,6 +14,7 @@ import com.moneysnapshot.report.web.HistoryReportResponse;
 import com.moneysnapshot.report.web.PlanningReportResponse;
 import com.moneysnapshot.report.web.SummaryReportResponse;
 import com.moneysnapshot.savings.SavingsForecastService;
+import com.moneysnapshot.retirement.RetirementAccountRepository;
 import com.moneysnapshot.security.AppUser;
 import com.moneysnapshot.security.CurrentUserService;
 import com.moneysnapshot.security.UserSettingsService;
@@ -43,6 +44,7 @@ class ReportQueryServiceTest {
     private final CurrentUserService currentUserService = mock(CurrentUserService.class);
     private final UserSettingsService userSettingsService = mock(UserSettingsService.class);
     private final SavingsForecastService savingsForecastService = mock(SavingsForecastService.class);
+    private final RetirementAccountRepository retirementAccountRepository = mock(RetirementAccountRepository.class);
     private final MessageSource messageSource = mock(MessageSource.class);
 
     private final ReportQueryService service = new ReportQueryService(
@@ -54,6 +56,7 @@ class ReportQueryServiceTest {
             currentUserService,
             userSettingsService,
             savingsForecastService,
+            retirementAccountRepository,
             messageSource,
             Clock.fixed(Instant.parse("2026-06-03T00:00:00Z"), ZoneOffset.UTC)
     );

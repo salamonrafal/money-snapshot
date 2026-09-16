@@ -4,6 +4,7 @@ const accountsElement = document.querySelector("#snapshot-panel-accounts");
 const daysUntilPeriodEndElement = document.querySelector("#snapshot-panel-days-until-period-end");
 const billingWarningElement = document.querySelector("#snapshot-panel-billing-warning");
 const billsElement = document.querySelector("#snapshot-panel-bills");
+const retirementElement = document.querySelector("#snapshot-panel-retirement");
 const liabilitiesElement = document.querySelector("#snapshot-panel-liabilities");
 const installmentsElement = document.querySelector("#snapshot-panel-installments");
 const balanceElement = document.querySelector("#snapshot-panel-balance");
@@ -66,6 +67,8 @@ let selectedHomeRepaymentLiabilityId = "";
 const toastManager = MoneySnapshotUi.createToastManager({
     durationMs: 4200
 });
+
+window.MoneySnapshotSlider?.create(document.querySelector("#snapshot-panel-summary-slider"));
 
 function formatCurrencyAmount({currencyCode, amount}, includeSign = false) {
     const numericAmount = Number(amount);
@@ -209,6 +212,9 @@ function renderSnapshotPanel(panel) {
     renderBillingPeriodStatus(panel);
     balanceElement.textContent = formatAmountList(panel.currentBalances);
     changeElement.textContent = formatAmountList(panel.monthlyChanges, true);
+    if (retirementElement) {
+        retirementElement.textContent = formatAmountList(panel.retirementBalances);
+    }
 }
 
 function renderLiabilitiesSummary(summary) {

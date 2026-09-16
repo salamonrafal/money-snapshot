@@ -78,6 +78,7 @@ public class SnapshotPanelService {
                 snapshotRepository.countAccountsWithSnapshotsVisibleInSnapshotsByOwnerId(ownerId),
                 toResponse(currentBalances),
                 toResponse(monthlyChanges),
+                List.of(),
                 List.of()
         );
     }
