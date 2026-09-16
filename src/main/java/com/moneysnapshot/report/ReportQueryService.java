@@ -10,6 +10,8 @@ import com.moneysnapshot.report.web.OverviewReportResponse;
 import com.moneysnapshot.report.web.PlanningReportResponse;
 import com.moneysnapshot.report.web.SummaryReportResponse;
 import com.moneysnapshot.savings.SavingsForecastService;
+import com.moneysnapshot.retirement.RetirementAccount;
+import com.moneysnapshot.retirement.RetirementAccountRepository;
 import com.moneysnapshot.savings.web.SavingsForecastEntryResponse;
 import com.moneysnapshot.savings.web.SavingsForecastMonthValueResponse;
 import com.moneysnapshot.savings.web.SavingsForecastRunResponse;
@@ -46,6 +48,7 @@ public class ReportQueryService {
     private final CurrentUserService currentUserService;
     private final UserSettingsService userSettingsService;
     private final SavingsForecastService savingsForecastService;
+    private final RetirementAccountRepository retirementAccountRepository;
     private final MessageSource messageSource;
     private final Clock clock;
 
@@ -59,6 +62,7 @@ public class ReportQueryService {
             CurrentUserService currentUserService,
             UserSettingsService userSettingsService,
             SavingsForecastService savingsForecastService,
+            RetirementAccountRepository retirementAccountRepository,
             MessageSource messageSource
     ) {
         this(
@@ -70,6 +74,7 @@ public class ReportQueryService {
                 currentUserService,
                 userSettingsService,
                 savingsForecastService,
+                retirementAccountRepository,
                 messageSource,
                 Clock.systemUTC()
         );
@@ -84,6 +89,7 @@ public class ReportQueryService {
             CurrentUserService currentUserService,
             UserSettingsService userSettingsService,
             SavingsForecastService savingsForecastService,
+            RetirementAccountRepository retirementAccountRepository,
             MessageSource messageSource,
             Clock clock
     ) {
@@ -95,6 +101,7 @@ public class ReportQueryService {
         this.currentUserService = currentUserService;
         this.userSettingsService = userSettingsService;
         this.savingsForecastService = savingsForecastService;
+        this.retirementAccountRepository = retirementAccountRepository;
         this.messageSource = messageSource;
         this.clock = clock;
     }
@@ -140,8 +147,19 @@ public class ReportQueryService {
                 trackedAccounts,
                 currentBalances,
                 monthlyChanges,
-                snapshotPanelChart(periodEntries, periodDate, periodEndDate, preferredCurrency)
+                snapshotPanelChart(periodEntries, periodDate, periodEndDate, preferredCurrency),
+                retirementBalances(ownerId)
         );
+    }
+
+    private List<SnapshotPanelAmountResponse> retirementBalances(UUID ownerId) {
+        Map<String, BigDecimal> balancesByCurrency = new LinkedHashMap<>();
+        for (RetirementAccount account : retirementAccountRepository.findAllByOwnerIdOrderByName(ownerId)) {
+            balancesByCurrency.merge(account.getCurrencyCode(), account.getBalance(), BigDecimal::add);
+        }
+        return balancesByCurrency.entrySet().stream()
+                .map(entry -> new SnapshotPanelAmountResponse(entry.getKey(), entry.getValue()))
+                .toList();
     }
 
     public List<SnapshotPanelChartPointResponse> snapshotPanelChart(LocalDate periodDate) {
