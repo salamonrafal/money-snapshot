@@ -1,0 +1,184 @@
+.retirement-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.retirement-summary-card {
+    display: grid;
+    gap: 10px;
+    min-height: 118px;
+    align-content: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-glass);
+    padding: 18px;
+}
+
+.retirement-summary-card-primary {
+    background: var(--accent-wash-soft);
+    border-color: var(--accent-border);
+}
+
+.retirement-summary-card span {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.retirement-summary-card strong {
+    font-size: clamp(1.35rem, 2.4vw, 2.1rem);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.retirement-grid {
+    margin-top: 24px;
+}
+
+.retirement-section-subtitle {
+    margin: 8px 0 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.retirement-table-wrap {
+    overflow-x: auto;
+}
+
+.retirement-table {
+    min-width: 1240px;
+}
+
+.reports-table.retirement-table th:nth-child(1),
+.reports-table.retirement-table td:nth-child(1) {
+    width: 7%;
+}
+
+.reports-table.retirement-table th:nth-child(2),
+.reports-table.retirement-table td:nth-child(2) {
+    width: 14%;
+    text-align: left;
+}
+
+.reports-table.retirement-table th:nth-child(3),
+.reports-table.retirement-table td:nth-child(3) {
+    width: 17%;
+    text-align: left;
+    white-space: normal;
+}
+
+.reports-table.retirement-table th:nth-child(4),
+.reports-table.retirement-table td:nth-child(4),
+.reports-table.retirement-table th:nth-child(5),
+.reports-table.retirement-table td:nth-child(5) {
+    width: 13%;
+}
+
+.reports-table.retirement-table th:nth-child(6),
+.reports-table.retirement-table td:nth-child(6) {
+    width: 10%;
+    text-align: left;
+}
+
+.reports-table.retirement-table th:nth-child(7),
+.reports-table.retirement-table td:nth-child(7) {
+    width: 11%;
+    text-align: left;
+}
+
+.reports-table.retirement-table th:nth-child(8),
+.reports-table.retirement-table td:nth-child(8) {
+    width: 15%;
+    text-align: center;
+}
+
+.retirement-table th:nth-child(4),
+.retirement-table th:nth-child(5),
+.retirement-table td:nth-child(4),
+.retirement-table td:nth-child(5) {
+    text-align: right;
+}
+
+.retirement-type-cell {
+    color: var(--accent-strong);
+    font-weight: 900;
+}
+
+.retirement-money-cell {
+    font-weight: 800;
+}
+
+.retirement-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    border: 1px solid var(--accent-border);
+    border-radius: 999px;
+    background: var(--accent-wash-subtle);
+    color: var(--accent-strong);
+    padding: 0 10px;
+    font-size: 0.78rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.retirement-form-modal .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.retirement-contribution-form-modal .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.retirement-contribution-form-modal .field-wide {
+    grid-column: 1 / -1;
+}
+
+.retirement-contribution-calculation {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.retirement-contribution-calculation strong {
+    color: var(--accent-strong);
+}
+
+.retirement-contribution-calculation strong[data-type="error"] {
+    color: var(--danger);
+}
+
+.retirement-actions-cell {
+    text-align: center;
+}
+
+.retirement-row-actions {
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.retirement-row-action {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+}
+
+.retirement-row-action svg {
+    width: 17px;
+    height: 17px;
+}
+
+@media (max-width: 760px) {
+    .retirement-summary-card {
+        min-height: 98px;
+    }
+
+    .retirement-form-modal .form-grid,
+    .retirement-contribution-form-modal .form-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

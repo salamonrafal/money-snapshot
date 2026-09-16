@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Emerytura | Money Snapshot', 'retirement.js', 'retirement')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('retirement')}"></header>
+
+<main class="workspace workspace-with-sticky-launcher">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="retirement.heading.eyebrow">Długoterminowe oszczędności</p>
+        <h1 data-i18n="retirement.heading.title">Emerytura</h1>
+        <p data-i18n="retirement.heading.subtitle">Dodawaj rachunki PPK, IKE, IKZE, OFE oraz inne konta emerytalne i aktualizuj zgromadzone środki.</p>
+    </section>
+
+    <section class="retirement-summary" aria-label="Podsumowanie emerytalne">
+        <article class="retirement-summary-card retirement-summary-card-primary">
+            <span data-i18n="retirement.summary.total">Zgromadzone środki</span>
+            <strong id="retirement-total-balance">-</strong>
+        </article>
+        <article class="retirement-summary-card">
+            <span data-i18n="retirement.summary.monthly">Miesięczne wpłaty</span>
+            <strong id="retirement-monthly-contribution">-</strong>
+        </article>
+        <article class="retirement-summary-card">
+            <span data-i18n="retirement.summary.accounts">Rachunki</span>
+            <strong id="retirement-account-count">0</strong>
+        </article>
+        <article class="retirement-summary-card">
+            <span data-i18n="retirement.summary.updatedAt">Ostatnia aktualizacja</span>
+            <strong id="retirement-updated-at">-</strong>
+        </article>
+    </section>
+
+    <section class="retirement-grid">
+        <section class="table-panel table-panel-wide" aria-labelledby="retirement-accounts-title">
+            <div class="section-header">
+                <div>
+                    <h2 id="retirement-accounts-title" data-i18n="retirement.accounts.title">Rachunki emerytalne</h2>
+                    <p class="retirement-section-subtitle" data-i18n="retirement.accounts.subtitle">Zarządzaj rachunkami emerytalnymi i aktualizuj zgromadzone środki.</p>
+                </div>
+                <div class="section-actions topbar-account-actions icon-toolbar" role="toolbar" aria-label="Akcje rachunków emerytalnych">
+                    <button type="button"
+                            class="icon-button secondary topbar-icon-link"
+                            id="add-retirement-account"
+                            title="Dodaj rachunek"
+                            data-i18n-title="retirement.actions.add"
+                            data-i18n-aria-label="retirement.actions.add"
+                            aria-label="Dodaj rachunek">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 5v14"></path>
+                            <path d="M5 12h14"></path>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            class="icon-button secondary topbar-icon-link"
+                            id="refresh-retirement"
+                            title="Odśwież"
+                            data-i18n-title="retirement.actions.refresh"
+                            data-i18n-aria-label="retirement.actions.refresh"
+                            aria-label="Odśwież">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                            <path d="M21 3v6h-6"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="table-wrap retirement-table-wrap">
+                <table class="reports-table retirement-table">
+                    <thead>
+                    <tr>
+                        <th data-i18n="retirement.table.type">Typ</th>
+                        <th data-i18n="retirement.table.institution">Instytucja</th>
+                        <th data-i18n="retirement.table.account">Rachunek</th>
+                        <th data-i18n="retirement.table.balance">Saldo</th>
+                        <th data-i18n="retirement.table.monthlyContribution">Miesięczna wpłata</th>
+                        <th data-i18n="retirement.table.updatedAt">Aktualizacja</th>
+                        <th data-i18n="retirement.table.status">Status</th>
+                        <th data-i18n="retirement.table.actions">Akcje</th>
+                    </tr>
+                    </thead>
+                    <tbody id="retirement-table-body">
+                    <tr>
+                        <td colspan="8" data-i18n="retirement.loading">Ładowanie...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</main>
+<div class="modal-backdrop" id="retirement-account-form-modal" hidden>
+    <div class="modal snapshot-form-modal retirement-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="retirement-account-form-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <p class="eyebrow" data-i18n="retirement.form.eyebrow">Nowy wpis</p>
+                <h2 id="retirement-account-form-modal-title" data-i18n="retirement.form.title">Dodaj rachunek emerytalny</h2>
+                <p data-i18n="retirement.form.subtitle">Uzupełnij dane rachunku widoczne w tabeli emerytalnej.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-retirement-account-form-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form class="snapshot-form" id="retirement-account-form" novalidate data-i18n-aria-label="retirement.form.aria" aria-label="Formularz rachunku emerytalnego">
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.form.type">Typ</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="type" required>
+                            <option value="PPK">PPK</option>
+                            <option value="IKE">IKE</option>
+                            <option value="IKZE">IKZE</option>
+                            <option value="OFE">OFE</option>
+                            <option value="OTHER" data-i18n="retirement.type.OTHER">Inne</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.form.institution">Instytucja</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="text" name="institution" maxlength="120" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.form.account">Rachunek</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="text" name="account" maxlength="120" required>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="retirement.form.websiteUrl">Strona logowania</span>
+                        <input type="text" name="websiteUrl" maxlength="2048" inputmode="url" placeholder="https://">
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.form.currency">Waluta</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="text" name="currency" maxlength="3" pattern="[A-Za-z]{3}" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.form.balance">Saldo</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="text" name="balance" inputmode="decimal" required>
+                    </label>
+                    <label class="field">
+                        <span data-i18n="retirement.form.monthlyContribution">Miesięczna wpłata</span>
+                        <input type="text" name="monthlyContribution" inputmode="decimal">
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.form.updatedAt">Data aktualizacji</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="date" name="updatedAt" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="statusKey" required>
+                            <option value="ACTIVE" selected data-i18n="retirement.status.ACTIVE">Aktywne</option>
+                            <option value="SUSPENDED" data-i18n="retirement.status.SUSPENDED">Wstrzymane</option>
+                            <option value="CLOSED" data-i18n="retirement.status.CLOSED">Zamknięte</option>
+                        </select>
+                    </label>
+                </div>
+                <p class="form-helper" data-i18n="retirement.form.hint">Zmiany zostaną zapisane na liście rachunków emerytalnych.</p>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-retirement-account-form-modal-close
+                        data-i18n="retirement.form.cancel">Anuluj</button>
+                <button type="submit"
+                        class="button primary snapshot-form-modal-action-button"
+                        form="retirement-account-form"
+                        data-i18n="retirement.form.submit">Dodaj rachunek</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop" id="retirement-contribution-form-modal" hidden>
+    <div class="modal snapshot-form-modal retirement-contribution-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="retirement-contribution-form-modal-title">
+        <div class="snapshot-form-modal-header">
+            <div class="snapshot-form-modal-copy">
+                <p class="eyebrow" data-i18n="retirement.contributionForm.eyebrow">Saldo</p>
+                <h2 id="retirement-contribution-form-modal-title" data-i18n="retirement.contributionForm.title">Zaktualizuj saldo</h2>
+                <p id="retirement-contribution-form-subtitle" data-i18n="retirement.contributionForm.subtitle">Wprowadź aktualne saldo rachunku emerytalnego.</p>
+            </div>
+            <button type="button"
+                    class="icon-button secondary snapshot-form-modal-close"
+                    data-retirement-contribution-form-modal-close
+                    data-i18n-aria-label="common.close"
+                    aria-label="Zamknij">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="snapshot-form-modal-body">
+            <form class="snapshot-form" id="retirement-contribution-form" novalidate data-i18n-aria-label="retirement.contributionForm.aria" aria-label="Formularz aktualizacji salda">
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.contributionForm.currentBalance">Aktualne saldo</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="text" name="currentBalance" inputmode="decimal" required>
+                    </label>
+                    <label class="field">
+                        <span class="field-label"><span data-i18n="retirement.contributionForm.date">Data aktualizacji</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <input type="date" name="contributionDate" required>
+                    </label>
+                    <label class="field field-wide">
+                        <span data-i18n="retirement.contributionForm.note">Notatka</span>
+                        <input type="text" name="note" maxlength="500">
+                    </label>
+                </div>
+                <p class="form-helper retirement-contribution-calculation">
+                    <span data-i18n="retirement.contributionForm.previousBalance">Poprzednie saldo</span>:
+                    <strong id="retirement-contribution-previous-balance">-</strong>
+                </p>
+                <p class="form-helper retirement-contribution-calculation">
+                    <span data-i18n="retirement.contributionForm.calculatedAmount">Zmiana salda</span>:
+                    <strong id="retirement-contribution-calculated-amount">-</strong>
+                </p>
+                <p class="form-helper" data-i18n="retirement.form.hint">Zmiany zostaną zapisane na liście rachunków emerytalnych.</p>
+            </form>
+        </div>
+        <div class="snapshot-form-modal-footer">
+            <div class="snapshot-form-modal-actions">
+                <button type="button"
+                        class="button secondary snapshot-form-modal-action-button"
+                        data-retirement-contribution-form-modal-close
+                        data-i18n="retirement.form.cancel">Anuluj</button>
+                <button type="submit"
+                        class="button primary snapshot-form-modal-action-button"
+                        form="retirement-contribution-form"
+                        data-i18n="retirement.contributionForm.submit">Zapisz saldo</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/page :: confirmDeleteModal(
+        'delete-retirement-account-modal',
+        'delete-retirement-account-title',
+        'retirement.delete.title',
+        'retirement.delete.message',
+        'delete-retirement-account-subject',
+        'confirm-delete-retirement-account',
+        'cancel-delete-retirement-account')}"></div>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+<th:block th:replace="~{fragments/shortcuts-launcher :: shortcutModals}"></th:block>
+</body>
+</html>

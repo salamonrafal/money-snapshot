@@ -225,6 +225,14 @@ public class HomeController {
         return messageBundleService.savingsPlanningPageMessages(resolveLocale(lang, acceptLanguage));
     }
 
+    @GetMapping("/retirement/messages")
+    public Map<String, String> retirementMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.retirementPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
     @GetMapping("/savings-planning-settings/messages")
     public Map<String, String> savingsPlanningSettingsMessages(
             @RequestParam(required = false) String lang,
