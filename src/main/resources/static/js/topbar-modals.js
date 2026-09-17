@@ -34,6 +34,7 @@
     const settingsDateTimeFormatInput = document.querySelector("#topbar-settings-date-time-format");
     const settingsMoneyFormatInput = document.querySelector("#topbar-settings-money-format");
     const settingsBillingMonthStartDayInput = document.querySelector("#topbar-settings-billing-month-start-day");
+    const settingsPeriodComparisonHistoryPeriodsInput = document.querySelector("#topbar-settings-period-comparison-history-periods");
 
     let messages = {};
     let messagesLanguage = "";
@@ -165,12 +166,24 @@
         return String(numericValue);
     }
 
+    function normalizedPeriodComparisonHistoryPeriodsValue() {
+        const rawValue = settingsPeriodComparisonHistoryPeriodsInput.value.trim();
+        if (!/^\d+$/.test(rawValue)) {
+            return null;
+        }
+
+        const numericValue = Number(rawValue);
+        return Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 6
+                ? String(numericValue) : null;
+    }
+
     function fillSettingsForm(settings) {
         settingsDefaultCurrencySelect.value = settings.defaultCurrency ?? "PLN";
         settingsThemeSelect.value = settings.theme ?? "light";
         settingsDateTimeFormatInput.value = settings.dateTimeFormat ?? "Y-m-d H:m";
         settingsMoneyFormatInput.value = settings.moneyFormat ?? "### ###,00 zł";
         settingsBillingMonthStartDayInput.value = settings.billingMonthStartDay ?? 1;
+        settingsPeriodComparisonHistoryPeriodsInput.value = settings.periodComparisonHistoryPeriods ?? 3;
     }
 
     async function loadSettings() {
@@ -184,6 +197,7 @@
 
     async function saveSettings() {
         const billingMonthStartDay = normalizedBillingMonthStartDayValue();
+        const periodComparisonHistoryPeriods = normalizedPeriodComparisonHistoryPeriodsValue();
         const response = await fetch("/api/users/me/settings", {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
@@ -193,7 +207,8 @@
                     theme: settingsThemeSelect.value,
                     dateTimeFormat: settingsDateTimeFormatInput.value.trim(),
                     moneyFormat: settingsMoneyFormatInput.value.trim(),
-                    billingMonthStartDay
+                    billingMonthStartDay,
+                    periodComparisonHistoryPeriods
                 }
             })
         });
@@ -306,9 +321,11 @@
     settingsForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const billingMonthStartDay = normalizedBillingMonthStartDayValue();
+        const periodComparisonHistoryPeriods = normalizedPeriodComparisonHistoryPeriodsValue();
         if (!settingsDateTimeFormatInput.value.trim()
                 || !settingsMoneyFormatInput.value.trim()
-                || billingMonthStartDay === null) {
+                || billingMonthStartDay === null
+                || periodComparisonHistoryPeriods === null) {
             showToast(messages["settings.form.required"] ?? "Fill in required settings.", "error");
             return;
         }

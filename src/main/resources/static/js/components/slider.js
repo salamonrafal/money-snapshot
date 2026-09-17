@@ -63,6 +63,10 @@ window.MoneySnapshotSlider = (() => {
                 return;
             }
 
+            if (event.target instanceof Element && event.target.closest(".period-comparison-data, .table-wrap, textarea, select")) {
+                return;
+            }
+
             if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
                 return;
             }

@@ -47,6 +47,7 @@ public class ReportCacheRefreshService {
     private final ReportAverageContributionCacheRepository averageContributionCacheRepository;
     private final ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository;
     private final ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository;
+    private final ReportPeriodComparisonCacheRepository periodComparisonCacheRepository;
     private final ReportRetirementAccountCacheRepository retirementAccountCacheRepository;
     private final RetirementAccountRepository retirementAccountRepository;
     private final AppUserRepository appUserRepository;
@@ -63,6 +64,7 @@ public class ReportCacheRefreshService {
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
             ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
+            ReportPeriodComparisonCacheRepository periodComparisonCacheRepository,
             ReportRetirementAccountCacheRepository retirementAccountCacheRepository,
             RetirementAccountRepository retirementAccountRepository,
             AppUserRepository appUserRepository,
@@ -76,6 +78,7 @@ public class ReportCacheRefreshService {
                 averageContributionCacheRepository,
                 finalSnapshotCacheRepository,
                 billingPeriodComparisonCacheRepository,
+                periodComparisonCacheRepository,
                 retirementAccountCacheRepository,
                 retirementAccountRepository,
                 appUserRepository,
@@ -92,6 +95,7 @@ public class ReportCacheRefreshService {
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
             ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
+            ReportPeriodComparisonCacheRepository periodComparisonCacheRepository,
             AppUserRepository appUserRepository,
             UserSettingRepository userSettingRepository,
             AccountSnapshotRepository snapshotRepository,
@@ -99,7 +103,7 @@ public class ReportCacheRefreshService {
             Clock clock
     ) {
         this(refreshStateRepository, dailyBalanceCacheRepository, averageContributionCacheRepository,
-                finalSnapshotCacheRepository, billingPeriodComparisonCacheRepository, null, null,
+                finalSnapshotCacheRepository, billingPeriodComparisonCacheRepository, periodComparisonCacheRepository, null, null,
                 appUserRepository, userSettingRepository, snapshotRepository, failureStateTransaction, clock);
     }
 
@@ -109,6 +113,7 @@ public class ReportCacheRefreshService {
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
             ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
+            ReportPeriodComparisonCacheRepository periodComparisonCacheRepository,
             ReportRetirementAccountCacheRepository retirementAccountCacheRepository,
             RetirementAccountRepository retirementAccountRepository,
             AppUserRepository appUserRepository,
@@ -122,6 +127,7 @@ public class ReportCacheRefreshService {
         this.averageContributionCacheRepository = averageContributionCacheRepository;
         this.finalSnapshotCacheRepository = finalSnapshotCacheRepository;
         this.billingPeriodComparisonCacheRepository = billingPeriodComparisonCacheRepository;
+        this.periodComparisonCacheRepository = periodComparisonCacheRepository;
         this.retirementAccountCacheRepository = retirementAccountCacheRepository;
         this.retirementAccountRepository = retirementAccountRepository;
         this.appUserRepository = appUserRepository;
@@ -129,6 +135,23 @@ public class ReportCacheRefreshService {
         this.snapshotRepository = snapshotRepository;
         this.failureStateTransaction = failureStateTransaction;
         this.clock = clock;
+    }
+
+    ReportCacheRefreshService(
+            ReportCacheRefreshStateRepository refreshStateRepository,
+            ReportDailyBalanceCacheRepository dailyBalanceCacheRepository,
+            ReportAverageContributionCacheRepository averageContributionCacheRepository,
+            ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
+            ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
+            AppUserRepository appUserRepository,
+            UserSettingRepository userSettingRepository,
+            AccountSnapshotRepository snapshotRepository,
+            TransactionOperations failureStateTransaction,
+            Clock clock
+    ) {
+        this(refreshStateRepository, dailyBalanceCacheRepository, averageContributionCacheRepository,
+                finalSnapshotCacheRepository, billingPeriodComparisonCacheRepository, null, null, null,
+                appUserRepository, userSettingRepository, snapshotRepository, failureStateTransaction, clock);
     }
 
     @Transactional
@@ -176,6 +199,9 @@ public class ReportCacheRefreshService {
             averageContributionCacheRepository.deleteByOwnerId(ownerId);
             finalSnapshotCacheRepository.deleteByOwnerId(ownerId);
             billingPeriodComparisonCacheRepository.deleteByOwnerId(ownerId);
+            if (periodComparisonCacheRepository != null) {
+                periodComparisonCacheRepository.deleteByOwnerId(ownerId);
+            }
             if (retirementAccountCacheRepository != null) {
                 retirementAccountCacheRepository.deleteByOwnerId(ownerId);
             }
@@ -202,10 +228,12 @@ public class ReportCacheRefreshService {
             boolean hasFinalSnapshots = snapshotRepository.existsByOwnerIdAndSnapshotType(ownerId, SnapshotType.FINAL);
             boolean finalCacheMissing = hasFinalSnapshots && !finalSnapshotCacheRepository.existsByOwnerId(ownerId);
             boolean billingComparisonCacheMissing = hasSnapshots && !state.isBillingPeriodComparisonReady();
+            boolean periodComparisonCacheMissing = periodComparisonCacheRepository != null
+                    && hasSnapshots && !state.isPeriodComparisonReady();
             boolean retirementCacheMissing = retirementAccountRepository != null
                     && retirementAccountRepository.findAllByOwnerIdOrderByName(ownerId).stream().findAny().isPresent()
                     && !retirementAccountCacheRepository.existsByOwnerId(ownerId);
-            if (state.isDirty() || cacheMissing || finalCacheMissing || billingComparisonCacheMissing || retirementCacheMissing) {
+            if (state.isDirty() || cacheMissing || finalCacheMissing || billingComparisonCacheMissing || periodComparisonCacheMissing || retirementCacheMissing) {
                 refreshOwnerInternal(ownerId, state, owner);
             }
         });
@@ -224,12 +252,37 @@ public class ReportCacheRefreshService {
         });
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void rebuildPeriodComparison(UUID ownerId) {
+        withOwnerLock(ownerId, () -> {
+            ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId).orElse(null);
+            AppUser owner = lockOwner(ownerId);
+            if (state == null || owner == null || periodComparisonCacheRepository == null) {
+                return;
+            }
+
+            try {
+                List<AccountSnapshot> snapshots = snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId);
+                rebuildPeriodComparisons(owner, snapshots);
+                state.markPeriodComparisonRefreshed();
+                refreshStateRepository.save(state);
+            } catch (RuntimeException exception) {
+                persistFailedState(ownerId, exception.getMessage());
+                log.warn("Failed to refresh period comparison cache for owner {}", ownerId, exception);
+                throw exception;
+            }
+        });
+    }
+
     private void refreshOwnerInternal(UUID ownerId, ReportCacheRefreshState state, AppUser owner) {
         try {
             List<AccountSnapshot> snapshots = snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId);
             rebuildDailyBalances(owner, snapshots);
             rebuildFinalSnapshots(owner, snapshots);
             rebuildBillingPeriodComparisons(owner, snapshots);
+            if (periodComparisonCacheRepository != null) {
+                rebuildPeriodComparisons(owner, snapshots);
+            }
             rebuildAverageContributions(owner, snapshots);
             rebuildRetirementAccounts(owner);
             state.markRefreshed();
@@ -354,6 +407,88 @@ public class ReportCacheRefreshService {
             }
         }
         billingPeriodComparisonCacheRepository.saveAll(entries);
+    }
+
+    private void rebuildPeriodComparisons(AppUser owner, List<AccountSnapshot> snapshots) {
+        periodComparisonCacheRepository.deleteByOwnerId(owner.getId());
+        periodComparisonCacheRepository.flush();
+
+        int billingMonthEndDay = userSettingRepository.findByUserIdAndKey(owner.getId(), UserSettingsService.BILLING_MONTH_START_DAY)
+                .map(setting -> parseBillingMonthEndDay(setting.getValue())).orElse(1);
+        int historyPeriods = userSettingRepository.findByUserIdAndKey(owner.getId(), UserSettingsService.PERIOD_COMPARISON_HISTORY_PERIODS)
+                .map(setting -> parsePeriodComparisonHistoryPeriods(setting.getValue())).orElse(UserSettingsService.DEFAULT_PERIOD_COMPARISON_HISTORY_PERIODS);
+        LocalDate today = LocalDate.now(clock);
+        LocalDate currentStart = resolvePeriodStart(today, billingMonthEndDay);
+        Map<UUID, List<AccountSnapshot>> snapshotsByAccount = snapshots.stream()
+                .filter(snapshot -> snapshot.getAccount().isShowInSnapshots())
+                .collect(java.util.stream.Collectors.groupingBy(snapshot -> snapshot.getAccount().getId()));
+        List<ReportPeriodComparisonCache> entries = new ArrayList<>();
+
+        for (int periodIndex = 0; periodIndex <= historyPeriods; periodIndex++) {
+            LocalDate periodStart = periodIndex == 0
+                    ? currentStart
+                    : resolvePeriodStart(currentStart.minusDays(1), billingMonthEndDay);
+            for (int previousPeriod = 1; previousPeriod < periodIndex; previousPeriod++) {
+                periodStart = resolvePeriodStart(periodStart.minusDays(1), billingMonthEndDay);
+            }
+            LocalDate periodEnd = resolvePeriodEnd(periodStart, billingMonthEndDay);
+            LocalDate effectiveEnd = periodIndex == 0 ? today : periodEnd;
+            LocalDate baselineDate = periodStart.minusDays(1);
+            int cachedPeriodIndex = periodIndex;
+            LocalDate cachedPeriodStart = periodStart;
+            LocalDate cachedPeriodEnd = periodEnd;
+            if (effectiveEnd.isBefore(periodStart)) continue;
+
+            Set<LocalDate> registeredDates = new TreeSet<>();
+            registeredDates.add(baselineDate);
+            snapshotsByAccount.values().stream()
+                    .flatMap(List::stream)
+                    .map(AccountSnapshot::getSnapshotDate)
+                    .filter(date -> !date.isBefore(cachedPeriodStart) && !date.isAfter(effectiveEnd))
+                    .forEach(registeredDates::add);
+
+            Map<LocalDate, Map<String, BigDecimal>> amountsByDate = new java.util.TreeMap<>();
+            for (LocalDate date : registeredDates) {
+                LocalDate pointDate = date;
+                Map<String, BigDecimal> amounts = amountsByDate.computeIfAbsent(date, ignored -> new HashMap<>());
+                snapshotsByAccount.forEach((accountId, accountSnapshots) -> {
+                    AccountSnapshot accountSnapshot = latestSnapshotOnOrBefore(accountSnapshots, pointDate);
+                    AccountSnapshot baselineSnapshot = latestSnapshotOnOrBefore(accountSnapshots, baselineDate);
+                    if (baselineSnapshot == null) {
+                        baselineSnapshot = firstSnapshotInRange(accountSnapshots, cachedPeriodStart, effectiveEnd);
+                    }
+                    if (accountSnapshot == null || baselineSnapshot == null) return;
+                    amounts.merge(accountSnapshot.getAccount().getCurrencyCode(),
+                            accountSnapshot.getBalance().subtract(baselineSnapshot.getBalance()), BigDecimal::add);
+                });
+            }
+            amountsByDate.forEach((date, amounts) -> amounts.forEach((currency, amount) -> entries.add(
+                    new ReportPeriodComparisonCache(owner, cachedPeriodIndex, cachedPeriodStart, cachedPeriodEnd, date, currency, amount))));
+        }
+        periodComparisonCacheRepository.saveAll(entries);
+    }
+
+    private AccountSnapshot latestSnapshotOnOrBefore(List<AccountSnapshot> snapshots, LocalDate date) {
+        return snapshots.stream()
+                .filter(snapshot -> !snapshot.getSnapshotDate().isAfter(date))
+                .max(Comparator.comparing(AccountSnapshot::getSnapshotDate))
+                .orElse(null);
+    }
+
+    private AccountSnapshot firstSnapshotInRange(List<AccountSnapshot> snapshots, LocalDate fromDate, LocalDate toDate) {
+        return snapshots.stream()
+                .filter(snapshot -> !snapshot.getSnapshotDate().isBefore(fromDate)
+                        && !snapshot.getSnapshotDate().isAfter(toDate))
+                .min(Comparator.comparing(AccountSnapshot::getSnapshotDate))
+                .orElse(null);
+    }
+
+    private int parsePeriodComparisonHistoryPeriods(String value) {
+        try {
+            return Math.max(1, Math.min(Integer.parseInt(value), UserSettingsService.MAX_PERIOD_COMPARISON_HISTORY_PERIODS));
+        } catch (NumberFormatException ignored) {
+            return UserSettingsService.DEFAULT_PERIOD_COMPARISON_HISTORY_PERIODS;
+        }
     }
 
     private List<CompletedBillingPeriod> completedBillingPeriodsFromFinalSnapshots(

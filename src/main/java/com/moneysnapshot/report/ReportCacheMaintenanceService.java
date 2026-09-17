@@ -32,4 +32,9 @@ public class ReportCacheMaintenanceService {
         reportCacheRefreshService.clearOwner(ownerId);
         reportCacheRefreshService.refreshOwner(ownerId);
     }
+
+    public void rebuildCurrentUserPeriodComparisonCache() {
+        UUID ownerId = currentUserService.currentUserId();
+        reportCacheRefreshService.rebuildPeriodComparison(ownerId);
+    }
 }

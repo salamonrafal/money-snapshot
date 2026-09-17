@@ -31,6 +31,9 @@ public class ReportCacheRefreshState {
     @Column(name = "billing_period_comparison_ready", nullable = false)
     private boolean billingPeriodComparisonReady;
 
+    @Column(name = "period_comparison_ready", nullable = false)
+    private boolean periodComparisonReady;
+
     protected ReportCacheRefreshState() {
     }
 
@@ -52,6 +55,10 @@ public class ReportCacheRefreshState {
         return billingPeriodComparisonReady;
     }
 
+    public boolean isPeriodComparisonReady() {
+        return periodComparisonReady;
+    }
+
     public void markDirty() {
         dirty = true;
         refreshRequestedAt = OffsetDateTime.now(ZoneOffset.UTC);
@@ -61,6 +68,13 @@ public class ReportCacheRefreshState {
     public void markRefreshed() {
         dirty = false;
         billingPeriodComparisonReady = true;
+        periodComparisonReady = true;
+        refreshedAt = OffsetDateTime.now(ZoneOffset.UTC);
+        lastError = null;
+    }
+
+    public void markPeriodComparisonRefreshed() {
+        periodComparisonReady = true;
         refreshedAt = OffsetDateTime.now(ZoneOffset.UTC);
         lastError = null;
     }

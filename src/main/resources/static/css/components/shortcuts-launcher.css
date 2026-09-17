@@ -329,7 +329,7 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     inset: var(--shortcuts-launcher-top, 0px) 0 0;
     z-index: 34;
     overflow: hidden;
-    padding: 8px var(--page-padding) 0;
+    padding: 8px 0 0;
     background: var(--background);
     opacity: 0;
     pointer-events: none;
@@ -347,16 +347,21 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     display: grid;
     align-content: start;
     gap: 0;
-    width: min(1380px, 100%);
+    width: 100%;
     height: 100%;
     margin: 0 auto;
-    padding: 12px 52px 16px 0;
+    padding: 12px 0 16px;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-gutter: stable;
     transform: translateY(56px);
     opacity: 0;
     transition: transform 0.26s ease, opacity 0.22s ease;
+}
+
+.shortcuts-launcher-content {
+    width: min(1380px, calc(100% - (2 * var(--page-padding))));
+    margin: 0 auto;
 }
 
 .shortcuts-launcher-panel.is-open .shortcuts-launcher-surface {
@@ -458,12 +463,15 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     }
 
     .shortcuts-launcher-surface {
-        padding-right: 0;
         padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     }
 
     .shortcuts-launcher-sections {
-        padding-right: 16px;
+        padding-right: 0;
+    }
+
+    .shortcuts-launcher-content {
+        width: calc(100% - (2 * var(--page-padding)));
     }
 }
 
