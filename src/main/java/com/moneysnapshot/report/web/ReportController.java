@@ -57,6 +57,13 @@ public class ReportController {
         return reportQueryService.averageContributions();
     }
 
+    @GetMapping("/retirement-capital")
+    public RetirementCapitalReportResponse retirementCapital(
+            @RequestParam(defaultValue = "type") String grouping
+    ) {
+        return reportQueryService.retirementCapital(grouping);
+    }
+
     @GetMapping("/planning")
     public PlanningReportResponse planning() {
         return reportQueryService.planning();

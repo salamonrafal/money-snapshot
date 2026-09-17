@@ -47,6 +47,10 @@
     min-height: 450px;
 }
 
+.report-panel > .form-message:empty {
+    display: none;
+}
+
 .reports-nav {
     display: grid;
     gap: 10px;
@@ -480,8 +484,10 @@
 .overview-pie-chart path,
 .overview-pie-chart circle {
     fill: var(--chart-color);
-    stroke: var(--chart-slice-line);
-    stroke-width: 1;
+    stroke: var(--chart-color);
+    stroke-width: 0.75;
+    stroke-linejoin: round;
+    shape-rendering: geometricPrecision;
     transition: opacity 0.16s ease;
 }
 
@@ -490,20 +496,24 @@
     opacity: 1;
 }
 
-#overview-chart .overview-pie-chart:hover [data-overview-index]:not(.is-active) {
+#overview-chart .overview-pie-chart:hover [data-overview-index]:not(.is-active),
+#retirement-capital-chart .overview-pie-chart:hover [data-overview-index]:not(.is-active) {
     opacity: 0.35;
 }
 
-#overview-chart .report-chart-legend-item {
+#overview-chart .report-chart-legend-item,
+#retirement-capital-chart .report-chart-legend-item {
     transition: background-color 0.16s ease;
 }
 
-#overview-chart .report-chart-legend-item.is-active {
+#overview-chart .report-chart-legend-item.is-active,
+#retirement-capital-chart .report-chart-legend-item.is-active {
     background: var(--accent-wash);
     border-radius: 4px;
 }
 
-#overview-chart .report-chart-layout {
+#overview-chart .report-chart-layout,
+#retirement-capital-chart .report-chart-layout {
     grid-template-columns: minmax(140px, 170px) minmax(180px, 1fr);
     gap: 6px;
     align-items: start;
