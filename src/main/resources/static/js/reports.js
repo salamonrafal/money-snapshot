@@ -868,7 +868,8 @@ function pieSliceMarkup(cx, cy, radius, startAngle, endAngle, share, index) {
         return `<circle cx="${cx}" cy="${cy}" r="${radius}" ${attributes}></circle>`;
     }
 
-    const overlap = 0.004;
+    const sliceSpan = endAngle - startAngle;
+    const overlap = Math.min(0.004, Math.max(0, (Math.PI * 2 - sliceSpan - 0.0001) / 2));
     return `<path d="${pieSlicePath(cx, cy, radius, startAngle - overlap, endAngle + overlap)}" ${attributes}></path>`;
 }
 
