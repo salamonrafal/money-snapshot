@@ -187,6 +187,8 @@ public class ReportPdfService {
                     drawBillingComparisonChart(canvas, request.chart());
                 } else if ("pie".equals(request.chartType())) {
                     drawPieChart(canvas, request.chart());
+                } else if ("multiPie".equals(request.chartType())) {
+                    drawMultiPieChart(canvas, request.chart());
                 }
                 drawTable(canvas, request.table());
             }
@@ -489,6 +491,16 @@ public class ReportPdfService {
         }
 
         canvas.setCurrentY(chartY - 16f);
+    }
+
+    private void drawMultiPieChart(PdfCanvas canvas, JsonNode chart) throws IOException {
+        JsonNode charts = chart == null ? null : chart.path("charts");
+        if (charts == null || !charts.isArray()) {
+            return;
+        }
+        for (JsonNode currencyChart : charts) {
+            drawPieChart(canvas, currencyChart);
+        }
     }
 
     private void drawTable(PdfCanvas canvas, ReportPdfTableRequest table) throws IOException {

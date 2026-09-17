@@ -7,6 +7,8 @@ import com.moneysnapshot.security.UserSettingsService;
 import com.moneysnapshot.snapshot.AccountSnapshot;
 import com.moneysnapshot.snapshot.AccountSnapshotRepository;
 import com.moneysnapshot.snapshot.SnapshotType;
+import com.moneysnapshot.retirement.RetirementAccount;
+import com.moneysnapshot.retirement.RetirementAccountRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -45,6 +47,8 @@ public class ReportCacheRefreshService {
     private final ReportAverageContributionCacheRepository averageContributionCacheRepository;
     private final ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository;
     private final ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository;
+    private final ReportRetirementAccountCacheRepository retirementAccountCacheRepository;
+    private final RetirementAccountRepository retirementAccountRepository;
     private final AppUserRepository appUserRepository;
     private final UserSettingRepository userSettingRepository;
     private final AccountSnapshotRepository snapshotRepository;
@@ -59,6 +63,8 @@ public class ReportCacheRefreshService {
             ReportAverageContributionCacheRepository averageContributionCacheRepository,
             ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
             ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
+            ReportRetirementAccountCacheRepository retirementAccountCacheRepository,
+            RetirementAccountRepository retirementAccountRepository,
             AppUserRepository appUserRepository,
             UserSettingRepository userSettingRepository,
             AccountSnapshotRepository snapshotRepository,
@@ -70,6 +76,8 @@ public class ReportCacheRefreshService {
                 averageContributionCacheRepository,
                 finalSnapshotCacheRepository,
                 billingPeriodComparisonCacheRepository,
+                retirementAccountCacheRepository,
+                retirementAccountRepository,
                 appUserRepository,
                 userSettingRepository,
                 snapshotRepository,
@@ -90,11 +98,32 @@ public class ReportCacheRefreshService {
             TransactionOperations failureStateTransaction,
             Clock clock
     ) {
+        this(refreshStateRepository, dailyBalanceCacheRepository, averageContributionCacheRepository,
+                finalSnapshotCacheRepository, billingPeriodComparisonCacheRepository, null, null,
+                appUserRepository, userSettingRepository, snapshotRepository, failureStateTransaction, clock);
+    }
+
+    ReportCacheRefreshService(
+            ReportCacheRefreshStateRepository refreshStateRepository,
+            ReportDailyBalanceCacheRepository dailyBalanceCacheRepository,
+            ReportAverageContributionCacheRepository averageContributionCacheRepository,
+            ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
+            ReportBillingPeriodComparisonCacheRepository billingPeriodComparisonCacheRepository,
+            ReportRetirementAccountCacheRepository retirementAccountCacheRepository,
+            RetirementAccountRepository retirementAccountRepository,
+            AppUserRepository appUserRepository,
+            UserSettingRepository userSettingRepository,
+            AccountSnapshotRepository snapshotRepository,
+            TransactionOperations failureStateTransaction,
+            Clock clock
+    ) {
         this.refreshStateRepository = refreshStateRepository;
         this.dailyBalanceCacheRepository = dailyBalanceCacheRepository;
         this.averageContributionCacheRepository = averageContributionCacheRepository;
         this.finalSnapshotCacheRepository = finalSnapshotCacheRepository;
         this.billingPeriodComparisonCacheRepository = billingPeriodComparisonCacheRepository;
+        this.retirementAccountCacheRepository = retirementAccountCacheRepository;
+        this.retirementAccountRepository = retirementAccountRepository;
         this.appUserRepository = appUserRepository;
         this.userSettingRepository = userSettingRepository;
         this.snapshotRepository = snapshotRepository;
@@ -147,6 +176,9 @@ public class ReportCacheRefreshService {
             averageContributionCacheRepository.deleteByOwnerId(ownerId);
             finalSnapshotCacheRepository.deleteByOwnerId(ownerId);
             billingPeriodComparisonCacheRepository.deleteByOwnerId(ownerId);
+            if (retirementAccountCacheRepository != null) {
+                retirementAccountCacheRepository.deleteByOwnerId(ownerId);
+            }
 
             ReportCacheRefreshState state = refreshStateRepository.findByOwnerId(ownerId)
                     .orElseGet(() -> refreshStateRepository.save(new ReportCacheRefreshState(ownerId)));
@@ -170,7 +202,10 @@ public class ReportCacheRefreshService {
             boolean hasFinalSnapshots = snapshotRepository.existsByOwnerIdAndSnapshotType(ownerId, SnapshotType.FINAL);
             boolean finalCacheMissing = hasFinalSnapshots && !finalSnapshotCacheRepository.existsByOwnerId(ownerId);
             boolean billingComparisonCacheMissing = hasSnapshots && !state.isBillingPeriodComparisonReady();
-            if (state.isDirty() || cacheMissing || finalCacheMissing || billingComparisonCacheMissing) {
+            boolean retirementCacheMissing = retirementAccountRepository != null
+                    && retirementAccountRepository.findAllByOwnerIdOrderByName(ownerId).stream().findAny().isPresent()
+                    && !retirementAccountCacheRepository.existsByOwnerId(ownerId);
+            if (state.isDirty() || cacheMissing || finalCacheMissing || billingComparisonCacheMissing || retirementCacheMissing) {
                 refreshOwnerInternal(ownerId, state, owner);
             }
         });
@@ -196,6 +231,7 @@ public class ReportCacheRefreshService {
             rebuildFinalSnapshots(owner, snapshots);
             rebuildBillingPeriodComparisons(owner, snapshots);
             rebuildAverageContributions(owner, snapshots);
+            rebuildRetirementAccounts(owner);
             state.markRefreshed();
             refreshStateRepository.save(state);
         } catch (RuntimeException exception) {
@@ -481,6 +517,19 @@ public class ReportCacheRefreshService {
                 .toList();
 
         finalSnapshotCacheRepository.saveAll(entries);
+    }
+
+    private void rebuildRetirementAccounts(AppUser owner) {
+        if (retirementAccountCacheRepository == null || retirementAccountRepository == null) {
+            return;
+        }
+        retirementAccountCacheRepository.deleteByOwnerId(owner.getId());
+        retirementAccountCacheRepository.flush();
+        List<ReportRetirementAccountCache> entries = retirementAccountRepository.findAllByOwnerIdOrderByName(owner.getId()).stream()
+                .map(account -> new ReportRetirementAccountCache(owner, account.getId(), account.getAccountTypeCode(),
+                        account.getInstitution(), account.getCurrencyCode(), account.getBalance()))
+                .toList();
+        retirementAccountCacheRepository.saveAll(entries);
     }
 
     private record CompletedBillingPeriod(

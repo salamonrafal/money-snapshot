@@ -9,6 +9,7 @@ import com.moneysnapshot.report.web.HistoryReportResponse;
 import com.moneysnapshot.report.web.OverviewReportResponse;
 import com.moneysnapshot.report.web.PlanningReportResponse;
 import com.moneysnapshot.report.web.SummaryReportResponse;
+import com.moneysnapshot.report.web.RetirementCapitalReportResponse;
 import com.moneysnapshot.savings.SavingsForecastService;
 import com.moneysnapshot.retirement.RetirementAccount;
 import com.moneysnapshot.retirement.RetirementAccountRepository;
@@ -49,6 +50,7 @@ public class ReportQueryService {
     private final UserSettingsService userSettingsService;
     private final SavingsForecastService savingsForecastService;
     private final RetirementAccountRepository retirementAccountRepository;
+    private final ReportRetirementAccountCacheRepository retirementAccountCacheRepository;
     private final MessageSource messageSource;
     private final Clock clock;
 
@@ -63,6 +65,7 @@ public class ReportQueryService {
             UserSettingsService userSettingsService,
             SavingsForecastService savingsForecastService,
             RetirementAccountRepository retirementAccountRepository,
+            ReportRetirementAccountCacheRepository retirementAccountCacheRepository,
             MessageSource messageSource
     ) {
         this(
@@ -75,6 +78,7 @@ public class ReportQueryService {
                 userSettingsService,
                 savingsForecastService,
                 retirementAccountRepository,
+                retirementAccountCacheRepository,
                 messageSource,
                 Clock.systemUTC()
         );
@@ -93,6 +97,25 @@ public class ReportQueryService {
             MessageSource messageSource,
             Clock clock
     ) {
+        this(dailyBalanceCacheRepository, averageContributionCacheRepository, finalSnapshotCacheRepository,
+                accountRepository, reportCacheRefreshService, currentUserService, userSettingsService,
+                savingsForecastService, retirementAccountRepository, null, messageSource, clock);
+    }
+
+    ReportQueryService(
+            ReportDailyBalanceCacheRepository dailyBalanceCacheRepository,
+            ReportAverageContributionCacheRepository averageContributionCacheRepository,
+            ReportFinalSnapshotCacheRepository finalSnapshotCacheRepository,
+            AccountRepository accountRepository,
+            ReportCacheRefreshService reportCacheRefreshService,
+            CurrentUserService currentUserService,
+            UserSettingsService userSettingsService,
+            SavingsForecastService savingsForecastService,
+            RetirementAccountRepository retirementAccountRepository,
+            ReportRetirementAccountCacheRepository retirementAccountCacheRepository,
+            MessageSource messageSource,
+            Clock clock
+    ) {
         this.dailyBalanceCacheRepository = dailyBalanceCacheRepository;
         this.averageContributionCacheRepository = averageContributionCacheRepository;
         this.finalSnapshotCacheRepository = finalSnapshotCacheRepository;
@@ -102,6 +125,7 @@ public class ReportQueryService {
         this.userSettingsService = userSettingsService;
         this.savingsForecastService = savingsForecastService;
         this.retirementAccountRepository = retirementAccountRepository;
+        this.retirementAccountCacheRepository = retirementAccountCacheRepository;
         this.messageSource = messageSource;
         this.clock = clock;
     }
@@ -329,6 +353,30 @@ public class ReportQueryService {
                 .map(entry -> new AverageContributionReportResponse.Total(entry.getKey(), entry.getValue()))
                 .toList();
         return new AverageContributionReportResponse(responseRows, totals);
+    }
+
+    public RetirementCapitalReportResponse retirementCapital(String grouping) {
+        ensureCurrentOwnerCache();
+        UUID ownerId = currentUserService.currentUserId();
+        boolean byInstitution = "institution".equalsIgnoreCase(grouping);
+        Map<String, Map<String, BigDecimal>> balances = new LinkedHashMap<>();
+        if (retirementAccountCacheRepository != null) {
+            retirementAccountCacheRepository.findAllByOwnerIdOrderByAccountTypeCodeAscInstitutionAscCurrencyCodeAsc(ownerId)
+                    .forEach(row -> balances.computeIfAbsent(byInstitution ? row.getInstitution() : row.getAccountTypeCode(), ignored -> new LinkedHashMap<>())
+                            .merge(row.getCurrencyCode(), row.getBalance(), BigDecimal::add));
+        }
+        Map<String, BigDecimal> totalsByCurrency = new HashMap<>();
+        balances.values().forEach(values -> values.forEach((currency, amount) -> totalsByCurrency.merge(currency, amount.abs(), BigDecimal::add)));
+        List<RetirementCapitalReportResponse.Row> rows = balances.entrySet().stream()
+                .flatMap(entry -> entry.getValue().entrySet().stream().map(value -> {
+                    BigDecimal total = totalsByCurrency.get(value.getKey());
+                    BigDecimal share = total == null || total.signum() == 0 ? null : value.getValue().abs().multiply(BigDecimal.valueOf(100)).divide(total, 2, RoundingMode.HALF_UP);
+                    return new RetirementCapitalReportResponse.Row(entry.getKey(), value.getKey(), value.getValue(), share);
+                }))
+                .sorted(Comparator.comparing(RetirementCapitalReportResponse.Row::balance).reversed()
+                        .thenComparing(RetirementCapitalReportResponse.Row::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        return new RetirementCapitalReportResponse(rows);
     }
 
     public PlanningReportResponse planning() {

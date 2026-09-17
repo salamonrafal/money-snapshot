@@ -122,6 +122,37 @@
         </div>
     </section>
 
+    <section class="table-panel table-panel-wide report-panel" id="reports-retirement-capital-section" aria-labelledby="retirement-capital-title">
+        <div class="section-header">
+            <h2 id="retirement-capital-title" data-i18n="reports.retirementCapital.title">Kapitał emerytalny</h2>
+            <div class="section-actions topbar-account-actions icon-toolbar report-controls" role="toolbar" aria-label="Akcje kapitału emerytalnego">
+                <div class="report-filter-menu">
+                    <button type="button" class="icon-button secondary topbar-icon-link report-filter-button" aria-expanded="false" data-i18n-title="reports.actions.filters" data-i18n-aria-label="reports.actions.filters"><span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span></button>
+                    <div class="report-filter-popover" hidden>
+                        <label class="compact-field">
+                            <span data-i18n="reports.retirementCapital.groupBy">Grupuj według</span>
+                            <select id="retirement-capital-grouping">
+                                <option value="type" data-i18n="reports.retirementCapital.type">Typu</option>
+                                <option value="institution" data-i18n="reports.retirementCapital.institution">Instytucji</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <button type="button" class="icon-button secondary topbar-icon-link report-pdf-button" data-report-section="retirementCapital" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf"><span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span></button>
+            </div>
+        </div>
+        <p class="form-message" id="retirement-capital-message" role="status"></p>
+        <div class="report-content overview-content">
+            <div class="report-chart" id="retirement-capital-chart" aria-label="Wykres kołowy kapitału emerytalnego"></div>
+            <div class="table-wrap">
+                <table class="reports-table overview-table">
+                    <thead><tr><th data-i18n="reports.table.name">Nazwa</th><th data-i18n="reports.table.currency">Waluta</th><th data-i18n="reports.overview.balance">Saldo</th><th data-i18n="reports.overview.share">Udział %</th></tr></thead>
+                    <tbody id="retirement-capital-table-body"><tr><td colspan="4" data-i18n="reports.loading">Ładowanie...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
     <section class="table-panel table-panel-wide report-panel" id="reports-billing-comparison-section" aria-labelledby="billing-comparison-title">
         <div class="section-header">
             <div>
@@ -340,6 +371,7 @@
             <nav class="reports-nav" aria-label="Raporty">
                 <a href="#reports-summary-section" data-target="reports-summary-section" data-i18n="reports.table.title">Zestawienie zmian</a>
                 <a href="#reports-overview-section" data-target="reports-overview-section" data-i18n="reports.overview.title">Przegląd sald</a>
+                <a href="#reports-retirement-capital-section" data-target="reports-retirement-capital-section" data-i18n="reports.retirementCapital.title">Kapitał emerytalny</a>
                 <a href="#reports-billing-comparison-section" data-target="reports-billing-comparison-section" data-i18n="reports.billingComparison.title">Porównanie okresów rozliczeniowych</a>
                 <a href="#reports-average-contributions-section" data-target="reports-average-contributions-section" data-i18n="reports.average.title">Średnie wpłaty</a>
                 <a href="#reports-planning-section" data-target="reports-planning-section" data-i18n="reports.planning.title">Planowanie</a>

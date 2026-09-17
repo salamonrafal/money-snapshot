@@ -12,6 +12,10 @@ const tableBody = document.querySelector("#reports-table-body");
 const overviewMessageElement = document.querySelector("#overview-message");
 const overviewChartElement = document.querySelector("#overview-chart");
 const overviewTableBody = document.querySelector("#overview-table-body");
+const retirementCapitalGroupingSelect = document.querySelector("#retirement-capital-grouping");
+const retirementCapitalMessageElement = document.querySelector("#retirement-capital-message");
+const retirementCapitalChartElement = document.querySelector("#retirement-capital-chart");
+const retirementCapitalTableBody = document.querySelector("#retirement-capital-table-body");
 const billingComparisonChartElement = document.querySelector("#billing-comparison-chart");
 const billingComparisonPeriodsSelect = document.querySelector("#billing-comparison-periods");
 const billingComparisonMessageElement = document.querySelector("#billing-comparison-message");
@@ -84,6 +88,12 @@ const reportSections = {
     },
     overview: {
         element: document.querySelector("#reports-overview-section"),
+        dirty: true,
+        loading: false,
+        visible: false
+    },
+    retirementCapital: {
+        element: document.querySelector("#reports-retirement-capital-section"),
         dirty: true,
         loading: false,
         visible: false
@@ -599,8 +609,8 @@ function renderTable(rows) {
     }));
 }
 
-function renderOverviewTable(rows) {
-    overviewTableBody.replaceChildren(...rows.map((row) => {
+function renderOverviewTable(rows, target = overviewTableBody) {
+    target.replaceChildren(...rows.map((row) => {
         const tableRow = document.createElement("tr");
         [
             row.name,
@@ -858,7 +868,8 @@ function pieSliceMarkup(cx, cy, radius, startAngle, endAngle, share, index) {
         return `<circle cx="${cx}" cy="${cy}" r="${radius}" ${attributes}></circle>`;
     }
 
-    return `<path d="${pieSlicePath(cx, cy, radius, startAngle, endAngle)}" ${attributes}></path>`;
+    const overlap = 0.004;
+    return `<path d="${pieSlicePath(cx, cy, radius, startAngle - overlap, endAngle + overlap)}" ${attributes}></path>`;
 }
 
 function chartColor(index) {
@@ -1145,9 +1156,9 @@ function renderPlanning(rows, totals) {
     renderPlanningSummary(totals);
 }
 
-function renderOverviewChart(rows) {
+function renderOverviewChart(rows, target = overviewChartElement, emptyMessage = messages["reports.overview.empty"]) {
     if (rows.length === 0) {
-        overviewChartElement.innerHTML = `<div class="chart-empty">${escapeHtml(messages["reports.overview.empty"])}</div>`;
+        target.innerHTML = `<div class="chart-empty">${escapeHtml(emptyMessage)}</div>`;
         return;
     }
 
@@ -1173,17 +1184,17 @@ function renderOverviewChart(rows) {
         </li>
     `).join("");
 
-    overviewChartElement.innerHTML = `
+    target.innerHTML = `
         <div class="report-chart-layout">
             <ul class="report-chart-legend">${legend}</ul>
-            <svg viewBox="0 0 180 112" role="img" aria-label="${escapeHtml(messages["reports.chart.aria.overview"])}">
+            <svg viewBox="0 0 180 112" shape-rendering="geometricPrecision" role="img" aria-label="${escapeHtml(messages["reports.chart.aria.overview"])}">
                 <g class="overview-pie-chart">${slices}</g>
             </svg>
         </div>
     `;
 
-    const sliceElements = overviewChartElement.querySelectorAll(".overview-pie-chart [data-overview-index]");
-    const legendElements = overviewChartElement.querySelectorAll(".report-chart-legend-item[data-overview-index]");
+    const sliceElements = target.querySelectorAll(".overview-pie-chart [data-overview-index]");
+    const legendElements = target.querySelectorAll(".report-chart-legend-item[data-overview-index]");
 
     function setActiveOverviewIndex(activeIndex) {
         legendElements.forEach((element) => {
@@ -1204,31 +1215,35 @@ function renderOverviewChart(rows) {
     });
 }
 
-function renderOverview(rawRows) {
-    setOverviewMessage("");
+function renderOverview(rawRows, config = {}) {
+    const targetTable = config.tableBody ?? overviewTableBody;
+    const targetChart = config.chartElement ?? overviewChartElement;
+    const reportKey = config.reportKey ?? "overview";
+    const emptyMessage = config.emptyMessage ?? messages["reports.overview.empty"];
+    if (reportKey === "overview") setOverviewMessage("");
     if (rawRows.length === 0) {
-        clearReportPdfData("overview");
-        renderOverviewEmpty(messages["reports.overview.empty"]);
+        clearReportPdfData(reportKey);
+        if (reportKey === "overview") renderOverviewEmpty(emptyMessage);
+        else {
+            targetTable.innerHTML = `<tr><td colspan="4">${escapeHtml(emptyMessage)}</td></tr>`;
+            renderOverviewChart([], targetChart, emptyMessage);
+        }
         return;
     }
 
     const totalMagnitude = rawRows.reduce((sum, row) => sum + Math.abs(row.balance), 0);
+    const rows = config.preserveShares
+            ? rawRows
+            : rawRows.map((row) => ({
+                ...row,
+                sharePercent: totalMagnitude === 0 ? null : (Math.abs(row.balance) * 100) / totalMagnitude
+            }));
 
-    const rows = rawRows.map((row) => {
-        return {
-            ...row,
-            sharePercent: totalMagnitude === 0 ? null : (Math.abs(row.balance) * 100) / totalMagnitude
-        };
-    });
-
-    reportPdfData.overview = {
-        title: messages["reports.overview.title"],
-        subtitle: currentOverviewScope === "banks" ? messages["reports.scope.banks"] : messages["reports.scope.accounts"],
-        chartType: "pie",
-        chart: {
-            rows,
-            otherLabel: messages["reports.overview.other"]
-        },
+    reportPdfData[reportKey] = {
+        title: config.title ?? messages["reports.overview.title"],
+        subtitle: config.subtitle ?? (currentOverviewScope === "banks" ? messages["reports.scope.banks"] : messages["reports.scope.accounts"]),
+        chartType: config.chartType ?? "pie",
+        chart: config.chart ?? {rows, otherLabel: messages["reports.overview.other"]},
         table: {
             columns: [
                 messages["reports.table.name"],
@@ -1244,8 +1259,26 @@ function renderOverview(rawRows) {
             ])
         }
     };
-    renderOverviewTable(rows);
-    renderOverviewChart(rows);
+    renderOverviewTable(rows, targetTable);
+    if (config.chartRenderer) config.chartRenderer(rows, targetChart, emptyMessage);
+    else renderOverviewChart(rows, targetChart, emptyMessage);
+}
+
+function renderRetirementCapitalCharts(rows, target, emptyMessage) {
+    const rowsByCurrency = new Map();
+    rows.forEach((row) => {
+        if (!rowsByCurrency.has(row.currencyCode)) rowsByCurrency.set(row.currencyCode, []);
+        rowsByCurrency.get(row.currencyCode).push(row);
+    });
+    target.replaceChildren(...Array.from(rowsByCurrency.entries()).map(([, currencyRows]) => {
+        const wrapper = document.createElement("section");
+        wrapper.className = "retirement-capital-currency-chart";
+        const chart = document.createElement("div");
+        chart.className = "report-chart retirement-capital-currency-pie";
+        wrapper.append(chart);
+        renderOverviewChart(currencyRows, chart, emptyMessage);
+        return wrapper;
+    }));
 }
 
 function resolveHistoryRange() {
@@ -1386,6 +1419,30 @@ async function renderSummaryReportSection() {
 async function renderOverviewReportSection() {
     const overview = await fetchReportJson(`/api/reports/overview?scope=${encodeURIComponent(currentOverviewScope)}&toDate=${encodeURIComponent(todayIsoDate())}`);
     renderOverview(overview.rows ?? []);
+}
+
+async function renderRetirementCapitalReportSection() {
+    const grouping = retirementCapitalGroupingSelect.value;
+    const report = await fetchReportJson(`/api/reports/retirement-capital?grouping=${encodeURIComponent(grouping)}`);
+    const groupLabel = messages[`reports.retirementCapital.${grouping}`] ?? grouping;
+    renderOverview(report.rows ?? [], {
+        tableBody: retirementCapitalTableBody,
+        chartElement: retirementCapitalChartElement,
+        reportKey: "retirementCapital",
+        title: messages["reports.retirementCapital.title"],
+        subtitle: `${messages["reports.retirementCapital.groupBy"]}: ${groupLabel}`,
+        emptyMessage: messages["reports.retirementCapital.empty"],
+        preserveShares: true,
+        chartRenderer: renderRetirementCapitalCharts,
+        chartType: "multiPie",
+        chart: {
+            charts: Array.from(new Set((report.rows ?? []).map((row) => row.currencyCode))).map((currencyCode) => ({
+                rows: (report.rows ?? []).filter((row) => row.currencyCode === currencyCode),
+                otherLabel: messages["reports.overview.other"]
+            }))
+        }
+    });
+    retirementCapitalMessageElement.textContent = "";
 }
 
 async function renderBillingComparisonReportSection() {
@@ -1656,6 +1713,10 @@ function renderReportSectionError(key, error) {
     } else if (key === "overview") {
         renderOverviewEmpty(error.message);
         setOverviewMessage(error.message, "error");
+    } else if (key === "retirementCapital") {
+        retirementCapitalTableBody.innerHTML = `<tr><td colspan="4">${escapeHtml(error.message)}</td></tr>`;
+        retirementCapitalChartElement.innerHTML = `<div class="chart-empty">${escapeHtml(error.message)}</div>`;
+        retirementCapitalMessageElement.textContent = error.message;
     } else if (key === "billingComparison") {
         renderBillingComparisonEmpty(error.message);
         setBillingComparisonMessage(error.message, "error");
@@ -1676,6 +1737,8 @@ function showReportPdfError(key, error) {
         setMessage(error.message, "error");
     } else if (key === "overview") {
         setOverviewMessage(error.message, "error");
+    } else if (key === "retirementCapital") {
+        retirementCapitalMessageElement.textContent = error.message;
     } else if (key === "billingComparison") {
         setBillingComparisonMessage(error.message, "error");
     } else if (key === "averageContributions") {
@@ -1692,6 +1755,8 @@ async function renderReportSection(key) {
         await renderSummaryReportSection();
     } else if (key === "overview") {
         await renderOverviewReportSection();
+    } else if (key === "retirementCapital") {
+        await renderRetirementCapitalReportSection();
     } else if (key === "billingComparison") {
         await renderBillingComparisonReportSection();
     } else if (key === "averageContributions") {
@@ -1927,6 +1992,7 @@ function handleLanguageChange(nextLanguage, nextMessages) {
     document.title = `${messages["reports.heading.title"]} | ${messages["app.name"]}`;
     chartElement.setAttribute("aria-label", messages["reports.chart.aria.changes"]);
     overviewChartElement.setAttribute("aria-label", messages["reports.chart.aria.overview"]);
+    retirementCapitalChartElement.setAttribute("aria-label", messages["reports.chart.aria.retirementCapital"]);
     reportScopeTabs.setAttribute("aria-label", messages["reports.controls.scope.report"]);
     overviewScopeTabs.setAttribute("aria-label", messages["reports.controls.scope.overview"]);
     historyPaginationElement.setAttribute("aria-label", messages["reports.history.pagination.aria"]);
@@ -1983,6 +2049,11 @@ overviewTabs.forEach((tab) => {
         markReportSectionsDirty(["overview"]);
         renderVisibleReportSections(["overview"]);
     });
+});
+
+retirementCapitalGroupingSelect.addEventListener("change", () => {
+    markReportSectionsDirty(["retirementCapital"]);
+    renderVisibleReportSections(["retirementCapital"]);
 });
 
 billingComparisonPeriodsSelect.addEventListener("change", () => {

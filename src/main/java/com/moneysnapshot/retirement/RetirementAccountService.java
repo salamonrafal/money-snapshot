@@ -14,6 +14,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class RetirementAccountService {
@@ -22,6 +24,7 @@ public class RetirementAccountService {
     private final RetirementAccountContributionRepository retirementAccountContributionRepository;
     private final CurrentUserService currentUserService;
     private final NameNormalizationService normalizer;
+    private final ApplicationEventPublisher eventPublisher;
 
     public RetirementAccountService(
             RetirementAccountRepository retirementAccountRepository,
@@ -29,10 +32,22 @@ public class RetirementAccountService {
             CurrentUserService currentUserService,
             NameNormalizationService normalizer
     ) {
+        this(retirementAccountRepository, retirementAccountContributionRepository, currentUserService, normalizer, null);
+    }
+
+    @Autowired
+    public RetirementAccountService(
+            RetirementAccountRepository retirementAccountRepository,
+            RetirementAccountContributionRepository retirementAccountContributionRepository,
+            CurrentUserService currentUserService,
+            NameNormalizationService normalizer,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.retirementAccountRepository = retirementAccountRepository;
         this.retirementAccountContributionRepository = retirementAccountContributionRepository;
         this.currentUserService = currentUserService;
         this.normalizer = normalizer;
+        this.eventPublisher = eventPublisher;
     }
 
     public List<RetirementAccount> listAccounts() {
@@ -77,7 +92,9 @@ public class RetirementAccountService {
                 request.balanceUpdatedAt(),
                 normalizeStatus(request.status())
         );
-        return retirementAccountRepository.save(account);
+        RetirementAccount saved = retirementAccountRepository.save(account);
+        publishChanged(owner.getId());
+        return saved;
     }
 
     @Transactional
@@ -100,7 +117,9 @@ public class RetirementAccountService {
                 normalizeMonthlyContribution(request.monthlyContribution()),
                 normalizeStatus(request.status())
         );
-        return retirementAccountRepository.save(account);
+        RetirementAccount saved = retirementAccountRepository.save(account);
+        publishChanged(ownerId);
+        return saved;
     }
 
     @Transactional
@@ -108,7 +127,9 @@ public class RetirementAccountService {
         RetirementAccount account = getAccountForBalanceUpdate(id);
         validateBalanceUpdatedAt(request.balanceUpdatedAt(), account);
         account.updateBalance(normalizeAmount(request.balance()), request.balanceUpdatedAt());
-        return retirementAccountRepository.save(account);
+        RetirementAccount saved = retirementAccountRepository.save(account);
+        publishChanged(account.getOwner().getId());
+        return saved;
     }
 
     @Transactional
@@ -134,12 +155,20 @@ public class RetirementAccountService {
 
         account.updateBalance(currentBalance, request.contributionDate());
         retirementAccountRepository.save(account);
-        return retirementAccountContributionRepository.save(contribution);
+        RetirementAccountContribution saved = retirementAccountContributionRepository.save(contribution);
+        publishChanged(account.getOwner().getId());
+        return saved;
     }
 
     private void validateBalanceUpdatedAt(LocalDate balanceUpdatedAt, RetirementAccount account) {
         if (balanceUpdatedAt.isBefore(account.getBalanceUpdatedAt())) {
             throw new IllegalArgumentException("Balance update date cannot be before the current balance update date.");
+        }
+    }
+
+    private void publishChanged(UUID ownerId) {
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new RetirementAccountChangedEvent(ownerId));
         }
     }
 
@@ -153,6 +182,7 @@ public class RetirementAccountService {
         RetirementAccount account = getAccount(id);
         retirementAccountRepository.delete(account);
         retirementAccountRepository.flush();
+        publishChanged(account.getOwner().getId());
     }
 
     private String normalizeAccountTypeCode(String accountTypeCode) {
