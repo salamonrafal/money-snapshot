@@ -18,13 +18,17 @@ public class UserSettingsService {
     public static final String DATE_TIME_FORMAT = "dateTimeFormat";
     public static final String MONEY_FORMAT = "moneyFormat";
     public static final String BILLING_MONTH_START_DAY = "billingMonthStartDay";
+    public static final String PERIOD_COMPARISON_HISTORY_PERIODS = "periodComparisonHistoryPeriods";
+    public static final int DEFAULT_PERIOD_COMPARISON_HISTORY_PERIODS = 3;
+    public static final int MAX_PERIOD_COMPARISON_HISTORY_PERIODS = 6;
 
     private static final Map<String, String> DEFAULT_VALUES = Map.of(
             DEFAULT_CURRENCY, "PLN",
             THEME, "light",
             DATE_TIME_FORMAT, "Y-m-d H:m",
             MONEY_FORMAT, "### ###,00 zł",
-            BILLING_MONTH_START_DAY, "1"
+            BILLING_MONTH_START_DAY, "1",
+            PERIOD_COMPARISON_HISTORY_PERIODS, "3"
     );
 
     private final UserSettingRepository settingRepository;
@@ -108,6 +112,15 @@ public class UserSettingsService {
             }
         }
 
+        if (PERIOD_COMPARISON_HISTORY_PERIODS.equals(key)) {
+            try {
+                int periods = Integer.parseInt(normalizedValue);
+                return periods >= 1 && periods <= MAX_PERIOD_COMPARISON_HISTORY_PERIODS ? Integer.toString(periods) : null;
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+
         if (THEME.equals(key)) {
             return "dark".equals(normalizedValue) || "light".equals(normalizedValue) ? normalizedValue : null;
         }
@@ -117,10 +130,12 @@ public class UserSettingsService {
 
     private UserSettingsResponse response(Map<String, String> values) {
         int billingMonthStartDay = parseBillingMonthStartDay(values.get(BILLING_MONTH_START_DAY));
+        int periodComparisonHistoryPeriods = parsePeriodComparisonHistoryPeriods(values.get(PERIOD_COMPARISON_HISTORY_PERIODS));
         String theme = normalizeTheme(values.get(THEME));
         Map<String, String> sanitizedValues = new LinkedHashMap<>(values);
         sanitizedValues.put(THEME, theme);
         sanitizedValues.put(BILLING_MONTH_START_DAY, Integer.toString(billingMonthStartDay));
+        sanitizedValues.put(PERIOD_COMPARISON_HISTORY_PERIODS, Integer.toString(periodComparisonHistoryPeriods));
         Map<String, String> immutableValues = Map.copyOf(sanitizedValues);
         return new UserSettingsResponse(
                 sanitizedValues.get(DEFAULT_CURRENCY),
@@ -128,6 +143,7 @@ public class UserSettingsService {
                 sanitizedValues.get(DATE_TIME_FORMAT),
                 sanitizedValues.get(MONEY_FORMAT),
                 billingMonthStartDay,
+                periodComparisonHistoryPeriods,
                 immutableValues
         );
     }
@@ -142,6 +158,16 @@ public class UserSettingsService {
             return day >= 1 && day <= 31 ? day : 1;
         } catch (NumberFormatException ignored) {
             return 1;
+        }
+    }
+
+    private int parsePeriodComparisonHistoryPeriods(String value) {
+        try {
+            int periods = Integer.parseInt(value);
+            return periods >= 1 && periods <= MAX_PERIOD_COMPARISON_HISTORY_PERIODS
+                    ? periods : DEFAULT_PERIOD_COMPARISON_HISTORY_PERIODS;
+        } catch (NumberFormatException ignored) {
+            return DEFAULT_PERIOD_COMPARISON_HISTORY_PERIODS;
         }
     }
 

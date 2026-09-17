@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Porównanie okresów | Money Snapshot', 'period-comparison.js', 'reports')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('reports')}"></header>
+<main class="workspace workspace-with-sticky-launcher period-comparison-workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="reports.periodComparison.eyebrow">Raporty</p>
+        <h1 data-i18n="reports.periodComparison.title">Porównanie okresów</h1>
+        <p data-i18n="reports.periodComparison.subtitle">Wykresy zmian sald dla bieżącego i poprzednich okresów rozliczeniowych.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide report-panel period-comparison-panel"
+             aria-labelledby="period-comparison-panel-title">
+        <div class="section-header">
+            <h2 id="period-comparison-panel-title" data-i18n="reports.periodComparison.panelTitle">Dane porównania</h2>
+            <div class="section-actions topbar-account-actions icon-toolbar"
+                 role="toolbar"
+                 data-i18n-aria-label="reports.periodComparison.toolbar"
+                 aria-label="Narzędzia porównania okresów">
+                <button type="button"
+                        class="icon-button secondary topbar-icon-link"
+                        id="rebuild-period-comparison-cache"
+                        data-i18n-title="reports.periodComparison.rebuild"
+                        data-i18n-aria-label="reports.periodComparison.rebuild"
+                        title="Odbuduj dane"
+                        aria-label="Odbuduj dane">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                        <path d="M21 3v6h-6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="period-comparison-list" id="period-comparison-list" aria-live="polite">
+            <p class="form-message" data-i18n="reports.loading">Ładowanie...</p>
+        </div>
+    </section>
+</main>
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+</body>
+</html>

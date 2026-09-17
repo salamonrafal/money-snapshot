@@ -3,9 +3,11 @@ package com.moneysnapshot.report.web;
 import com.moneysnapshot.report.ReportCacheMaintenanceService;
 import com.moneysnapshot.report.ReportQueryService;
 import com.moneysnapshot.report.BillingPeriodComparisonQueryService;
+import com.moneysnapshot.report.PeriodComparisonQueryService;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,15 +25,27 @@ public class ReportController {
     private final ReportQueryService reportQueryService;
     private final ReportCacheMaintenanceService reportCacheMaintenanceService;
     private final BillingPeriodComparisonQueryService billingPeriodComparisonQueryService;
+    private final PeriodComparisonQueryService periodComparisonQueryService;
+
+    @Autowired
+    public ReportController(
+            ReportQueryService reportQueryService,
+            ReportCacheMaintenanceService reportCacheMaintenanceService,
+            BillingPeriodComparisonQueryService billingPeriodComparisonQueryService,
+            PeriodComparisonQueryService periodComparisonQueryService
+    ) {
+        this.reportQueryService = reportQueryService;
+        this.reportCacheMaintenanceService = reportCacheMaintenanceService;
+        this.billingPeriodComparisonQueryService = billingPeriodComparisonQueryService;
+        this.periodComparisonQueryService = periodComparisonQueryService;
+    }
 
     public ReportController(
             ReportQueryService reportQueryService,
             ReportCacheMaintenanceService reportCacheMaintenanceService,
             BillingPeriodComparisonQueryService billingPeriodComparisonQueryService
     ) {
-        this.reportQueryService = reportQueryService;
-        this.reportCacheMaintenanceService = reportCacheMaintenanceService;
-        this.billingPeriodComparisonQueryService = billingPeriodComparisonQueryService;
+        this(reportQueryService, reportCacheMaintenanceService, billingPeriodComparisonQueryService, null);
     }
 
     @GetMapping("/summary")
@@ -76,6 +90,11 @@ public class ReportController {
         return billingPeriodComparisonQueryService.comparison(periods);
     }
 
+    @GetMapping("/period-comparison")
+    public PeriodComparisonResponse periodComparison() {
+        return periodComparisonQueryService.comparison();
+    }
+
     @GetMapping("/history")
     public HistoryReportResponse history(
             @RequestParam LocalDate fromDate,
@@ -91,6 +110,12 @@ public class ReportController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void clearCache() {
         reportCacheMaintenanceService.clearCurrentUserCache();
+    }
+
+    @PostMapping("/period-comparison/cache/rebuild")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void rebuildPeriodComparisonCache() {
+        reportCacheMaintenanceService.rebuildCurrentUserPeriodComparisonCache();
     }
 
     private void validateHistoryRange(LocalDate fromDate, LocalDate toDate) {

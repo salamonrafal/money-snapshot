@@ -7,6 +7,43 @@
     margin-right: calc(var(--page-padding) * -1);
 }
 
+.period-comparison-list { display: grid; gap: 18px; margin-top: 18px; }
+.period-comparison-panel { min-width: 0; }
+.period-comparison-slider { min-width: 0; }
+.period-comparison-slider-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.period-comparison-slider-track::-webkit-scrollbar { display: none; }
+.period-comparison-slider-track > .period-comparison-card { box-sizing: border-box; min-width: 0; flex: 0 0 100%; scroll-snap-align: start; }
+.period-comparison-slider-controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+.period-comparison-slider-controls .summary-slider-arrow { position: relative; display: inline-block; box-sizing: border-box; width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--muted); font-size: 0; line-height: 0; cursor: pointer; }
+.period-comparison-slider-controls .summary-slider-arrow svg { position: absolute; top: 50%; left: 50%; display: block; width: 14px; height: 14px; margin: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: translate(-50%, -50%); }
+.period-comparison-slider-controls .summary-slider-arrow:hover, .period-comparison-slider-controls .summary-slider-arrow:focus-visible { border-color: var(--accent); color: var(--accent-strong); }
+.period-comparison-slider-controls .summary-slider-dots { display: flex; align-items: center; gap: 8px; }
+.period-comparison-slider-controls .summary-slider-dot { width: 9px; height: 9px; padding: 0; border: 0; border-radius: 50%; background: var(--line); cursor: pointer; }
+.period-comparison-slider-controls .summary-slider-dot.is-active { background: var(--accent); transform: scale(1.25); }
+.period-comparison-currency-charts, .period-comparison-currency-chart { min-width: 0; }
+.period-comparison-currency-charts { display: grid; gap: 18px; margin-top: 8px; }
+.period-comparison-chart-meta { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px 0; color: var(--muted); font-size: .8rem; }
+.period-comparison-chart-meta strong { color: var(--text); font-size: .95rem; }
+.period-comparison-data { margin-top: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.period-comparison-data summary { padding: 10px 12px; color: var(--muted); font-size: .82rem; font-weight: 800; cursor: pointer; }
+.period-comparison-data[open] summary { border-bottom: 1px solid var(--line); color: var(--accent-strong); }
+.period-comparison-data .table-wrap { margin: 0; max-height: 260px; overflow: auto; }
+.period-comparison-data .reports-table { margin: 0; }
+.period-comparison-card { min-height: 0; padding: 0 1px; }
+.period-comparison-chart { margin-top: 18px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface-highlight); }
+.period-comparison-chart svg { display: block; width: 100%; max-width: 100%; min-width: 0; height: 280px; }
+.period-comparison-axis { stroke: var(--chart-grid); stroke-width: 1; }
+.period-comparison-line { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 4; }
+.period-comparison-point { fill: var(--surface); stroke: var(--accent-strong); stroke-width: 3; }
+.period-comparison-final-point { fill: var(--accent); stroke: var(--text); stroke-width: 3; }
+.period-comparison-final-label { fill: var(--accent-strong); font-size: 10px; font-weight: 800; }
+.period-comparison-final-badge { display: inline-block; margin-left: 6px; padding: 2px 5px; border-radius: 999px; background: var(--accent-wash-subtle); color: var(--accent-strong); font-size: .72rem; font-weight: 800; white-space: nowrap; }
+.period-comparison-value { fill: var(--text); font-size: 10px; font-weight: 700; paint-order: stroke; stroke: var(--surface-highlight); stroke-width: 3px; stroke-linejoin: round; }
+.period-comparison-axis-label { fill: var(--muted); font-size: 11px; }
+.period-comparison-chart-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 16px 0; color: var(--muted); font-size: .8rem; font-weight: 700; }
+.period-comparison-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.period-comparison-chart-legend i { width: 10px; height: 10px; border-radius: 50%; }
+
 .reports-workspace {
     overflow-x: clip;
 }

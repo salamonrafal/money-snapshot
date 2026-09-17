@@ -57,6 +57,11 @@ public class PageController {
         return "reports";
     }
 
+    @GetMapping("/reports/period-comparison.html")
+    public String periodComparison() {
+        return "period-comparison";
+    }
+
     @GetMapping("/calendar.html")
     public String calendar() {
         return "calendar";

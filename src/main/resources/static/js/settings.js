@@ -4,6 +4,7 @@ const themeSelect = document.querySelector("#settings-theme");
 const dateTimeFormatInput = document.querySelector("#settings-date-time-format");
 const moneyFormatInput = document.querySelector("#settings-money-format");
 const billingMonthStartDayInput = document.querySelector("#settings-billing-month-start-day");
+const periodComparisonHistoryPeriodsInput = document.querySelector("#settings-period-comparison-history-periods");
 const formMessage = document.querySelector("#settings-form-message");
 const toastManager = MoneySnapshotUi.createToastManager({durationMs: 5000});
 
@@ -48,6 +49,7 @@ function fillSettings(settings) {
     dateTimeFormatInput.value = settings.dateTimeFormat ?? "Y-m-d H:m";
     moneyFormatInput.value = settings.moneyFormat ?? "### ###,00 zł";
     billingMonthStartDayInput.value = settings.billingMonthStartDay ?? 1;
+    periodComparisonHistoryPeriodsInput.value = settings.periodComparisonHistoryPeriods ?? 3;
     MoneySnapshotUi.applyTheme(themeSelect.value);
 }
 
@@ -62,6 +64,7 @@ async function loadSettings() {
 
 async function saveSettings() {
     const billingMonthStartDay = normalizedBillingMonthStartDayValue();
+    const periodComparisonHistoryPeriods = periodComparisonHistoryPeriodsInput.value.trim();
     const response = await fetch("/api/users/me/settings", {
         method: "PUT",
         headers: {"Content-Type": "application/json"},
@@ -71,7 +74,8 @@ async function saveSettings() {
                 theme: themeSelect.value,
                 dateTimeFormat: dateTimeFormatInput.value.trim(),
                 moneyFormat: moneyFormatInput.value.trim(),
-                billingMonthStartDay
+                billingMonthStartDay,
+                periodComparisonHistoryPeriods
             }
         })
     });
@@ -87,9 +91,12 @@ async function saveSettings() {
 settingsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const billingMonthStartDay = normalizedBillingMonthStartDayValue();
+    const periodComparisonHistoryPeriods = Number.parseInt(periodComparisonHistoryPeriodsInput.value.trim(), 10);
     if (!dateTimeFormatInput.value.trim()
             || !moneyFormatInput.value.trim()
-            || billingMonthStartDay === null) {
+            || billingMonthStartDay === null
+            || !Number.isInteger(periodComparisonHistoryPeriods)
+            || periodComparisonHistoryPeriods < 1 || periodComparisonHistoryPeriods > 6) {
         setMessage(messages["settings.form.required"], "error");
         return;
     }
