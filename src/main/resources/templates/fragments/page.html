@@ -24,6 +24,7 @@
     <link rel="stylesheet" th:href="@{/css/components/forms.css}">
     <link rel="stylesheet" th:href="@{/css/components/modals.css}">
     <link rel="stylesheet" th:href="@{/css/components/shortcuts-launcher.css}">
+    <link rel="stylesheet" th:href="@{/css/components/custom-select.css}">
     <link rel="stylesheet" th:href="@{/css/components/topbar.css}">
     <link rel="stylesheet" th:href="@{/css/app-overrides.css}">
     <th:block th:if="${domainStyle != null}">
@@ -32,12 +33,14 @@
               th:href="@{/css/domains/{style}.css(style=${#strings.trim(style)})}">
     </th:block>
     <link rel="icon" type="image/svg+xml" th:href="@{/images/money_snapshot_mark.svg}">
+    <script defer th:src="@{/js/components/custom-select.js}"></script>
     <script defer th:src="@{/js/i18n.js}"></script>
     <script defer th:src="@{/js/shared-ui.js}"></script>
     <script defer th:src="@{/js/shortcuts-launcher.js}"></script>
     <script defer th:src="@{/js/shortcut-actions.js}"></script>
     <script defer th:src="@{/js/topbar-modals.js}"></script>
     <script defer th:src="@{/js/components/slider.js}"></script>
+    <script th:if="${pageScript == 'counterparties.js'}" defer th:src="@{/js/counterparty-form.js}"></script>
     <script defer th:src="@{/js/{script}(script=${pageScript})}"></script>
 </head>
 <body>
@@ -107,13 +110,13 @@
                     <span class="visually-hidden" data-i18n="common.nav.logout">Wyloguj</span>
                 </button>
             </form>
-            <label class="language-switcher topbar-language-switcher">
-                <span class="visually-hidden" data-i18n="common.nav.language">Język</span>
-                <select id="language-select" aria-label="Language">
-                    <option value="pl">PL</option>
-                    <option value="en">EN</option>
+            <div class="language-switcher topbar-language-switcher">
+                <span id="language-select-label" class="visually-hidden" data-i18n="common.nav.language">Język</span>
+                <select id="language-select" data-custom-select aria-labelledby="language-select-label">
+                    <option value="pl" th:attr="data-icon=@{/images/flag-pl.svg}">PL</option>
+                    <option value="en" th:attr="data-icon=@{/images/flag-gb.svg}">EN</option>
                 </select>
-            </label>
+            </div>
         </div>
     </div>
 
@@ -195,21 +198,21 @@
             </div>
             <div class="snapshot-form-modal-body">
                 <form class="editor-panel wide-panel topbar-modal-form" id="topbar-settings-form">
-                    <label class="field">
-                        <span data-i18n="settings.form.defaultCurrency">Waluta</span>
-                        <select id="topbar-settings-default-currency">
-                            <option value="PLN">PLN</option>
-                            <option value="EUR">EUR</option>
-                            <option value="USD">USD</option>
+                    <div class="field">
+                        <span id="topbar-settings-default-currency-label" data-i18n="settings.form.defaultCurrency">Waluta</span>
+                        <select id="topbar-settings-default-currency" data-custom-select aria-labelledby="topbar-settings-default-currency-label">
+                            <option value="PLN" data-icon-text="zł">PLN</option>
+                            <option value="EUR" data-icon-text="€">EUR</option>
+                            <option value="USD" data-icon-text="$">USD</option>
                         </select>
-                    </label>
-                    <label class="field">
-                        <span data-i18n="settings.form.theme">Motyw</span>
-                        <select id="topbar-settings-theme">
+                    </div>
+                    <div class="field">
+                        <span id="topbar-settings-theme-label" data-i18n="settings.form.theme">Motyw</span>
+                        <select id="topbar-settings-theme" data-custom-select aria-labelledby="topbar-settings-theme-label">
                             <option value="light" data-i18n="settings.form.theme.light">Jasny</option>
                             <option value="dark" data-i18n="settings.form.theme.dark">Ciemny</option>
                         </select>
-                    </label>
+                    </div>
                     <label class="field">
                         <span data-i18n="settings.form.dateTimeFormat">Format daty</span>
                         <input id="topbar-settings-date-time-format" type="text" maxlength="80" autocomplete="off">

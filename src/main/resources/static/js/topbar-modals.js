@@ -87,6 +87,9 @@
             }
             field.disabled = disabled || field.dataset.initialDisabled === "true";
         });
+        form.querySelectorAll("select[data-custom-select]").forEach((select) => {
+            window.MoneySnapshotSelect?.create(select)?.refresh();
+        });
     }
 
     function applyModalMessages() {
@@ -180,6 +183,9 @@
     function fillSettingsForm(settings) {
         settingsDefaultCurrencySelect.value = settings.defaultCurrency ?? "PLN";
         settingsThemeSelect.value = settings.theme ?? "light";
+        [settingsDefaultCurrencySelect, settingsThemeSelect].forEach((select) => {
+            window.MoneySnapshotSelect?.create(select)?.refresh();
+        });
         settingsDateTimeFormatInput.value = settings.dateTimeFormat ?? "Y-m-d H:m";
         settingsMoneyFormatInput.value = settings.moneyFormat ?? "### ###,00 zł";
         settingsBillingMonthStartDayInput.value = settings.billingMonthStartDay ?? 1;

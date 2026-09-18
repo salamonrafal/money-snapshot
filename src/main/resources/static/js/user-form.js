@@ -54,12 +54,17 @@ function persistUsersNotification(messageKey, type = "success") {
 }
 
 function renderRoles() {
+    const selectedValue = roleSelect.value;
     roleSelect.replaceChildren(...roles.map((role) => {
         const option = document.createElement("option");
         option.value = role.id;
         option.textContent = role.name;
         return option;
     }));
+    if (roles.some((role) => String(role.id) === selectedValue)) {
+        roleSelect.value = selectedValue;
+    }
+    window.MoneySnapshotSelect.create(roleSelect).refresh();
 }
 
 function fillForm(user) {
@@ -69,6 +74,7 @@ function fillForm(user) {
     descriptionInput.value = user.description ?? "";
     roleSelect.value = user.roleId;
     statusSelect.value = user.status;
+    [roleSelect, statusSelect].forEach((select) => window.MoneySnapshotSelect.create(select).refresh());
     passwordInput.value = "";
 }
 
@@ -81,7 +87,12 @@ function highlightField(input) {
 }
 
 function focusFirstHighlightedField() {
-    formControls.find((input) => input.getAttribute("aria-invalid") === "true")?.focus();
+    const input = formControls.find((input) => input.getAttribute("aria-invalid") === "true");
+    if (input?.matches("select[data-custom-select]")) {
+        window.MoneySnapshotSelect.create(input).focus();
+    } else {
+        input?.focus();
+    }
 }
 
 function validateTrimmedFields() {
@@ -137,6 +148,7 @@ async function loadUser() {
             passwordRequiredMark.hidden = false;
         }
         statusSelect.value = "ACTIVE";
+        window.MoneySnapshotSelect.create(statusSelect).refresh();
         return;
     }
 

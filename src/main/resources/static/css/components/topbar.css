@@ -105,13 +105,13 @@ body.shortcuts-launcher-open {
     flex-wrap: nowrap;
     border-radius: 8px;
     background: var(--surface);
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid var(--line);
 }
 
 .topbar-account-actions .topbar-icon-link,
 .topbar-account-actions .logout-form .button,
-.topbar-account-actions .topbar-language-switcher select {
+.topbar-account-actions .topbar-language-switcher .custom-select-trigger {
     border: 0;
     border-radius: 0;
     min-height: 40px;
@@ -184,8 +184,8 @@ body.shortcuts-launcher-open {
     background: transparent;
 }
 
-.topbar-account-actions .topbar-language-switcher select {
-    display: block;
+.topbar-account-actions .topbar-language-switcher .custom-select-trigger {
+    display: flex;
     width: auto;
     min-width: 64px;
     min-height: 40px;
@@ -194,14 +194,11 @@ body.shortcuts-launcher-open {
     border-radius: 0;
     background: transparent;
     color: var(--text);
-    appearance: auto;
     box-shadow: none;
-    color-scheme: light dark;
 }
 
-.topbar-account-actions .topbar-language-switcher select option {
-    background: var(--surface);
-    color: var(--text);
+.topbar-language-switcher .custom-select-list {
+    min-width: 100px;
 }
 
 .topbar-account-actions > :first-child,
@@ -213,7 +210,7 @@ body.shortcuts-launcher-open {
 .topbar-account-actions > :last-child,
 .topbar-account-actions > :last-child .button,
 .topbar-account-actions > :last-child .topbar-icon-link,
-.topbar-account-actions > :last-child select {
+.topbar-account-actions > :last-child .custom-select-trigger {
     border-top-right-radius: 8px;
     border-bottom-right-radius: 8px;
 }
@@ -330,7 +327,7 @@ body.shortcuts-launcher-open {
     .topbar-account-actions .logout-form,
     .topbar-account-actions .logout-form .button,
     .topbar-language-switcher,
-    .topbar-language-switcher select {
+    .topbar-language-switcher .custom-select-trigger {
         width: auto;
     }
 

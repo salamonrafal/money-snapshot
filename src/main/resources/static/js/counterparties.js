@@ -22,9 +22,41 @@ let cachedCounterparties = [];
 let counterpartiesLoaded = false;
 let counterpartiesUserSettings = null;
 let selectedCounterpartyForDetails = null;
+const counterpartyEditorModal = MoneySnapshotUi.createModal({
+    modalSelector: "#counterparty-editor-modal",
+    closeSelectors: ["[data-counterparty-editor-close]"]
+});
+const counterpartyEditor = window.MoneySnapshotCounterpartyForm?.create({
+    root: document.querySelector("#counterparty-editor-modal"),
+    onSuccess: async () => {
+        counterpartyEditorModal.close();
+        await refreshCounterparties();
+        showCounterpartiesToast(counterpartiesMessages["counterparties.form.success"] ?? "", "success");
+    }
+});
+
+function openCounterpartyEditor(event, trigger, counterparty = null) {
+    if (!counterpartyEditor || !counterpartyEditorModal.modal || !counterpartiesMessages["counterpartyForm.heading.title"]
+            || event.defaultPrevented || event.button !== 0
+            || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+        return;
+    }
+    if (counterpartyEditor.isSaving()) {
+        event.preventDefault();
+        return;
+    }
+    counterpartyEditor.prepare(counterparty);
+    counterpartyEditorModal.open({trigger});
+    event.preventDefault();
+}
+
+newCounterpartyAction?.addEventListener("click", (event) => {
+    openCounterpartyEditor(event, newCounterpartyAction);
+});
 
 function handleCounterpartiesLanguageChange(nextMessages) {
     counterpartiesMessages = nextMessages;
+    counterpartyEditor?.setMessages(nextMessages);
     document.title = `${counterpartiesMessages["counterparties.heading.title"]} | ${counterpartiesMessages["app.name"]}`;
     if (counterpartyInfoModal.isOpen()) {
         renderCounterpartyInfoModal();
@@ -135,6 +167,7 @@ function createCounterpartyEditAction(counterparty) {
     editLink.setAttribute("aria-label", counterpartiesMessages["counterparties.actions.edit"] ?? "");
     MoneySnapshotUi.setTooltip(editLink, counterpartiesMessages["counterparties.actions.edit"] ?? "");
     editLink.append(MoneySnapshotUi.createEditIcon());
+    editLink.addEventListener("click", (event) => openCounterpartyEditor(event, editLink, counterparty));
     return editLink;
 }
 

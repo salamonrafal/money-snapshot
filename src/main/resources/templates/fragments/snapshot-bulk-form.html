@@ -19,15 +19,15 @@
             <p class="form-message" data-role="bulk-snapshot-message" role="alert"></p>
         </div>
         <div class="bulk-snapshot-controls">
-            <label class="field bulk-snapshot-control-type">
-                <span data-i18n="snapshots.form.type">Typ migawki</span>
-                <select data-role="bulk-snapshot-type" name="snapshotType" required>
+            <div class="field bulk-snapshot-control-type">
+                <span th:id="${formId + '-type-label'}" data-i18n="snapshots.form.type">Typ migawki</span>
+                <select data-role="bulk-snapshot-type" name="snapshotType" data-custom-select th:attr="aria-labelledby=${formId + '-type-label'}" required>
                     <option value="" data-i18n="snapshots.form.typePlaceholder">Wybierz typ migawki</option>
                     <option value="FINAL" data-i18n="snapshots.type.FINAL">Finalna</option>
                     <option value="PARTIAL" data-i18n="snapshots.type.PARTIAL">Cząstkowa</option>
                 </select>
-                <span class="bulk-input-error" data-role="bulk-snapshot-type-error" data-validation-role="type" aria-live="polite" hidden></span>
-            </label>
+                <span class="bulk-input-error" th:id="${formId + '-type-error'}" data-role="bulk-snapshot-type-error" data-validation-role="type" aria-live="polite" hidden></span>
+            </div>
             <label class="field bulk-snapshot-control-date">
                 <span data-i18n="snapshots.form.date">Data migawki</span>
                 <input data-role="bulk-snapshot-date" name="snapshotDate" type="date" required>

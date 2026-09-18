@@ -1,6 +1,7 @@
 package com.moneysnapshot.shared.i18n;
 
 import java.util.Locale;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.context.MessageSource;
@@ -1294,7 +1295,9 @@ public class MessageBundleService {
     }
 
     public Map<String, String> counterpartyPageMessages(Locale locale) {
-        return messages(COUNTERPARTY_PAGE_KEYS, locale);
+        Map<String, String> result = new LinkedHashMap<>(messages(COUNTERPARTY_PAGE_KEYS, locale));
+        result.putAll(messages(COUNTERPARTY_FORM_PAGE_KEYS, locale));
+        return result;
     }
 
     public Map<String, String> counterpartyFormPageMessages(Locale locale) {

@@ -84,3 +84,21 @@
     width: 88px;
     text-align: center;
 }
+
+.user-editor-form .field {
+    margin-top: 18px;
+}
+
+.user-editor-form .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.user-editor-form .form-actions {
+    justify-content: flex-end;
+}
+
+@media (max-width: 560px) {
+    .user-editor-form .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

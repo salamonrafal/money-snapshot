@@ -167,6 +167,7 @@ function renderRoleOptions(selectElement, selectedValue = "") {
 
     if (selectedValue) {
         selectElement.value = selectedValue;
+        if (selectElement.matches("[data-custom-select]")) window.MoneySnapshotSelect.create(selectElement).refresh();
         return;
     }
 
@@ -174,6 +175,7 @@ function renderRoleOptions(selectElement, selectedValue = "") {
     if (defaultValue) {
         selectElement.value = defaultValue;
     }
+    if (selectElement.matches("[data-custom-select]")) window.MoneySnapshotSelect.create(selectElement).refresh();
 }
 
 function clearFieldHighlights(inputs) {
@@ -185,7 +187,12 @@ function highlightField(input) {
 }
 
 function focusFirstHighlightedField(inputs) {
-    inputs.find((input) => input.getAttribute("aria-invalid") === "true")?.focus();
+    const input = inputs.find((input) => input.getAttribute("aria-invalid") === "true");
+    if (input?.matches("select[data-custom-select]")) {
+        window.MoneySnapshotSelect.create(input).focus();
+    } else {
+        input?.focus();
+    }
 }
 
 function validateUserForm(fieldMap, {requirePassword = false} = {}) {
@@ -232,6 +239,7 @@ function resetNewUserForm() {
     newUserForm.reset();
     renderRoleOptions(newUserRoleSelect);
     newUserStatusSelect.value = "ACTIVE";
+    window.MoneySnapshotSelect.create(newUserStatusSelect).refresh();
     newUserPasswordInput.required = true;
     newUserSubmitButton.disabled = false;
     clearFieldHighlights(newUserFormControls);
@@ -246,6 +254,7 @@ function resetEditUserForm() {
     editUserForm.reset();
     renderRoleOptions(editUserRoleSelect);
     editUserStatusSelect.value = "ACTIVE";
+    window.MoneySnapshotSelect.create(editUserStatusSelect).refresh();
     editUserPasswordInput.required = false;
     editUserSubmitButton.disabled = false;
     clearFieldHighlights(editUserFormControls);
@@ -259,6 +268,7 @@ function fillEditUserForm(user) {
     editUserDescriptionInput.value = user.description ?? "";
     renderRoleOptions(editUserRoleSelect, user.roleId);
     editUserStatusSelect.value = user.status ?? "ACTIVE";
+    window.MoneySnapshotSelect.create(editUserStatusSelect).refresh();
     editUserPasswordInput.value = "";
     editUserPasswordInput.required = false;
 }

@@ -18,37 +18,37 @@
                     <span data-i18n="accounts.form.name">Nazwa konta</span>
                     <input id="account-name" name="accountName" type="text" maxlength="120" required>
                 </label>
-                <label class="field">
-                    <span data-i18n="accounts.form.bank">Bank</span>
-                    <select id="account-bank" name="bankName" required>
+                <div class="field">
+                    <span id="account-bank-label" data-i18n="accounts.form.bank">Bank</span>
+                    <select id="account-bank" data-custom-select aria-labelledby="account-bank-label" name="bankName" required>
                         <option value="" data-i18n="accounts.form.bankPlaceholder">Wybierz bank</option>
                     </select>
-                </label>
-                <label class="field">
-                    <span data-i18n="accounts.form.accountType">Typ konta</span>
-                    <select id="account-type" name="accountTypeCode" required>
+                </div>
+                <div class="field">
+                    <span id="account-type-label" data-i18n="accounts.form.accountType">Typ konta</span>
+                    <select id="account-type" data-custom-select aria-labelledby="account-type-label" name="accountTypeCode" required>
                         <option value="BANK_ACCOUNT" data-i18n="accounts.accountType.BANK_ACCOUNT">Konto bankowe</option>
                         <option value="CASH" data-i18n="accounts.accountType.CASH">Gotówka</option>
                         <option value="SAVINGS" data-i18n="accounts.accountType.SAVINGS">Oszczędnościowe</option>
                         <option value="INVESTMENT" data-i18n="accounts.accountType.INVESTMENT">Inwestycyjne</option>
                     </select>
-                </label>
-                <label class="field">
-                    <span data-i18n="accounts.form.currency">Waluta</span>
-                    <select id="account-currency" name="currencyCode" required>
-                        <option value="PLN">PLN</option>
-                        <option value="EUR">EUR</option>
-                        <option value="USD">USD</option>
+                </div>
+                <div class="field">
+                    <span id="account-currency-label" data-i18n="accounts.form.currency">Waluta</span>
+                    <select id="account-currency" data-custom-select aria-labelledby="account-currency-label" name="currencyCode" required>
+                        <option value="PLN" data-icon-text="zł">PLN</option>
+                        <option value="EUR" data-icon-text="€">EUR</option>
+                        <option value="USD" data-icon-text="$">USD</option>
                     </select>
-                </label>
-                <label class="field">
-                    <span data-i18n="accounts.form.status">Status</span>
-                    <select id="account-status" name="status" required>
+                </div>
+                <div class="field">
+                    <span id="account-status-label" data-i18n="accounts.form.status">Status</span>
+                    <select id="account-status" data-custom-select aria-labelledby="account-status-label" name="status" required>
                         <option value="ACTIVE" data-i18n="accounts.status.ACTIVE">Aktywne</option>
                         <option value="CLOSED" data-i18n="accounts.status.CLOSED">Zamknięte</option>
                         <option value="SUSPENDED" data-i18n="accounts.status.SUSPENDED">Zawieszone</option>
                     </select>
-                </label>
+                </div>
             </div>
             <label class="field">
                 <span data-i18n="accounts.form.bankAccountNumber">Numer rachunku</span>
