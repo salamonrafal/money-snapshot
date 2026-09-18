@@ -6,12 +6,12 @@
           data-snapshot-form
           th:attr="id=${formId},data-mode=${mode},data-snapshot-id=${snapshotId}">
         <div class="form-grid">
-            <label class="field">
-                <span data-i18n="snapshots.form.account">Konto</span>
-                <select name="accountId" data-role="snapshot-account" required>
+            <div class="field">
+                <span th:id="${(formId != null ? formId : 'snapshot-' + mode) + '-account-label'}" data-i18n="snapshots.form.account">Konto</span>
+                <select name="accountId" data-role="snapshot-account" data-custom-select th:attr="aria-labelledby=${(formId != null ? formId : 'snapshot-' + mode) + '-account-label'}" required>
                     <option value="" data-i18n="snapshots.form.accountPlaceholder">Wybierz konto</option>
                 </select>
-            </label>
+            </div>
             <label class="field">
                 <span data-i18n="snapshots.form.date">Data migawki</span>
                 <input name="snapshotDate" type="date" data-role="snapshot-date" required>
@@ -20,14 +20,14 @@
                 <span data-i18n="snapshots.form.balance">Saldo</span>
                 <input name="balance" type="number" step="0.0001" data-role="snapshot-balance" required>
             </label>
-            <label class="field">
-                <span data-i18n="snapshots.form.type">Typ migawki</span>
-                <select name="snapshotType" data-role="snapshot-type" required>
+            <div class="field">
+                <span th:id="${(formId != null ? formId : 'snapshot-' + mode) + '-type-label'}" data-i18n="snapshots.form.type">Typ migawki</span>
+                <select name="snapshotType" data-role="snapshot-type" data-custom-select th:attr="aria-labelledby=${(formId != null ? formId : 'snapshot-' + mode) + '-type-label'}" required>
                     <option value="" data-i18n="snapshots.form.typePlaceholder">Wybierz typ migawki</option>
                     <option value="FINAL" data-i18n="snapshots.type.FINAL">Finalna</option>
                     <option value="PARTIAL" data-i18n="snapshots.type.PARTIAL">Cząstkowa</option>
                 </select>
-            </label>
+            </div>
         </div>
         <label class="field">
             <span data-i18n="snapshots.form.note">Notatka</span>

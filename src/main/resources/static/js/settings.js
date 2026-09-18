@@ -46,6 +46,9 @@ function normalizedBillingMonthStartDayValue() {
 function fillSettings(settings) {
     defaultCurrencySelect.value = settings.defaultCurrency ?? "PLN";
     themeSelect.value = settings.theme ?? "light";
+    [defaultCurrencySelect, themeSelect].forEach((select) => {
+        window.MoneySnapshotSelect.create(select).refresh();
+    });
     dateTimeFormatInput.value = settings.dateTimeFormat ?? "Y-m-d H:m";
     moneyFormatInput.value = settings.moneyFormat ?? "### ###,00 zł";
     billingMonthStartDayInput.value = settings.billingMonthStartDay ?? 1;

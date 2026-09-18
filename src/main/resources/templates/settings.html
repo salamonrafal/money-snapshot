@@ -13,21 +13,21 @@
 
     <section class="management-layout single-column" aria-label="Ustawienia aplikacji">
         <form class="editor-panel wide-panel" id="settings-form">
-            <label class="field">
-                <span data-i18n="settings.form.defaultCurrency">Waluta</span>
-                <select id="settings-default-currency">
-                    <option value="PLN">PLN</option>
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
+            <div class="field">
+                <span id="settings-default-currency-label" data-i18n="settings.form.defaultCurrency">Waluta</span>
+                <select id="settings-default-currency" data-custom-select aria-labelledby="settings-default-currency-label">
+                    <option value="PLN" data-icon-text="zł">PLN</option>
+                    <option value="EUR" data-icon-text="€">EUR</option>
+                    <option value="USD" data-icon-text="$">USD</option>
                 </select>
-            </label>
-            <label class="field">
-                <span data-i18n="settings.form.theme">Motyw</span>
-                <select id="settings-theme">
+            </div>
+            <div class="field">
+                <span id="settings-theme-label" data-i18n="settings.form.theme">Motyw</span>
+                <select id="settings-theme" data-custom-select aria-labelledby="settings-theme-label">
                     <option value="light" data-i18n="settings.form.theme.light">Jasny</option>
                     <option value="dark" data-i18n="settings.form.theme.dark">Ciemny</option>
                 </select>
-            </label>
+            </div>
             <label class="field">
                 <span data-i18n="settings.form.dateTimeFormat">Format daty</span>
                 <input id="settings-date-time-format" type="text" maxlength="80" autocomplete="off">

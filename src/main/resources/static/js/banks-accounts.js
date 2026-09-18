@@ -289,6 +289,9 @@ function renderAccountBankOptions(selectElement, selectedValue = "") {
         })
     );
     selectElement.value = selectedValue;
+    if (selectElement.matches("[data-custom-select]")) {
+        window.MoneySnapshotSelect.create(selectElement).refresh();
+    }
 }
 
 function renderNewAccountBankOptions(selectedValue = "") {
@@ -309,6 +312,9 @@ function resetNewAccountForm() {
     newAccountTypeSelect.value = "BANK_ACCOUNT";
     newAccountCurrencySelect.value = "PLN";
     newAccountStatusSelect.value = "ACTIVE";
+    [newAccountTypeSelect, newAccountCurrencySelect, newAccountStatusSelect].forEach((select) => {
+        window.MoneySnapshotSelect.create(select).refresh();
+    });
     newAccountShowInSnapshotsInput.checked = true;
     setBankAccountInfo(newAccountBankAccountNumberBankInfo, "");
     setNewAccountFormMessage("");
@@ -326,6 +332,9 @@ function resetEditAccountForm() {
     editAccountTypeSelect.value = "BANK_ACCOUNT";
     editAccountCurrencySelect.value = "PLN";
     editAccountStatusSelect.value = "ACTIVE";
+    [editAccountTypeSelect, editAccountCurrencySelect, editAccountStatusSelect].forEach((select) => {
+        window.MoneySnapshotSelect.create(select).refresh();
+    });
     editAccountShowInSnapshotsInput.checked = true;
     setBankAccountInfo(editAccountBankAccountNumberBankInfo, "");
     setEditAccountFormMessage("");
@@ -363,6 +372,9 @@ function openEditAccountModal({trigger, account} = {}) {
     editAccountTypeSelect.value = account.accountTypeCode ?? "BANK_ACCOUNT";
     editAccountCurrencySelect.value = account.currencyCode ?? "PLN";
     editAccountStatusSelect.value = account.status ?? "ACTIVE";
+    [editAccountTypeSelect, editAccountCurrencySelect, editAccountStatusSelect].forEach((select) => {
+        window.MoneySnapshotSelect.create(select).refresh();
+    });
     editAccountBankAccountNumberInput.value = account.bankAccountNumber ?? "";
     editAccountShowInSnapshotsInput.checked = account.showInSnapshots !== false;
     editAccountDescriptionInput.value = account.description ?? "";

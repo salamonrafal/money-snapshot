@@ -59,6 +59,9 @@ const MoneySnapshotI18n = (() => {
                 }
             }
         });
+        document.querySelectorAll("select[data-custom-select]").forEach((select) => {
+            window.MoneySnapshotSelect?.create(select)?.refresh();
+        });
     }
 
     async function init({endpoint, onLanguageChange = () => {}}) {
@@ -74,6 +77,7 @@ const MoneySnapshotI18n = (() => {
 
             if (languageSelect) {
                 languageSelect.value = currentLanguage;
+                window.MoneySnapshotSelect?.create(languageSelect)?.refresh();
             }
 
             onLanguageChange({language: currentLanguage, messages});

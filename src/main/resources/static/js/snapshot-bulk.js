@@ -21,6 +21,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
         const noteInput = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-note']");
         const snapshotDateInput = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-date']");
         const snapshotTypeSelect = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-type']");
+        const snapshotTypeCustomSelect = window.MoneySnapshotSelect.create(snapshotTypeSelect);
         const tableBody = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-table-body']");
         const messageContainer = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-message-container']");
         const formMessage = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-message']");
@@ -420,7 +421,11 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
                 });
 
             firstInvalidInput?.scrollIntoView({block: "center", inline: "center", behavior: "smooth"});
-            firstInvalidInput?.focus({preventScroll: true});
+            if (firstInvalidInput === snapshotTypeSelect) {
+                snapshotTypeCustomSelect.focus({preventScroll: true});
+            } else {
+                firstInvalidInput?.focus({preventScroll: true});
+            }
         }
 
         async function saveSnapshots(entries) {
@@ -540,6 +545,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             bulkSnapshotForm.reset();
             snapshotDateInput.value = draftSnapshotDate;
             snapshotTypeSelect.value = "";
+            snapshotTypeCustomSelect.refresh();
             noteInput.value = "";
             clearValidationErrors();
             setFormMessage("");

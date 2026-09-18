@@ -158,6 +158,7 @@ function restoreListState() {
         const state = JSON.parse(savedState);
         currentPage = Number.isInteger(state.currentPage) && state.currentPage >= 0 ? state.currentPage : 0;
         pageSizeSelect.value = ["10", "20", "50", "100"].includes(state.pageSize) ? state.pageSize : pageSizeSelect.value;
+        window.MoneySnapshotSelect.create(pageSizeSelect).refresh();
         dateFilterInput.value = typeof state.snapshotDate === "string" ? state.snapshotDate : "";
         accountFilterSelect.dataset.pendingValue = typeof state.accountId === "string" ? state.accountId : "";
     } catch (error) {
@@ -357,8 +358,11 @@ function formatBalance(snapshot) {
 }
 
 function createSnapshotTypeSelect(snapshot) {
+    const container = document.createElement("div");
+    container.className = "snapshot-type-select";
     const select = document.createElement("select");
-    select.className = "table-input snapshot-type-select";
+    select.dataset.customSelect = "";
+    select.dataset.selectPopover = "";
     select.setAttribute("aria-label", messages["snapshots.table.type"] ?? "Type");
 
     const placeholder = document.createElement("option");
@@ -375,6 +379,8 @@ function createSnapshotTypeSelect(snapshot) {
     });
 
     select.value = snapshot.snapshotType ?? "";
+    container.append(select);
+    const customSelect = window.MoneySnapshotSelect.create(select);
     select.addEventListener("change", async () => {
         const previousType = snapshot.snapshotType;
         const nextType = select.value;
@@ -383,6 +389,7 @@ function createSnapshotTypeSelect(snapshot) {
         }
 
         select.disabled = true;
+        customSelect.refresh();
         setListMessage("");
 
         try {
@@ -395,10 +402,11 @@ function createSnapshotTypeSelect(snapshot) {
             setListMessage(error.message, "error");
         } finally {
             select.disabled = false;
+            customSelect.refresh();
         }
     });
 
-    return select;
+    return container;
 }
 
 function formatAccountOption(account) {
@@ -422,6 +430,7 @@ function renderAccountFilterOptions() {
     );
 
     accountFilterSelect.value = cachedAccounts.some((account) => account.id === selectedValue) ? selectedValue : "";
+    window.MoneySnapshotSelect.create(accountFilterSelect).refresh();
     delete accountFilterSelect.dataset.pendingValue;
     updateClearFiltersButton();
 }
@@ -841,6 +850,7 @@ clearFiltersButton?.addEventListener("click", () => {
     }
 
     accountFilterSelect.value = "";
+    window.MoneySnapshotSelect.create(accountFilterSelect).refresh();
     dateFilterInput.value = "";
     currentPage = 0;
     updateClearFiltersButton();

@@ -157,6 +157,9 @@ function renderBankOptions() {
             })
     );
     accountBankSelect.value = selectedValue;
+    if (accountBankSelect.matches("[data-custom-select]")) {
+        window.MoneySnapshotSelect.create(accountBankSelect).refresh();
+    }
 }
 
 async function loadBanks() {
@@ -189,6 +192,9 @@ async function loadAccount() {
     accountTypeSelect.value = loadedAccount.accountTypeCode;
     accountCurrencySelect.value = loadedAccount.currencyCode;
     accountStatusSelect.value = loadedAccount.status;
+    [accountBankSelect, accountTypeSelect, accountCurrencySelect, accountStatusSelect].forEach((select) => {
+        window.MoneySnapshotSelect.create(select).refresh();
+    });
     accountBankAccountNumberInput.value = loadedAccount.bankAccountNumber ?? "";
     accountShowInSnapshotsInput.checked = loadedAccount.showInSnapshots !== false;
     accountDescriptionInput.value = loadedAccount.description ?? "";

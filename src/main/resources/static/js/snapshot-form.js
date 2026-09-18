@@ -41,6 +41,8 @@ window.MoneySnapshotSnapshotForm = (() => {
         const snapshotDateInput = snapshotForm.querySelector("[data-role='snapshot-date']");
         const balanceInput = snapshotForm.querySelector("[data-role='snapshot-balance']");
         const snapshotTypeSelect = snapshotForm.querySelector("[data-role='snapshot-type']");
+        const accountCustomSelect = window.MoneySnapshotSelect.create(accountSelect);
+        const snapshotTypeCustomSelect = window.MoneySnapshotSelect.create(snapshotTypeSelect);
         const noteInput = snapshotForm.querySelector("[data-role='snapshot-note']");
         const rememberAccountInput = snapshotForm.querySelector("[data-role='remember-snapshot-account']");
         const lastSnapshotSummary = snapshotForm.querySelector("[data-role='snapshot-last-summary']")
@@ -66,6 +68,8 @@ window.MoneySnapshotSnapshotForm = (() => {
             balanceInput.value = "";
             snapshotTypeSelect.value = "";
             noteInput.value = "";
+            accountCustomSelect.refresh();
+            snapshotTypeCustomSelect.refresh();
         }
 
         function setFormMessage(text, type = "") {
@@ -136,6 +140,7 @@ window.MoneySnapshotSnapshotForm = (() => {
                 })
             );
             accountSelect.value = accountExists(selectedValue) ? selectedValue : "";
+            accountCustomSelect.refresh();
         }
 
         function setDefaultSnapshotDate() {
@@ -230,6 +235,8 @@ window.MoneySnapshotSnapshotForm = (() => {
             balanceInput.value = loadedSnapshot.balance;
             snapshotTypeSelect.value = loadedSnapshot.snapshotType ?? "";
             noteInput.value = loadedSnapshot.note ?? "";
+            accountCustomSelect.refresh();
+            snapshotTypeCustomSelect.refresh();
         }
 
         async function saveSnapshot(payload) {
@@ -311,13 +318,14 @@ window.MoneySnapshotSnapshotForm = (() => {
             } finally {
                 submitButton.disabled = false;
                 if (shouldRefocusAccount) {
-                    accountSelect.focus();
+                    accountCustomSelect.focus();
                 }
             }
         }
 
         function resetForm() {
             snapshotForm.reset();
+            snapshotTypeCustomSelect.refresh();
             restoreRememberAccountPreference(rememberAccountInput);
             renderAccountOptions();
             setRememberedAccountDateFromLastSnapshot();
@@ -392,7 +400,7 @@ window.MoneySnapshotSnapshotForm = (() => {
             handleLanguageChange,
             updateUserSettings,
             resetForm,
-            focus: () => accountSelect.focus(),
+            focus: () => accountCustomSelect.focus(),
             loadSnapshotIntoForm,
             setSnapshotId
         };

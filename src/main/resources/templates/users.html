@@ -115,17 +115,17 @@
                     <textarea id="new-user-description" maxlength="500" rows="4"></textarea>
                 </label>
                 <div class="form-grid">
-                    <label class="field">
-                        <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="new-user-role" required></select>
-                    </label>
-                    <label class="field">
-                        <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="new-user-status" required>
+                    <div class="field">
+                        <span class="field-label"><span id="new-user-role-label" data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-user-role" data-custom-select aria-labelledby="new-user-role-label" required></select>
+                    </div>
+                    <div class="field">
+                        <span class="field-label"><span id="new-user-status-label" data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-user-status" data-custom-select aria-labelledby="new-user-status-label" required>
                             <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
                             <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
                         </select>
-                    </label>
+                    </div>
                 </div>
                 <label class="field">
                     <span class="field-label"><span data-i18n="users.form.password">Hasło</span><span class="required-mark" aria-hidden="true">*</span></span>
@@ -188,17 +188,17 @@
                     <textarea id="edit-user-description" maxlength="500" rows="4"></textarea>
                 </label>
                 <div class="form-grid">
-                    <label class="field">
-                        <span class="field-label"><span data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="edit-user-role" required></select>
-                    </label>
-                    <label class="field">
-                        <span class="field-label"><span data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="edit-user-status" required>
+                    <div class="field">
+                        <span class="field-label"><span id="edit-user-role-label" data-i18n="users.form.role">Rola</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-user-role" data-custom-select aria-labelledby="edit-user-role-label" required></select>
+                    </div>
+                    <div class="field">
+                        <span class="field-label"><span id="edit-user-status-label" data-i18n="users.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-user-status" data-custom-select aria-labelledby="edit-user-status-label" required>
                             <option value="ACTIVE" data-i18n="users.status.ACTIVE">Aktywny</option>
                             <option value="SUSPENDED" data-i18n="users.status.SUSPENDED">Zawieszony</option>
                         </select>
-                    </label>
+                    </div>
                 </div>
                 <label class="field">
                     <span data-i18n="users.form.password">Hasło</span>

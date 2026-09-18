@@ -221,3 +221,17 @@
         min-width: 108px;
     }
 }
+
+.snapshots-account-filter .custom-select-trigger {
+    width: 100%;
+}
+
+.snapshots-account-filter .custom-select-content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.snapshots-account-filter .custom-select-list {
+    width: 100%;
+    max-width: 100%;
+}

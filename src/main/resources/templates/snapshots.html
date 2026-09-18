@@ -25,12 +25,12 @@
                         <span class="visually-hidden" data-i18n="snapshots.actions.filters">Filtry</span>
                     </button>
                     <div class="snapshots-filter-popover" hidden>
-                        <label class="compact-field snapshots-account-filter">
-                            <span data-i18n="snapshots.filter.account">Konto</span>
-                            <select id="snapshots-account-filter">
+                        <div class="compact-field snapshots-account-filter">
+                            <span id="snapshots-account-filter-label" data-i18n="snapshots.filter.account">Konto</span>
+                            <select id="snapshots-account-filter" data-custom-select aria-labelledby="snapshots-account-filter-label">
                                 <option value="" data-i18n="snapshots.filter.allAccounts">Wszystkie konta</option>
                             </select>
-                        </label>
+                        </div>
                         <label class="compact-field">
                             <span data-i18n="snapshots.filter.date">Data</span>
                             <input id="snapshots-date-filter" type="date">
@@ -104,15 +104,15 @@
             <button type="button" class="button secondary compact" id="snapshots-prev-page" data-i18n="snapshots.pagination.previous">Poprzednia</button>
             <span id="snapshots-page-info">-</span>
             <button type="button" class="button secondary compact" id="snapshots-next-page" data-i18n="snapshots.pagination.next">Następna</button>
-            <label class="compact-field pagination-size">
-                <span data-i18n="snapshots.pagination.size">Na stronę</span>
-                <select id="snapshots-page-size">
+            <div class="compact-field pagination-size">
+                <span id="snapshots-page-size-label" data-i18n="snapshots.pagination.size">Na stronę</span>
+                <select id="snapshots-page-size" data-custom-select aria-labelledby="snapshots-page-size-label">
                     <option value="10">10</option>
                     <option value="20" selected>20</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                 </select>
-            </label>
+            </div>
         </div>
         <div class="table-wrap snapshots-table-wrap">
             <table class="snapshots-table">
