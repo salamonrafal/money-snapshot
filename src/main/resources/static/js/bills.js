@@ -404,6 +404,7 @@ function replaceSelectOptions(select, items, labelSelector, selectedValue = "") 
 
     select.replaceChildren(placeholder, ...options);
     select.value = selectedValue;
+    window.MoneySnapshotSelect?.create(select)?.refresh();
 }
 
 function renderBillReferenceOptions() {
@@ -708,17 +709,23 @@ function fillBillForm(bill) {
     elements.namedItem("counterpartyId").value = bill.counterpartyId ?? "";
     elements.namedItem("accountId").value = bill.accountId ?? "";
     elements.namedItem("status").value = bill.status ?? "ACTIVE";
+    [billDurationTypeField, billCounterpartySelect, billAccountSelect, elements.namedItem("status")]
+        .forEach((select) => window.MoneySnapshotSelect?.create(select)?.refresh());
     syncBillDurationFields();
 }
 
 function createBillEditAction(bill) {
-    const editButton = document.createElement("button");
-    editButton.type = "button";
+    const editButton = document.createElement("a");
+    editButton.href = `/bills/${encodeURIComponent(bill.id)}/edit.html`;
     editButton.className = "icon-button";
     editButton.setAttribute("aria-label", billsMessages["bills.actions.edit"] ?? "");
     MoneySnapshotUi.setTooltip(editButton, billsMessages["bills.actions.edit"] ?? "");
     editButton.append(MoneySnapshotUi.createEditIcon());
-    editButton.addEventListener("click", () => {
+    editButton.addEventListener("click", (event) => {
+        if (event.button === 1 || event.button === 2 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+        event.preventDefault();
         resetBillFieldState();
         hideBillFormMessage();
         renderBillReferenceOptions();

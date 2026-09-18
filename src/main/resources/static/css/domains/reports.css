@@ -230,6 +230,17 @@
     width: 100%;
 }
 
+.report-filter-popover .compact-field .custom-select,
+.pagination-size .custom-select {
+    display: block;
+    width: 100%;
+}
+
+.report-filter-popover .compact-field .custom-select-trigger,
+.pagination-size .custom-select-trigger {
+    width: 100%;
+}
+
 .report-tabs {
     display: inline-flex;
     align-items: center;

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Aktualizacja salda | Money Snapshot', 'retirement-account-balance-new.js', 'retirement')}"></head>
+<body th:attr="data-retirement-account-id=${retirementAccountId}">
+<header th:replace="~{fragments/page :: header('retirement')}"></header>
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="retirement.contributionForm.eyebrow">Saldo</p>
+        <h1 data-i18n="retirement.contributionForm.title">Zaktualizuj saldo</h1>
+        <p id="retirement-balance-page-subtitle" data-i18n="retirement.contributionForm.subtitle">Wprowadź aktualne saldo rachunku emerytalnego.</p>
+    </section>
+    <section class="management-layout single-column">
+        <form class="editor-panel wide-panel retirement-page-form" id="retirement-balance-page-form">
+            <div class="form-grid">
+                <label class="field"><span class="field-label"><span data-i18n="retirement.contributionForm.currentBalance">Aktualne saldo</span><span class="required-mark">*</span></span><input type="text" name="currentBalance" inputmode="decimal" required></label>
+                <label class="field"><span class="field-label"><span data-i18n="retirement.contributionForm.date">Data aktualizacji</span><span class="required-mark">*</span></span><input type="date" name="contributionDate" required></label>
+                <label class="field field-wide"><span data-i18n="retirement.contributionForm.note">Notatka</span><input type="text" name="note" maxlength="500"></label>
+            </div>
+            <p class="form-helper"><span data-i18n="retirement.contributionForm.previousBalance">Poprzednie saldo</span>: <strong id="retirement-balance-page-previous">-</strong></p>
+            <p class="form-helper" id="retirement-balance-page-message" role="alert"></p>
+            <div class="form-actions"><a class="button secondary" href="/retirement.html" data-i18n="retirement.form.cancel">Anuluj</a><button type="submit" class="button primary" data-i18n="retirement.contributionForm.submit">Zapisz saldo</button></div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

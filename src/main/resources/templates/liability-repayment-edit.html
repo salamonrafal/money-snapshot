@@ -26,8 +26,8 @@
             </div>
             <div class="form-grid">
                 <label class="field">
-                    <span class="field-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <select id="liability-repayment-liability" required>
+                    <span class="field-label" id="liability-repayment-liability-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="liability-repayment-liability" data-custom-select aria-labelledby="liability-repayment-liability-label" required>
                         <option value="" selected data-i18n="liabilityRepayment.form.liabilityPlaceholder">Wybierz obciążenie</option>
                     </select>
                 </label>
@@ -36,8 +36,8 @@
                     <input id="liability-repayment-date" type="date" value="" required>
                 </label>
                 <label class="field">
-                    <span class="field-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
-                    <select id="liability-repayment-source-type" required>
+                    <span class="field-label" id="liability-repayment-source-type-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                    <select id="liability-repayment-source-type" data-custom-select aria-labelledby="liability-repayment-source-type-label" required>
                         <option value="REPAYMENT_AMOUNT" selected data-i18n="liabilityRepayment.form.sourceTypeRepaymentAmount">Kwota spłaty</option>
                         <option value="CURRENT_AMOUNT" data-i18n="liabilityRepayment.form.sourceTypeCurrentAmount">Aktualne saldo</option>
                     </select>

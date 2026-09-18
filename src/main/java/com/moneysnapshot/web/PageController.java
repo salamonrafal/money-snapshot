@@ -98,6 +98,12 @@ public class PageController {
         return "bill-form";
     }
 
+    @GetMapping("/bills/{id}/edit.html")
+    public String editBill(@PathVariable String id, Model model) {
+        model.addAttribute("billId", id);
+        return "bill-form";
+    }
+
     @GetMapping("/bills/{id}/schedule.html")
     public String billSchedule(@PathVariable String id, Model model) {
         model.addAttribute("billId", id);
@@ -139,6 +145,23 @@ public class PageController {
     @GetMapping("/retirement.html")
     public String retirement() {
         return "retirement";
+    }
+
+    @GetMapping("/retirement/accounts/new.html")
+    public String newRetirementAccount() {
+        return "retirement-account-new";
+    }
+
+    @GetMapping("/retirement/accounts/{id}/edit.html")
+    public String editRetirementAccount(@PathVariable String id, Model model) {
+        model.addAttribute("retirementAccountId", id);
+        return "retirement-account-new";
+    }
+
+    @GetMapping("/retirement/accounts/{id}/balance/new.html")
+    public String newRetirementBalance(@PathVariable String id, Model model) {
+        model.addAttribute("retirementAccountId", id);
+        return "retirement-account-balance-new";
     }
 
     @GetMapping("/savings-planning/settings.html")

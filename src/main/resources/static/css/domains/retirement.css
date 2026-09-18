@@ -129,6 +129,44 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.retirement-page-form {
+    min-width: 0;
+}
+
+.retirement-page-form .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+}
+
+.retirement-page-form .field {
+    min-width: 0;
+}
+
+.retirement-page-form .field-wide {
+    grid-column: 1 / -1;
+}
+
+.retirement-page-form input,
+.retirement-page-form .custom-select,
+.retirement-page-form .custom-select-trigger {
+    width: 100%;
+    min-width: 0;
+}
+
+.retirement-page-form input[name="websiteUrl"] {
+    min-width: 0;
+}
+
+.retirement-page-form input[name="websiteUrl"]:only-child {
+    width: 100%;
+}
+
+.retirement-page-form .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
 .retirement-contribution-form-modal .form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -178,7 +216,8 @@
     }
 
     .retirement-form-modal .form-grid,
-    .retirement-contribution-form-modal .form-grid {
+    .retirement-contribution-form-modal .form-grid,
+    .retirement-page-form .form-grid {
         grid-template-columns: minmax(0, 1fr);
     }
 }

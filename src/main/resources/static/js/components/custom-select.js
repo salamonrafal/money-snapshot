@@ -22,7 +22,9 @@ window.MoneySnapshotSelect = (() => {
         list.className = "custom-select-list";
         list.setAttribute("role", "listbox");
         list.hidden = true;
-        const usePopover = select.hasAttribute("data-select-popover") && typeof list.showPopover === "function";
+        const usePopover = (select.hasAttribute("data-select-popover")
+            || (typeof select.closest === "function" && Boolean(select.closest(".modal"))))
+            && typeof list.showPopover === "function";
         if (usePopover) list.setAttribute("popover", "manual");
         trigger.setAttribute("aria-controls", list.id);
         root.append(trigger, list);
@@ -76,6 +78,7 @@ window.MoneySnapshotSelect = (() => {
             if (usePopover) {
                 const bounds = trigger.getBoundingClientRect();
                 list.style.minWidth = `${bounds.width}px`;
+                list.style.width = `${bounds.width}px`;
                 list.style.left = `${bounds.left}px`;
                 list.style.top = `${bounds.bottom + 8}px`;
                 list.showPopover();
@@ -223,6 +226,11 @@ window.MoneySnapshotSelect = (() => {
         return instance;
     }
 
-    document.querySelectorAll("select[data-custom-select]").forEach(create);
-    return {create};
+    function enhanceAll(root = document) {
+        root.querySelectorAll("select[data-custom-select]").forEach(create);
+    }
+
+    enhanceAll();
+    document.addEventListener("DOMContentLoaded", () => enhanceAll());
+    return {create, enhanceAll};
 })();

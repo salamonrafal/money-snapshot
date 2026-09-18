@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Nowy rachunek emerytalny | Money Snapshot', 'retirement-account-new.js', 'retirement')}"></head>
+<body th:attr="data-retirement-account-id=${retirementAccountId}">
+<header th:replace="~{fragments/page :: header('retirement')}"></header>
+<main class="workspace">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="retirement.form.eyebrow">Nowy wpis</p>
+        <h1 data-i18n="retirement.form.title">Dodaj rachunek emerytalny</h1>
+        <p data-i18n="retirement.form.subtitle">Uzupełnij dane rachunku widoczne w tabeli emerytalnej.</p>
+    </section>
+    <section class="management-layout single-column">
+        <form class="editor-panel wide-panel retirement-page-form" id="retirement-account-page-form">
+            <div class="form-grid">
+                <div class="field"><span id="retirement-page-type-label" class="field-label"><span data-i18n="retirement.form.type">Typ</span><span class="required-mark">*</span></span><select name="type" data-custom-select aria-labelledby="retirement-page-type-label" required><option value="PPK">PPK</option><option value="IKE">IKE</option><option value="IKZE">IKZE</option><option value="OFE">OFE</option><option value="OTHER" data-i18n="retirement.type.OTHER">Inne</option></select></div>
+                <label class="field"><span class="field-label"><span data-i18n="retirement.form.institution">Instytucja</span><span class="required-mark">*</span></span><input name="institution" maxlength="120" required></label>
+                <label class="field"><span class="field-label"><span data-i18n="retirement.form.account">Rachunek</span><span class="required-mark">*</span></span><input name="account" maxlength="120" required></label>
+                <label class="field field-wide"><span data-i18n="retirement.form.websiteUrl">Strona logowania</span><input name="websiteUrl" maxlength="2048" inputmode="url" placeholder="https://"></label>
+                <label class="field"><span class="field-label"><span data-i18n="retirement.form.currency">Waluta</span><span class="required-mark">*</span></span><input name="currency" maxlength="3" pattern="[A-Za-z]{3}" required></label>
+                <label class="field"><span class="field-label"><span data-i18n="retirement.form.balance">Saldo</span><span class="required-mark">*</span></span><input name="balance" inputmode="decimal" required></label>
+                <label class="field"><span data-i18n="retirement.form.monthlyContribution">Miesięczna wpłata</span><input name="monthlyContribution" inputmode="decimal"></label>
+                <label class="field"><span class="field-label"><span data-i18n="retirement.form.updatedAt">Data aktualizacji</span><span class="required-mark">*</span></span><input name="updatedAt" type="date" required></label>
+                <div class="field"><span id="retirement-page-status-label" class="field-label"><span data-i18n="retirement.form.status">Status</span><span class="required-mark">*</span></span><select name="statusKey" data-custom-select aria-labelledby="retirement-page-status-label" required><option value="ACTIVE" data-i18n="retirement.status.ACTIVE">Aktywne</option><option value="SUSPENDED" data-i18n="retirement.status.SUSPENDED">Wstrzymane</option><option value="CLOSED" data-i18n="retirement.status.CLOSED">Zamknięte</option></select></div>
+            </div>
+            <p class="form-helper" data-i18n="retirement.form.hint">Zmiany zostaną zapisane na liście rachunków emerytalnych.</p>
+            <p class="form-message" id="retirement-account-page-message" role="alert"></p>
+            <div class="form-actions"><a class="button secondary" href="/retirement.html" data-i18n="retirement.form.cancel">Anuluj</a><button type="submit" class="button primary" data-i18n="retirement.form.submit">Dodaj rachunek</button></div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

@@ -48,6 +48,32 @@
     width: min(100%, 160px);
 }
 
+/* The settings table lives inside a narrow modal as well as on the page.
+   Keep the modal content within its viewport instead of forcing horizontal
+   scrolling for the desktop table width. */
+#savings-planning-settings-modal .savings-planning-settings-table-wrap {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+#savings-planning-settings-modal .savings-planning-settings-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+}
+
+#savings-planning-settings-modal .savings-planning-settings-table th,
+#savings-planning-settings-modal .savings-planning-settings-table td {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+#savings-planning-settings-modal .savings-planning-settings-table .forecast-input {
+    width: 100%;
+    min-width: 0;
+}
+
 .planner-warning {
     display: flex;
     align-items: center;

@@ -218,6 +218,9 @@ function fillAccountForm(account) {
             : "";
     form.elements.updatedAt.value = account.balanceUpdatedAt;
     form.elements.statusKey.value = account.status;
+    [form.elements.type, form.elements.statusKey].forEach((select) => {
+        window.MoneySnapshotSelect?.create(select)?.refresh();
+    });
 }
 
 function amountsByCurrency(accounts, selector) {
@@ -281,6 +284,26 @@ function createIconButton(action, labelKey, iconPaths, className = "secondary") 
     return button;
 }
 
+function createEditLink(account, iconPaths) {
+    const link = createIconButton("edit", "retirement.actions.edit", iconPaths);
+    const anchor = document.createElement("a");
+    [...link.attributes].forEach((attribute) => anchor.setAttribute(attribute.name, attribute.value));
+    anchor.href = `/retirement/accounts/${encodeURIComponent(account.id)}/edit.html`;
+    anchor.innerHTML = link.innerHTML;
+    anchor.dataset.retirementAction = "edit";
+    return anchor;
+}
+
+function createContributionLink(account, iconPaths) {
+    const link = createIconButton("contribution", "retirement.actions.registerContribution", iconPaths);
+    const anchor = document.createElement("a");
+    [...link.attributes].forEach((attribute) => anchor.setAttribute(attribute.name, attribute.value));
+    anchor.href = `/retirement/accounts/${encodeURIComponent(account.id)}/balance/new.html`;
+    anchor.innerHTML = link.innerHTML;
+    anchor.dataset.retirementAction = "contribution";
+    return anchor;
+}
+
 function createIconLink(href, labelKey, iconPaths) {
     const link = document.createElement("a");
     link.className = "icon-button secondary retirement-row-action";
@@ -315,11 +338,11 @@ function createRowActions(account) {
     actions.className = "row-actions retirement-row-actions";
     actions.dataset.accountId = String(account.id);
     const actionButtons = [
-            createIconButton("edit", "retirement.actions.edit", [
+            createEditLink(account, [
                 "M12 20h9",
                 "M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"
             ]),
-            createIconButton("contribution", "retirement.actions.registerContribution", [
+            createContributionLink(account, [
                 "M12 5v14",
                 "M5 12h14",
                 "M4 19h16"
@@ -386,6 +409,9 @@ function openAddForm() {
         form.reset();
         form.elements.currency.value = userSettings.defaultCurrency ?? "PLN";
         form.elements.updatedAt.value = MoneySnapshotUi.localIsoDate();
+        [form.elements.type, form.elements.statusKey].forEach((select) => {
+            window.MoneySnapshotSelect?.create(select)?.refresh();
+        });
         form.querySelectorAll("input").forEach((input) => input.setCustomValidity(""));
     }
     setAccountFormMode("add");
@@ -542,7 +568,11 @@ refreshButton?.addEventListener("click", () => {
     });
 });
 
-addButton?.addEventListener("click", () => {
+addButton?.addEventListener("click", (event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+    }
+    event.preventDefault();
     openAddForm();
 });
 
@@ -666,7 +696,7 @@ tableBody?.addEventListener("click", (event) => {
     }
 
     const button = event.target.closest("[data-retirement-action]");
-    if (!(button instanceof HTMLButtonElement)) {
+    if (!(button instanceof HTMLElement)) {
         return;
     }
 
@@ -676,8 +706,18 @@ tableBody?.addEventListener("click", (event) => {
     }
 
     if (button.dataset.retirementAction === "edit") {
+        if (button instanceof HTMLAnchorElement
+                && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0)) {
+            return;
+        }
+        event.preventDefault();
         openEditForm(accountId, button);
     } else if (button.dataset.retirementAction === "contribution") {
+        if (button instanceof HTMLAnchorElement
+                && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0)) {
+            return;
+        }
+        event.preventDefault();
         openContributionForm(accountId, button);
     } else if (button.dataset.retirementAction === "delete") {
         openDeleteModal(accountId);
