@@ -287,6 +287,9 @@ function setNewLiabilityFieldVisibility(field, visible) {
     field.hidden = !visible;
     field.querySelectorAll("input, select, textarea").forEach((input) => {
         input.disabled = !visible;
+        if (input.tagName === "SELECT") {
+            window.MoneySnapshotSelect?.create(input)?.refresh();
+        }
     });
 }
 
@@ -434,6 +437,9 @@ function setEditLiabilityFieldVisibility(field, visible) {
     field.hidden = !visible;
     field.querySelectorAll("input, select, textarea").forEach((input) => {
         input.disabled = !visible;
+        if (input.tagName === "SELECT") {
+            window.MoneySnapshotSelect?.create(input)?.refresh();
+        }
     });
 }
 
@@ -545,6 +551,7 @@ function renderEditLiabilityBankOptions() {
     if (selectedValue) {
         editLiabilityBankSelect.value = selectedValue;
     }
+    window.MoneySnapshotSelect?.create(editLiabilityBankSelect)?.refresh();
 }
 
 function editLiabilityPayloadFromForm() {
@@ -637,6 +644,9 @@ async function loadEditLiability(liabilityId) {
     if (editLiabilityStatusSelect) {
         editLiabilityStatusSelect.value = liability.status ?? editLiabilityStatusSelect.value;
     }
+
+    [editLiabilityBankSelect, editLiabilityTypeSelect, editLiabilityScheduleModeSelect, editLiabilityStatusSelect]
+        .forEach((select) => window.MoneySnapshotSelect?.create(select)?.refresh());
 
     updateEditLiabilityAmountFields();
     updateEditLiabilityScheduleFields();
@@ -797,6 +807,7 @@ function renderNewLiabilityBankOptions() {
     if (selectedValue) {
         newLiabilityBankSelect.value = selectedValue;
     }
+    window.MoneySnapshotSelect?.create(newLiabilityBankSelect)?.refresh();
 }
 
 async function loadBanksForNewLiabilityForm() {
@@ -1558,10 +1569,13 @@ function renderNewRepaymentLiabilityOptions() {
     if (selectedNewRepaymentLiabilityId) {
         newLiabilityRepaymentSelect.value = selectedNewRepaymentLiabilityId;
     }
+    window.MoneySnapshotSelect?.create(newLiabilityRepaymentSelect)?.refresh();
 
     const hasLiabilities = liabilities.length > 0;
     newLiabilityRepaymentSelect.disabled = !hasLiabilities;
+    window.MoneySnapshotSelect?.create(newLiabilityRepaymentSelect)?.refresh();
     setNewRepaymentInputsEnabled(hasLiabilities);
+    window.MoneySnapshotSelect?.create(newLiabilityRepaymentSourceTypeInput)?.refresh();
     if (newLiabilityRepaymentSubmitButton) {
         newLiabilityRepaymentSubmitButton.disabled = !hasLiabilities;
     }
@@ -1599,12 +1613,15 @@ function renderEditRepaymentLiabilityOptions() {
     if (selectedEditRepaymentLiability?.id) {
         editLiabilityRepaymentSelect.value = selectedEditRepaymentLiability.id;
     }
+    window.MoneySnapshotSelect?.create(editLiabilityRepaymentSelect)?.refresh();
 
     const hasLiabilities = liabilities.length > 0;
     editLiabilityRepaymentSelect.disabled = true;
+    window.MoneySnapshotSelect?.create(editLiabilityRepaymentSelect)?.refresh();
     if (editLiabilityRepaymentSourceTypeInput) {
         editLiabilityRepaymentSourceTypeInput.disabled = !hasLiabilities;
     }
+    window.MoneySnapshotSelect?.create(editLiabilityRepaymentSourceTypeInput)?.refresh();
     if (editLiabilityRepaymentSourceAmountInput) {
         editLiabilityRepaymentSourceAmountInput.disabled = !hasLiabilities;
     }
@@ -1823,6 +1840,7 @@ function resetEditLiabilityRepaymentForm() {
 }
 
 async function openNewLiabilityRepaymentModal(trigger, liabilityId = "") {
+    window.MoneySnapshotSelect?.enhanceAll(newLiabilityRepaymentModalElement ?? document);
     selectedNewRepaymentLiabilityId = liabilityId;
     resetNewLiabilityRepaymentForm();
     newLiabilityRepaymentModal.open({trigger});

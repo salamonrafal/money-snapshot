@@ -37,14 +37,14 @@
                             <input name="name" id="liability-name" type="text" maxlength="120" required value="">
                         </label>
                         <label class="field">
-                            <span class="field-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
-                            <select name="bank" id="liability-bank" required disabled>
+                            <span class="field-label" id="liability-bank-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
+                            <select name="bank" id="liability-bank" data-custom-select aria-labelledby="liability-bank-label" required disabled>
                                 <option value="" data-i18n="liabilityForm.form.bankPlaceholder">Wybierz bank</option>
                             </select>
                         </label>
                         <label class="field">
-                            <span class="field-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
-                            <select name="liabilityType" id="liability-type" required disabled>
+                            <span class="field-label" id="liability-type-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                            <select name="liabilityType" id="liability-type" data-custom-select aria-labelledby="liability-type-label" required disabled>
                                 <option value="MORTGAGE" selected data-i18n="liabilityForm.form.typeMortgage">Hipoteka</option>
                                 <option value="CONSUMER_LOAN" data-i18n="liabilityForm.form.typeConsumerLoan">Kredyt konsumpcyjny</option>
                                 <option value="CREDIT_CARD" data-i18n="liabilityForm.form.typeCreditCard">Karta kredytowa</option>
@@ -112,15 +112,15 @@
                     <p class="liability-form-group-copy" data-i18n="liabilityForm.group.settings.copy">Skonfiguruj sposób domknięcia zobowiązania, status operacyjny i notatkę wewnętrzną.</p>
                     <div class="form-grid liability-form-grid">
                         <label class="field" id="liability-schedule-mode-field" hidden>
-                            <span data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
-                            <select name="scheduleMode" id="liability-schedule-mode">
+                            <span id="liability-schedule-mode-label" data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
+                            <select name="scheduleMode" id="liability-schedule-mode" data-custom-select aria-labelledby="liability-schedule-mode-label">
                                 <option value="END_DATE" selected data-i18n="liabilityForm.form.scheduleModeEndDate">Data zakończenia</option>
                                 <option value="INSTALLMENTS" data-i18n="liabilityForm.form.scheduleModeInstallments">Liczba rat i dzień pierwszej spłaty</option>
                             </select>
                         </label>
                         <label class="field">
-                            <span class="field-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                            <select name="status" required>
+                            <span class="field-label" id="liability-status-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                            <select name="status" id="liability-status" data-custom-select aria-labelledby="liability-status-label" required>
                                 <option value="ACTIVE" selected data-i18n="liabilityForm.status.active">Aktywna</option>
                                 <option value="COMPLETED" data-i18n="liabilityForm.status.completed">Zakończona</option>
                                 <option value="SUSPENDED" data-i18n="liabilityForm.status.suspended">Zawieszona</option>

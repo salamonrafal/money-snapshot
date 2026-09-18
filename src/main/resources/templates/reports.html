@@ -27,9 +27,9 @@
                             <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="total" data-i18n="reports.scope.total">Wszystkie konta</button>
                             <button type="button" class="report-tab report-scope-tab" role="tab" aria-selected="false" data-scope="banks" data-i18n="reports.scope.banks">Banki</button>
                         </div>
-                        <label class="compact-field">
-                            <span data-i18n="reports.controls.period">Okres</span>
-                            <select id="report-period">
+                        <div class="compact-field">
+                            <span id="report-period-label" data-i18n="reports.controls.period">Okres</span>
+                            <select id="report-period" data-custom-select aria-labelledby="report-period-label">
                                 <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
                                 <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
                                 <option value="3m" data-i18n="reports.period.3m">3 miesiące</option>
@@ -37,7 +37,7 @@
                                 <option value="2y" data-i18n="reports.period.2y">2 lata</option>
                                 <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
                             </select>
-                        </label>
+                        </div>
                         <label class="compact-field custom-period-field" hidden>
                             <span data-i18n="reports.controls.from">Od</span>
                             <input type="date" id="report-date-from">
@@ -129,13 +129,13 @@
                 <div class="report-filter-menu">
                     <button type="button" class="icon-button secondary topbar-icon-link report-filter-button" aria-expanded="false" data-i18n-title="reports.actions.filters" data-i18n-aria-label="reports.actions.filters"><span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span></button>
                     <div class="report-filter-popover" hidden>
-                        <label class="compact-field">
-                            <span data-i18n="reports.retirementCapital.groupBy">Grupuj według</span>
-                            <select id="retirement-capital-grouping">
+                        <div class="compact-field">
+                            <span id="retirement-capital-grouping-label" data-i18n="reports.retirementCapital.groupBy">Grupuj według</span>
+                            <select id="retirement-capital-grouping" data-custom-select aria-labelledby="retirement-capital-grouping-label">
                                 <option value="type" data-i18n="reports.retirementCapital.type">Typu</option>
                                 <option value="institution" data-i18n="reports.retirementCapital.institution">Instytucji</option>
                             </select>
-                        </label>
+                        </div>
                     </div>
                 </div>
                 <button type="button" class="icon-button secondary topbar-icon-link report-pdf-button" data-report-section="retirementCapital" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf"><span class="visually-hidden" data-i18n="reports.actions.pdf">Generuj PDF</span></button>
@@ -165,9 +165,9 @@
                         <span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span>
                     </button>
                     <div class="report-filter-popover" hidden>
-                        <label class="compact-field">
-                            <span data-i18n="reports.billingComparison.periods">Liczba okresów</span>
-                            <select id="billing-comparison-periods">
+                        <div class="compact-field">
+                            <span id="billing-comparison-periods-label" data-i18n="reports.billingComparison.periods">Liczba okresów</span>
+                            <select id="billing-comparison-periods" data-custom-select aria-labelledby="billing-comparison-periods-label">
                                 <option value="1">1</option>
                                 <option value="2">2</option>
                                 <option value="3" selected>3</option>
@@ -175,7 +175,7 @@
                                 <option value="5">5</option>
                                 <option value="6">6</option>
                             </select>
-                        </label>
+                        </div>
                     </div>
                 </div>
                 <button type="button" class="icon-button secondary topbar-icon-link report-pdf-button" data-report-section="billingComparison" data-i18n-title="reports.actions.pdf" data-i18n-aria-label="reports.actions.pdf">
@@ -298,9 +298,9 @@
                         <span class="visually-hidden" data-i18n="reports.actions.filters">Filtry</span>
                     </button>
                     <div class="report-filter-popover" hidden>
-                        <label class="compact-field">
-                            <span data-i18n="reports.controls.period">Okres</span>
-                            <select id="history-period">
+                        <div class="compact-field">
+                            <span id="history-period-label" data-i18n="reports.controls.period">Okres</span>
+                            <select id="history-period" data-custom-select aria-labelledby="history-period-label">
                                 <option value="1m" data-i18n="reports.period.1m">1 miesiąc</option>
                                 <option value="billing" selected data-i18n="reports.period.billing">Rozliczeniowy</option>
                                 <option value="2m" data-i18n="reports.period.2m">2 miesiące</option>
@@ -310,7 +310,7 @@
                                 <option value="2y" data-i18n="reports.period.2y">2 lata</option>
                                 <option value="custom" data-i18n="reports.period.custom">Dowolnie</option>
                             </select>
-                        </label>
+                        </div>
                         <label class="compact-field history-custom-period-field" hidden>
                             <span data-i18n="reports.controls.from">Od</span>
                             <input type="date" id="history-date-from">
@@ -332,14 +332,14 @@
             <button type="button" class="button secondary compact" id="history-prev-page" data-i18n="reports.history.pagination.previous">Poprzednia</button>
             <span id="history-page-info">-</span>
             <button type="button" class="button secondary compact" id="history-next-page" data-i18n="reports.history.pagination.next">Następna</button>
-            <label class="compact-field pagination-size">
-                <span data-i18n="reports.history.pagination.size">Na stronę</span>
-                <select id="history-page-size">
+            <div class="compact-field pagination-size">
+                <span id="history-page-size-label" data-i18n="reports.history.pagination.size">Na stronę</span>
+                <select id="history-page-size" data-custom-select aria-labelledby="history-page-size-label">
                     <option value="7">7</option>
                     <option value="14" selected>14</option>
                     <option value="31">31</option>
                 </select>
-            </label>
+            </div>
         </div>
         <div class="table-wrap history-table-wrap">
             <table class="reports-table history-table">

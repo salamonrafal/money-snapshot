@@ -147,14 +147,14 @@
                                 <input name="name" id="new-liability-name" type="text" maxlength="120" required value="">
                             </label>
                             <label class="field">
-                                <span class="field-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
-                                <select name="bank" id="new-liability-bank" required>
+                                <span class="field-label" id="new-liability-bank-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="bank" id="new-liability-bank" data-custom-select aria-labelledby="new-liability-bank-label" required>
                                     <option value="" data-i18n="liabilityForm.form.bankPlaceholder">Wybierz bank</option>
                                 </select>
                             </label>
                             <label class="field">
-                                <span class="field-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
-                                <select name="liabilityType" id="new-liability-type" required>
+                                <span class="field-label" id="new-liability-type-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="liabilityType" id="new-liability-type" data-custom-select aria-labelledby="new-liability-type-label" required>
                                     <option value="MORTGAGE" selected data-i18n="liabilityForm.form.typeMortgage">Hipoteka</option>
                                     <option value="CONSUMER_LOAN" data-i18n="liabilityForm.form.typeConsumerLoan">Kredyt konsumpcyjny</option>
                                     <option value="CREDIT_CARD" data-i18n="liabilityForm.form.typeCreditCard">Karta kredytowa</option>
@@ -221,15 +221,15 @@
                         <p class="liability-form-group-copy" data-i18n="liabilityForm.group.settings.copy">Skonfiguruj sposób domknięcia zobowiązania, status operacyjny i notatkę wewnętrzną.</p>
                         <div class="form-grid liability-form-grid">
                             <label class="field" id="new-liability-schedule-mode-field" hidden>
-                                <span data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
-                                <select name="scheduleMode" id="new-liability-schedule-mode">
+                                <span id="new-liability-schedule-mode-label" data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
+                                <select name="scheduleMode" id="new-liability-schedule-mode" data-custom-select aria-labelledby="new-liability-schedule-mode-label">
                                     <option value="END_DATE" selected data-i18n="liabilityForm.form.scheduleModeEndDate">Data zakończenia</option>
                                     <option value="INSTALLMENTS" data-i18n="liabilityForm.form.scheduleModeInstallments">Liczba rat i dzień pierwszej spłaty</option>
                                 </select>
                             </label>
                             <label class="field">
-                                <span class="field-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                                <select name="status" id="new-liability-status" required>
+                                <span class="field-label" id="new-liability-status-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="status" id="new-liability-status" data-custom-select aria-labelledby="new-liability-status-label" required>
                                     <option value="ACTIVE" selected data-i18n="liabilityForm.status.active">Aktywna</option>
                                     <option value="COMPLETED" data-i18n="liabilityForm.status.completed">Zakończona</option>
                                     <option value="SUSPENDED" data-i18n="liabilityForm.status.suspended">Zawieszona</option>
@@ -302,14 +302,14 @@
                                 <input name="name" id="edit-liability-name" type="text" maxlength="120" required value="">
                             </label>
                             <label class="field">
-                                <span class="field-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
-                                <select name="bank" id="edit-liability-bank" required disabled>
+                                <span class="field-label" id="edit-liability-bank-label"><span data-i18n="liabilityForm.form.bank">Bank</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="bank" id="edit-liability-bank" data-custom-select aria-labelledby="edit-liability-bank-label" required disabled>
                                     <option value="" data-i18n="liabilityForm.form.bankPlaceholder">Wybierz bank</option>
                                 </select>
                             </label>
                             <label class="field">
-                                <span class="field-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
-                                <select name="liabilityType" id="edit-liability-type" required disabled>
+                                <span class="field-label" id="edit-liability-type-label"><span data-i18n="liabilityForm.form.type">Typ obciążenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="liabilityType" id="edit-liability-type" data-custom-select aria-labelledby="edit-liability-type-label" required disabled>
                                     <option value="MORTGAGE" selected data-i18n="liabilityForm.form.typeMortgage">Hipoteka</option>
                                     <option value="CONSUMER_LOAN" data-i18n="liabilityForm.form.typeConsumerLoan">Kredyt konsumpcyjny</option>
                                     <option value="CREDIT_CARD" data-i18n="liabilityForm.form.typeCreditCard">Karta kredytowa</option>
@@ -377,15 +377,15 @@
                         <p class="liability-form-group-copy" data-i18n="liabilityForm.group.settings.copy">Skonfiguruj sposób domknięcia zobowiązania, status operacyjny i notatkę wewnętrzną.</p>
                         <div class="form-grid liability-form-grid">
                             <label class="field" id="edit-liability-schedule-mode-field" hidden>
-                                <span data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
-                                <select name="scheduleMode" id="edit-liability-schedule-mode">
+                                <span id="edit-liability-schedule-mode-label" data-i18n="liabilityForm.form.scheduleMode">Sposób zakończenia</span>
+                                <select name="scheduleMode" id="edit-liability-schedule-mode" data-custom-select aria-labelledby="edit-liability-schedule-mode-label">
                                     <option value="END_DATE" selected data-i18n="liabilityForm.form.scheduleModeEndDate">Data zakończenia</option>
                                     <option value="INSTALLMENTS" data-i18n="liabilityForm.form.scheduleModeInstallments">Liczba rat i dzień pierwszej spłaty</option>
                                 </select>
                             </label>
                             <label class="field">
-                                <span class="field-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                                <select name="status" id="edit-liability-status" required>
+                                <span class="field-label" id="edit-liability-status-label"><span data-i18n="liabilityForm.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                                <select name="status" id="edit-liability-status" data-custom-select aria-labelledby="edit-liability-status-label" required>
                                     <option value="ACTIVE" selected data-i18n="liabilityForm.status.active">Aktywna</option>
                                     <option value="COMPLETED" data-i18n="liabilityForm.status.completed">Zakończona</option>
                                     <option value="SUSPENDED" data-i18n="liabilityForm.status.suspended">Zawieszona</option>
@@ -458,8 +458,8 @@
                 </div>
                 <div class="form-grid">
                     <label class="field">
-                        <span class="field-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="new-liability-repayment-liability" required>
+                        <span class="field-label" id="new-liability-repayment-liability-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-liability-repayment-liability" data-custom-select aria-labelledby="new-liability-repayment-liability-label" required>
                             <option value="" selected data-i18n="liabilityRepayment.form.liabilityPlaceholder">Wybierz obciążenie</option>
                         </select>
                     </label>
@@ -468,8 +468,8 @@
                         <input id="new-liability-repayment-date" type="date" value="" required>
                     </label>
                     <label class="field">
-                        <span class="field-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="new-liability-repayment-source-type" required>
+                        <span class="field-label" id="new-liability-repayment-source-type-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="new-liability-repayment-source-type" data-custom-select aria-labelledby="new-liability-repayment-source-type-label" required>
                             <option value="REPAYMENT_AMOUNT" selected data-i18n="liabilityRepayment.form.sourceTypeRepaymentAmount">Kwota spłaty</option>
                             <option value="CURRENT_AMOUNT" data-i18n="liabilityRepayment.form.sourceTypeCurrentAmount">Aktualne saldo</option>
                         </select>
@@ -537,8 +537,8 @@
                 </div>
                 <div class="form-grid">
                     <label class="field">
-                        <span class="field-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="edit-liability-repayment-liability" required>
+                        <span class="field-label" id="edit-liability-repayment-liability-label"><span data-i18n="liabilityRepayment.form.liability">Obciążenie</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-liability-repayment-liability" data-custom-select aria-labelledby="edit-liability-repayment-liability-label" required>
                             <option value="" selected data-i18n="liabilityRepayment.form.liabilityPlaceholder">Wybierz obciążenie</option>
                         </select>
                     </label>
@@ -547,8 +547,8 @@
                         <input id="edit-liability-repayment-date" type="date" value="" required>
                     </label>
                     <label class="field">
-                        <span class="field-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select id="edit-liability-repayment-source-type" required>
+                        <span class="field-label" id="edit-liability-repayment-source-type-label"><span data-i18n="liabilityRepayment.form.sourceType">Sposób wprowadzenia</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select id="edit-liability-repayment-source-type" data-custom-select aria-labelledby="edit-liability-repayment-source-type-label" required>
                             <option value="REPAYMENT_AMOUNT" selected data-i18n="liabilityRepayment.form.sourceTypeRepaymentAmount">Kwota spłaty</option>
                             <option value="CURRENT_AMOUNT" data-i18n="liabilityRepayment.form.sourceTypeCurrentAmount">Aktualne saldo</option>
                         </select>

@@ -3,7 +3,9 @@ let userSettings = null;
 let cachedLiabilities = [];
 let cachedEditRepayment = null;
 let cachedEditLiability = null;
-let selectedLiabilityId = new URLSearchParams(window.location.search).get("liabilityId") ?? "";
+const initialLiabilityId = new URLSearchParams(window.location.search).get("liabilityId") ?? "";
+const liabilitySelectionLocked = Boolean(initialLiabilityId);
+let selectedLiabilityId = initialLiabilityId;
 
 const liabilityRepaymentForm = document.getElementById("liability-repayment-form");
 const liabilityRepaymentFormMode = liabilityRepaymentForm?.dataset.mode ?? "create";
@@ -312,10 +314,15 @@ function renderLiabilityOptions() {
     if (selectedLiabilityId) {
         liabilityRepaymentSelect.value = selectedLiabilityId;
     }
+    window.MoneySnapshotSelect?.create(liabilityRepaymentSelect)?.refresh();
 
     const hasLiabilities = cachedLiabilities.length > 0;
-    liabilityRepaymentSelect.disabled = !hasLiabilities || isEditMode();
+    // A repayment opened for a specific liability keeps that liability fixed;
+    // the general fallback form must leave the selector available.
+    liabilityRepaymentSelect.disabled = !hasLiabilities || isEditMode() || liabilitySelectionLocked;
+    window.MoneySnapshotSelect?.create(liabilityRepaymentSelect)?.refresh();
     setInputsEnabled(hasLiabilities && isEditContextReady());
+    window.MoneySnapshotSelect?.create(liabilityRepaymentSourceTypeInput)?.refresh();
     if (submitButton) {
         submitButton.disabled = !hasLiabilities || !isEditContextReady();
     }

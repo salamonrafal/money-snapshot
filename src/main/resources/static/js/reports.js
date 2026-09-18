@@ -57,6 +57,11 @@ const toastManager = MoneySnapshotUi.createToastManager({
     durationMs: 5000
 });
 
+// Reports have several filter sections that are initially hidden. Enhance
+// them explicitly after this page script loads so each filter is rendered by
+// the reusable custom select component as soon as its popover is opened.
+window.MoneySnapshotSelect?.enhanceAll();
+
 const periodOffsets = {
     "1m": {months: 1},
     "2m": {months: 2},

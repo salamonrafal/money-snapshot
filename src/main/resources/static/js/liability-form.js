@@ -176,6 +176,7 @@ function renderBankOptions() {
     if (selectedValue) {
         liabilityBankSelect.value = selectedValue;
     }
+    window.MoneySnapshotSelect?.create(liabilityBankSelect)?.refresh();
 }
 
 async function loadBanks() {
@@ -200,6 +201,9 @@ function setFieldVisibility(field, visible) {
     field.hidden = !visible;
     field.querySelectorAll("input, select, textarea").forEach((input) => {
         input.disabled = !visible;
+        if (input.tagName === "SELECT") {
+            window.MoneySnapshotSelect?.create(input)?.refresh();
+        }
     });
 }
 
@@ -351,6 +355,9 @@ async function loadLiability() {
     if (statusSelect) {
         statusSelect.value = liability.status ?? statusSelect.value;
     }
+
+    [liabilityBankSelect, liabilityTypeSelect, liabilityScheduleModeSelect, statusSelect]
+        .forEach((select) => window.MoneySnapshotSelect?.create(select)?.refresh());
 
     updateLiabilityAmountFields();
     updateLiabilityScheduleFields();

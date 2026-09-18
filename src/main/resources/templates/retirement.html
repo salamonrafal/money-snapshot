@@ -38,7 +38,8 @@
                     <p class="retirement-section-subtitle" data-i18n="retirement.accounts.subtitle">Zarządzaj rachunkami emerytalnymi i aktualizuj zgromadzone środki.</p>
                 </div>
                 <div class="section-actions topbar-account-actions icon-toolbar" role="toolbar" aria-label="Akcje rachunków emerytalnych">
-                    <button type="button"
+                    <a href="/retirement/accounts/new.html"
+                            role="button"
                             class="icon-button secondary topbar-icon-link"
                             id="add-retirement-account"
                             title="Dodaj rachunek"
@@ -49,7 +50,7 @@
                             <path d="M12 5v14"></path>
                             <path d="M5 12h14"></path>
                         </svg>
-                    </button>
+                    </a>
                     <button type="button"
                             class="icon-button secondary topbar-icon-link"
                             id="refresh-retirement"
@@ -110,16 +111,16 @@
         <div class="snapshot-form-modal-body">
             <form class="snapshot-form" id="retirement-account-form" novalidate data-i18n-aria-label="retirement.form.aria" aria-label="Formularz rachunku emerytalnego">
                 <div class="form-grid">
-                    <label class="field">
-                        <span class="field-label"><span data-i18n="retirement.form.type">Typ</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select name="type" required>
+                    <div class="field">
+                        <span id="retirement-account-type-label" class="field-label"><span data-i18n="retirement.form.type">Typ</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="type" data-custom-select aria-labelledby="retirement-account-type-label" required>
                             <option value="PPK">PPK</option>
                             <option value="IKE">IKE</option>
                             <option value="IKZE">IKZE</option>
                             <option value="OFE">OFE</option>
                             <option value="OTHER" data-i18n="retirement.type.OTHER">Inne</option>
                         </select>
-                    </label>
+                    </div>
                     <label class="field">
                         <span class="field-label"><span data-i18n="retirement.form.institution">Instytucja</span><span class="required-mark" aria-hidden="true">*</span></span>
                         <input type="text" name="institution" maxlength="120" required>
@@ -148,14 +149,14 @@
                         <span class="field-label"><span data-i18n="retirement.form.updatedAt">Data aktualizacji</span><span class="required-mark" aria-hidden="true">*</span></span>
                         <input type="date" name="updatedAt" required>
                     </label>
-                    <label class="field">
-                        <span class="field-label"><span data-i18n="retirement.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select name="statusKey" required>
+                    <div class="field">
+                        <span id="retirement-account-status-label" class="field-label"><span data-i18n="retirement.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="statusKey" data-custom-select aria-labelledby="retirement-account-status-label" required>
                             <option value="ACTIVE" selected data-i18n="retirement.status.ACTIVE">Aktywne</option>
                             <option value="SUSPENDED" data-i18n="retirement.status.SUSPENDED">Wstrzymane</option>
                             <option value="CLOSED" data-i18n="retirement.status.CLOSED">Zamknięte</option>
                         </select>
-                    </label>
+                    </div>
                 </div>
                 <p class="form-helper" data-i18n="retirement.form.hint">Zmiany zostaną zapisane na liście rachunków emerytalnych.</p>
             </form>

@@ -315,10 +315,13 @@
         if (selectedLiabilityId) {
             repaymentLiabilitySelect.value = selectedLiabilityId;
         }
+        window.MoneySnapshotSelect?.create(repaymentLiabilitySelect)?.refresh();
 
         const hasLiabilities = cachedLiabilities.length > 0;
         repaymentLiabilitySelect.disabled = !hasLiabilities;
+        window.MoneySnapshotSelect?.create(repaymentLiabilitySelect)?.refresh();
         setRepaymentInputsEnabled(hasLiabilities);
+        window.MoneySnapshotSelect?.create(repaymentSourceTypeInput)?.refresh();
         if (!hasLiabilities) {
             setRepaymentMessage(liabilityRepaymentMessages["liabilityRepayment.error.noLiabilities"] ?? "", "error");
         } else if (repaymentMessage?.dataset.type === "error") {
@@ -423,6 +426,7 @@
             return;
         }
 
+        window.MoneySnapshotSelect?.enhanceAll(repaymentModalElement ?? document);
         await loadRepaymentMessages();
         await loadLiabilities();
         resetRepaymentForm();

@@ -149,16 +149,16 @@
                         <input type="text" name="amount" inputmode="decimal" required>
                     </label>
                     <label class="field">
-                        <span class="field-label"><span data-i18n="bills.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select name="status" required>
+                        <span class="field-label" id="bill-status-label"><span data-i18n="bills.form.status">Status</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="status" data-custom-select aria-labelledby="bill-status-label" required>
                             <option value="ACTIVE" selected data-i18n="bills.status.ACTIVE">Aktywny</option>
                             <option value="SUSPENDED" data-i18n="bills.status.SUSPENDED">Zawieszony</option>
                             <option value="COMPLETED" data-i18n="bills.status.COMPLETED">Zakończony</option>
                         </select>
                     </label>
                     <label class="field">
-                        <span class="field-label"><span data-i18n="bills.form.durationMode">Okres trwania</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select name="durationType" id="bill-duration-type" required>
+                        <span class="field-label" id="bill-duration-type-label"><span data-i18n="bills.form.durationMode">Okres trwania</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="durationType" id="bill-duration-type" data-custom-select aria-labelledby="bill-duration-type-label" required>
                             <option value="UNTIL_DATE" selected data-i18n="bills.form.durationModeUntilDate">Do określonej daty</option>
                             <option value="INSTALLMENTS" data-i18n="bills.form.durationModeInstallments">Określona liczba rat</option>
                             <option value="OPEN_ENDED" data-i18n="bills.form.durationModeOpenEnded">Bezterminowo</option>
@@ -191,14 +191,14 @@
                         <input type="date" name="startFrom" required>
                     </label>
                     <label class="field">
-                        <span class="field-label"><span data-i18n="bills.form.counterparty">Kontrahent</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select name="counterpartyId" id="bill-counterparty" required>
+                        <span class="field-label" id="bill-counterparty-label"><span data-i18n="bills.form.counterparty">Kontrahent</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="counterpartyId" id="bill-counterparty" data-custom-select aria-labelledby="bill-counterparty-label" required>
                             <option value=""></option>
                         </select>
                     </label>
                     <label class="field">
-                        <span class="field-label"><span data-i18n="bills.form.fromAccount">Z konta</span><span class="required-mark" aria-hidden="true">*</span></span>
-                        <select name="accountId" id="bill-account" required>
+                        <span class="field-label" id="bill-account-label"><span data-i18n="bills.form.fromAccount">Z konta</span><span class="required-mark" aria-hidden="true">*</span></span>
+                        <select name="accountId" id="bill-account" data-custom-select aria-labelledby="bill-account-label" required>
                             <option value=""></option>
                         </select>
                     </label>

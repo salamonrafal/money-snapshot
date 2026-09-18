@@ -1,4 +1,6 @@
 const billForm = document.querySelector("#bill-form");
+const billFormMode = billForm?.dataset.mode ?? "create";
+const billId = billForm?.dataset.billId ?? "";
 const billFormMessageContainer = document.querySelector("#bill-form-message-container");
 const billFormMessage = document.querySelector("#bill-form-message");
 const billDurationTypeField = document.querySelector("#bill-duration-type");
@@ -10,6 +12,7 @@ const billAccountSelect = document.querySelector("#bill-account");
 let billsMessages = {};
 let availableAccounts = [];
 let availableCounterparties = [];
+let originalBill = null;
 
 function resetBillFieldState() {
     if (!billForm) {
@@ -163,6 +166,34 @@ function buildBillPayload(formData) {
     };
 }
 
+function normalizeBillDateField(value) {
+    return (value ?? "").toString().trim() || null;
+}
+
+function normalizeBillIntegerField(value) {
+    const parsed = Number.parseInt((value ?? "").toString(), 10);
+    return Number.isInteger(parsed) ? parsed : null;
+}
+
+function billScheduleOverwriteRequired(payload, bill) {
+    if (!payload || !bill) {
+        return false;
+    }
+
+    const selectedAccount = availableAccounts.find((account) => `${account?.id ?? ""}` === `${payload.accountId ?? ""}`);
+    const accountCurrencyChanged = payload.accountId !== bill.accountId
+        && Boolean(selectedAccount?.currencyCode)
+        && selectedAccount.currencyCode !== bill.currencyCode;
+
+    return payload.durationType !== bill.durationType
+        || normalizeBillDateField(payload.endDate) !== normalizeBillDateField(bill.endDate)
+        || normalizeBillIntegerField(payload.installmentCount) !== normalizeBillIntegerField(bill.installmentCount)
+        || normalizeBillIntegerField(payload.repaymentDay) !== normalizeBillIntegerField(bill.repaymentDay)
+        || normalizeBillDateField(payload.startFrom) !== normalizeBillDateField(bill.startFrom)
+        || Number(payload.amount) !== Number(bill.amount)
+        || accountCurrencyChanged;
+}
+
 async function readErrorPayload(response) {
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.includes("application/json")) {
@@ -193,6 +224,7 @@ function replaceSelectOptions(select, items, labelSelector) {
     });
 
     select.replaceChildren(placeholder, ...options);
+    window.MoneySnapshotSelect?.create(select)?.refresh();
 }
 
 function formatBillAccountOption(account) {
@@ -227,8 +259,9 @@ async function loadBillReferenceData() {
 }
 
 async function saveBill(payload) {
-    const response = await fetch("/api/bills", {
-        method: "POST",
+    const isEdit = billFormMode === "edit" && billId;
+    const response = await fetch(isEdit ? `/api/bills/${encodeURIComponent(billId)}` : "/api/bills", {
+        method: isEdit ? "PUT" : "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload)
     });
@@ -253,6 +286,43 @@ async function saveBill(payload) {
     return response.json();
 }
 
+function fillBillForm(bill) {
+    if (!billForm) {
+        return;
+    }
+
+    const elements = billForm.elements;
+    elements.namedItem("name").value = bill.name ?? "";
+    elements.namedItem("amount").value = bill.amount ?? "";
+    elements.namedItem("durationType").value = bill.durationType ?? "UNTIL_DATE";
+    elements.namedItem("endDate").value = bill.endDate ?? "";
+    elements.namedItem("installments").value = bill.installmentCount ?? "";
+    elements.namedItem("repaymentDay").value = bill.repaymentDay ?? "";
+    elements.namedItem("repaymentDay").readOnly = billFormMode === "edit";
+    elements.namedItem("repaymentDay").setAttribute("aria-readonly", String(billFormMode === "edit"));
+    elements.namedItem("startFrom").value = bill.startFrom ?? "";
+    elements.namedItem("counterpartyId").value = bill.counterpartyId ?? "";
+    elements.namedItem("accountId").value = bill.accountId ?? "";
+    elements.namedItem("status").value = bill.status ?? "ACTIVE";
+    [billDurationTypeField, billCounterpartySelect, billAccountSelect, elements.namedItem("status")]
+        .forEach((select) => window.MoneySnapshotSelect?.create(select)?.refresh());
+    syncBillDurationFields();
+}
+
+async function loadBillForEdit() {
+    if (billFormMode !== "edit" || !billId) {
+        return;
+    }
+
+    const response = await fetch(`/api/bills/${encodeURIComponent(billId)}`);
+    if (!response.ok) {
+        throw new Error("Cannot load bill.");
+    }
+
+    originalBill = await response.json();
+    fillBillForm(originalBill);
+}
+
 async function handleBillFormSubmit(event) {
     event.preventDefault();
 
@@ -271,7 +341,12 @@ async function handleBillFormSubmit(event) {
     resetBillFieldState();
 
     try {
-        await saveBill(buildBillPayload(formData));
+        const payload = buildBillPayload(formData);
+        if (billFormMode === "edit" && billScheduleOverwriteRequired(payload, originalBill)
+            && !window.confirm("Ta zmiana może przebudować harmonogram i usunąć dotychczasowy postęp spłat. Czy kontynuować?")) {
+            return;
+        }
+        await saveBill(payload);
         window.location.href = "/bills.html";
     } catch (error) {
         if (error.fieldErrors) {
@@ -333,6 +408,7 @@ MoneySnapshotI18n.init({
     }
 })
     .then(() => loadBillReferenceData())
+    .then(() => loadBillForEdit())
     .catch((error) => {
         console.error(error);
         showBillFormMessage(error.message ?? "Request failed.");
