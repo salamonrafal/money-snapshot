@@ -85,8 +85,16 @@
         const operators = new Set(["+", "-", "*", "/"]);
 
         function render(value = expression || "0") {
-            display.textContent = value.replace(/\./g, ",");
+            const formattedValue = value.replace(/\./g, ",");
+            display.textContent = formattedValue;
+            display.scrollLeft = display.scrollWidth;
         }
+
+        // Keep the final digit visible when the panel opens or its width changes.
+        const displayResizeObserver = new ResizeObserver(() => {
+            display.scrollLeft = display.scrollWidth;
+        });
+        displayResizeObserver.observe(display);
 
         function close() {
             panel.hidden = true;
@@ -287,7 +295,10 @@
                 calculatorErrorMessage = messages["launcher.calculator.error"] ?? "Błąd";
                 button.setAttribute("aria-label", label);
                 button.setAttribute("title", label);
-                panel.querySelector("#shortcuts-calculator-title").textContent = messages["launcher.calculator.title"] ?? label;
+                button.querySelector("[data-i18n='launcher.calculator.button']").textContent = label;
+                const calculatorTitle = messages["launcher.calculator.title"] ?? label;
+                panel.querySelector("#shortcuts-calculator-title").textContent = calculatorTitle;
+                panel.querySelector("[data-i18n-aria-label='launcher.calculator.title']")?.setAttribute("aria-label", calculatorTitle);
                 panel.querySelector("[data-shortcuts-calculator-close]")?.setAttribute("aria-label", messages["common.close"] ?? "Zamknij");
             } catch {
                 // Keep the Polish labels from the HTML when translations cannot be loaded.

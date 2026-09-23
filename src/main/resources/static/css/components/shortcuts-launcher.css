@@ -139,9 +139,11 @@
     font-size: 1.05rem;
 }
 
-.shortcuts-calculator-display {
+.shortcuts-calculator-display-frame {
     display: block;
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     box-sizing: border-box;
     min-height: 48px;
     margin-bottom: 12px;
@@ -149,12 +151,26 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--background);
-    padding: 10px 12px;
+    padding: 10px 18px;
+}
+
+.shortcuts-calculator-display {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    direction: ltr;
     color: var(--text);
     font-size: 1.45rem;
     font-variant-numeric: tabular-nums;
     text-align: right;
     white-space: nowrap;
+}
+
+.shortcuts-calculator-display::-webkit-scrollbar {
+    display: none;
 }
 
 .shortcuts-calculator {
