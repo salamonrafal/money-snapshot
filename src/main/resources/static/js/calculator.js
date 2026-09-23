@@ -80,6 +80,7 @@
         let justCalculated = false;
         let memoryValue = 0;
         let hasMemory = false;
+        let calculatorErrorMessage = "Błąd";
         let copyFeedbackTimer = null;
         const operators = new Set(["+", "-", "*", "/"]);
 
@@ -108,7 +109,8 @@
         function input(value) {
             if (justCalculated && !operators.has(value)) expression = "";
             justCalculated = false;
-            if (value === "." && /(?:^|[+\-*/(])[^+\-*/()]*\.?$/.test(expression) && expression.endsWith(".")) return;
+            const currentOperand = expression.match(/[^+\-*/()]*$/)?.[0] ?? "";
+            if (value === "." && currentOperand.includes(".")) return;
             if (operators.has(value) && (!expression && value !== "-" || /[+\-*/.]$/.test(expression))) {
                 if (value === "-" && /[+\-*/]$/.test(expression)) expression += value;
                 else if (expression) expression = expression.slice(0, -1) + value;
@@ -132,7 +134,7 @@
                 justCalculated = true;
                 render();
             } catch {
-                display.textContent = "Błąd";
+                display.textContent = calculatorErrorMessage;
                 expression = "";
                 justCalculated = true;
             }
@@ -160,9 +162,15 @@
                 if (hasMemory) {
                     const storedValue = formatValue(memoryValue);
                     if (expression && !justCalculated) {
-                        const operandMatch = expression.match(/(^|[+\-*/(])((?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)$/);
+                        const operandMatch = expression.match(/(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/);
                         if (operandMatch) {
-                            expression = expression.slice(0, -operandMatch[2].length) + storedValue;
+                            let operandStart = operandMatch.index;
+                            const signIndex = operandStart - 1;
+                            if (expression[signIndex] === "-"
+                                && (signIndex === 0 || "+-*/(".includes(expression[signIndex - 1]))) {
+                                operandStart = signIndex;
+                            }
+                            expression = expression.slice(0, operandStart) + storedValue;
                             render();
                         } else {
                             input(storedValue);
@@ -276,6 +284,7 @@
                 if (!response.ok) return;
                 const messages = await response.json();
                 const label = messages["launcher.calculator.button"] ?? "Kalkulator";
+                calculatorErrorMessage = messages["launcher.calculator.error"] ?? "Błąd";
                 button.setAttribute("aria-label", label);
                 button.setAttribute("title", label);
                 panel.querySelector("#shortcuts-calculator-title").textContent = messages["launcher.calculator.title"] ?? label;

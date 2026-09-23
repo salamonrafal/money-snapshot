@@ -404,6 +404,7 @@ public class MessageBundleService {
             "launcher.todayEvents.empty",
             "launcher.calculator.button",
             "launcher.calculator.title",
+            "launcher.calculator.error",
             "calendar.aria.navigation",
             "calendar.aria.grid",
             "calendar.aria.eventList",
