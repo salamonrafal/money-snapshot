@@ -196,6 +196,10 @@
                 const value = currentValue();
                 memoryValue = action === "memory-subtract" ? memoryValue - value : memoryValue + value;
                 hasMemory = true;
+                if (expression && !justCalculated) {
+                    expression = formatValue(value);
+                    render();
+                }
                 justCalculated = true;
             } catch {
                 // Ignore memory updates for an invalid expression.
@@ -276,7 +280,8 @@
                 event.preventDefault();
                 copyResult();
             }
-            else if (event.key === "Enter" || event.key === "=") {
+            else if ((event.key === "Enter" || event.key === "=")
+                && !(document.activeElement instanceof HTMLButtonElement)) {
                 event.preventDefault();
                 calculate();
             }
