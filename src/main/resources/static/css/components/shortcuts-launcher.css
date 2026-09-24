@@ -138,7 +138,7 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) {
 }
 
 body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-launcher-bar {
-    pointer-events: auto;
+    pointer-events: none;
 }
 
 body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-launcher-bar::before {
