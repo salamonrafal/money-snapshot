@@ -388,7 +388,6 @@
                         aria-controls="shortcuts-calculator-panel"
                         data-i18n-title="launcher.calculator.button"
                         data-i18n-aria-label="launcher.calculator.button"
-                        title="Kalkulator"
                         aria-label="Kalkulator">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <rect x="4" y="2.5" width="16" height="19" rx="2"></rect>
@@ -419,14 +418,118 @@
                     </div>
                     <div class="shortcuts-calculator" data-shortcuts-calculator tabindex="-1">
                         <div class="shortcuts-calculator-display-frame">
+                            <div class="shortcuts-calculator-display-info"
+                                 data-calculator-display-info
+                                 aria-live="polite"
+                                 hidden></div>
                             <output class="shortcuts-calculator-display" data-calculator-display aria-live="polite">0</output>
+                            <span class="shortcuts-calculator-copy-feedback" data-calculator-copy-feedback role="status" aria-live="polite" hidden>✓</span>
                         </div>
-                        <span class="shortcuts-calculator-copy-feedback" data-calculator-copy-feedback role="status" aria-live="polite" hidden>✓</span>
+                        <button type="button"
+                                class="button secondary shortcuts-calculator-currency-toggle"
+                                data-calculator-currency-toggle
+                                data-i18n="launcher.calculator.currencyToggle"
+                                data-i18n-aria-label="launcher.calculator.currencyToggle"
+                                aria-expanded="false"
+                                aria-controls="shortcuts-calculator-currency-tools">Waluty</button>
+                        <section class="shortcuts-calculator-currency-tools"
+                                 id="shortcuts-calculator-currency-tools"
+                                 data-calculator-currency-tools
+                                 hidden>
+                            <h3 class="shortcuts-calculator-currency-title" data-i18n="launcher.calculator.currencyTitle">Przeliczanie walut</h3>
+                            <select data-calculator-currency-from
+                                    data-custom-select
+                                    data-i18n-title="launcher.calculator.currencyFrom"
+                                    aria-label="Waluta podanej kwoty"></select>
+                            <button type="button"
+                                    class="icon-button secondary shortcuts-calculator-currency-swap"
+                                    data-calculator-currency-swap
+                                    data-i18n-title="launcher.calculator.currencySwap"
+                                    data-i18n-aria-label="launcher.calculator.currencySwap"
+                                    aria-label="Zamień waluty">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M20 7v5h-5"></path>
+                                    <path d="M4 17v-5h5"></path>
+                                    <path d="M5.5 9a7 7 0 0 1 11.9-2L20 8"></path>
+                                    <path d="M18.5 15a7 7 0 0 1-11.9 2L4 16"></path>
+                                </svg>
+                                <span class="visually-hidden" data-i18n="launcher.calculator.currencySwap">Zamień waluty</span>
+                            </button>
+                            <select data-calculator-currency-to
+                                    data-custom-select
+                                    data-i18n-title="launcher.calculator.currencyTo"
+                                    aria-label="Waluta docelowa"></select>
+                            <button type="button"
+                                    class="button primary shortcuts-calculator-currency-convert"
+                                    data-calculator-currency-convert
+                                    data-i18n-title="launcher.calculator.currencyConvert"
+                                    data-i18n-aria-label="launcher.calculator.currencyConvert"
+                                    aria-label="Przelicz">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M7 7h11l-3-3"></path>
+                                    <path d="m18 7-3 3"></path>
+                                    <path d="M17 17H6l3 3"></path>
+                                    <path d="m6 17 3-3"></path>
+                                </svg>
+                                <span class="visually-hidden" data-i18n="launcher.calculator.currencyConvert">Przelicz</span>
+                            </button>
+                            <button type="button"
+                                    class="icon-button secondary shortcuts-calculator-currency-close"
+                                    data-calculator-currency-close
+                                    data-i18n-title="common.close"
+                                    data-i18n-aria-label="common.close"
+                                    aria-label="Zamknij">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M18 6 6 18"></path>
+                                    <path d="m6 6 12 12"></path>
+                                </svg>
+                            </button>
+                            <button type="button"
+                                    class="icon-button secondary shortcuts-calculator-currency-help"
+                                    data-calculator-currency-help
+                                    data-i18n-title="launcher.calculator.currencyRatesHelp"
+                                    data-i18n-aria-label="launcher.calculator.currencyRatesHelp"
+                                    aria-label="Pokaż kursy walut"
+                                    aria-haspopup="dialog"
+                                    aria-expanded="false">
+                                <span aria-hidden="true">?</span>
+                            </button>
+                            <aside class="shortcuts-calculator-currency-rates"
+                                   data-calculator-currency-rates
+                                   role="dialog"
+                                   aria-modal="false"
+                                   aria-labelledby="shortcuts-calculator-currency-rates-title"
+                                   hidden>
+                                <div class="shortcuts-calculator-currency-rates-header">
+                                    <h4 id="shortcuts-calculator-currency-rates-title" data-i18n="launcher.calculator.currencyRatesTitle">Kursy walut</h4>
+                                    <button type="button"
+                                            class="icon-button secondary shortcuts-calculator-currency-rates-close"
+                                            data-calculator-currency-rates-close
+                                            data-i18n-title="launcher.calculator.currencyRatesClose"
+                                            data-i18n-aria-label="launcher.calculator.currencyRatesClose"
+                                            aria-label="Zamknij">×</button>
+                                </div>
+                                <p class="shortcuts-calculator-currency-rates-date" data-calculator-currency-rates-date></p>
+                                <div class="shortcuts-calculator-currency-rates-table-wrap">
+                                    <table>
+                                        <thead>
+                                        <tr>
+                                            <th data-i18n="launcher.calculator.currencyRatesCode">Kod</th>
+                                            <th data-i18n="launcher.calculator.currencyRatesName">Waluta</th>
+                                            <th data-i18n="launcher.calculator.currencyRatesValue">PLN</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody data-calculator-currency-rates-body></tbody>
+                                    </table>
+                                </div>
+                            </aside>
+                            <p class="shortcuts-calculator-currency-message" data-calculator-currency-message role="status" aria-live="polite" hidden></p>
+                        </section>
                         <div class="shortcuts-calculator-grid" role="group" data-i18n-aria-label="launcher.calculator.title" aria-label="Kalkulator">
-                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-read" title="Przywołaj z pamięci">M</button>
-                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-clear" title="Wyczyść pamięć">MC</button>
-                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-add" title="Dodaj do pamięci">M+</button>
-                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-subtract" title="Odejmij od pamięci">M−</button>
+                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-read" data-i18n-title="launcher.calculator.memoryRecall">M</button>
+                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-clear" data-i18n-title="launcher.calculator.memoryClear">MC</button>
+                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-add" data-i18n-title="launcher.calculator.memoryAdd">M+</button>
+                            <button type="button" class="calculator-key calculator-key-memory" data-calculator-action="memory-subtract" data-i18n-title="launcher.calculator.memorySubtract">M−</button>
                             <button type="button" class="calculator-key calculator-key-function" data-calculator-action="clear">C</button>
                             <button type="button" class="calculator-key calculator-key-operator" data-calculator-input="(">(</button>
                             <button type="button" class="calculator-key calculator-key-operator" data-calculator-input=")">)</button>
@@ -443,7 +546,7 @@
                             <button type="button" class="calculator-key calculator-key-number" data-calculator-input="2">2</button>
                             <button type="button" class="calculator-key calculator-key-number" data-calculator-input="3">3</button>
                             <button type="button" class="calculator-key calculator-key-operator" data-calculator-input="+">+</button>
-                            <button type="button" class="calculator-key calculator-key-function" data-calculator-action="backspace" aria-label="Usuń ostatni znak">&lt;</button>
+                            <button type="button" class="calculator-key calculator-key-function" data-calculator-action="backspace" data-i18n-title="launcher.calculator.backspace" aria-label="Usuń ostatni znak">&lt;</button>
                             <button type="button" class="calculator-key calculator-key-number" data-calculator-input="0">0</button>
                             <button type="button" class="calculator-key calculator-key-number" data-calculator-input=".">,</button>
                             <button type="button" class="calculator-key calculator-key-equals" data-calculator-action="equals">=</button>
