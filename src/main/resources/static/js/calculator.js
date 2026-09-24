@@ -258,7 +258,7 @@
                     const value = evaluateExpression(expression);
                     expression = formatValue(value);
                     justCalculated = true;
-                    render();
+                    render(formatDisplayValue(value));
                 }
 
                 const valueToCopy = display.textContent ?? "0";
