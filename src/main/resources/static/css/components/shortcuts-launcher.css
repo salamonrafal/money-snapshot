@@ -123,12 +123,46 @@
     background: var(--surface);
     box-shadow: var(--shadow);
     overflow-y: auto;
+    scrollbar-width: none;
     filter: grayscale(1);
-    opacity: 0.72;
+    opacity: 1;
     transition: filter 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
 }
 
+body.modal-open .shortcuts-calculator-panel:not([hidden]) {
+    z-index: 130;
+}
+
+body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) {
+    z-index: 130;
+}
+
+body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-launcher-bar {
+    pointer-events: auto;
+}
+
+body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-launcher-bar::before {
+    border-top: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-events-anchor,
+body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) > .shortcuts-launcher-bar > [data-shortcuts-launcher-button] {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-calculator-button {
+    pointer-events: auto;
+}
+
 .shortcuts-calculator-panel[hidden] {
+    display: none;
+}
+
+.shortcuts-calculator-panel::-webkit-scrollbar {
     display: none;
 }
 
@@ -136,6 +170,17 @@
     filter: none;
     opacity: 1;
     border-color: var(--accent-border);
+}
+
+.shortcuts-calculator-panel:hover {
+    filter: none;
+    opacity: 1;
+    border-color: var(--accent-border);
+}
+
+.shortcuts-calculator-panel:has(.shortcuts-calculator-currency-close:hover) {
+    filter: none;
+    opacity: 1;
 }
 
 .shortcuts-calculator-panel-header {
@@ -152,18 +197,39 @@
 }
 
 .shortcuts-calculator-display-frame {
-    display: block;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
     width: 100%;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
-    min-height: 48px;
+    height: 76px;
+    min-height: 76px;
     margin-bottom: 12px;
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--background);
     padding: 10px 18px;
+}
+
+.shortcuts-calculator-display-info {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    text-align: right;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.shortcuts-calculator-display-info[hidden] {
+    display: none;
 }
 
 .shortcuts-calculator-display {
@@ -196,7 +262,7 @@
 
 .shortcuts-calculator-copy-feedback {
     position: absolute;
-    top: 0;
+    top: 50%;
     right: 12px;
     z-index: 1;
     display: flex;
@@ -208,8 +274,12 @@
     font-size: 1.5rem;
     font-weight: 800;
     opacity: 0;
-    transform: translateY(4px) scale(0.8);
     transition: opacity 0.22s ease, transform 0.22s ease;
+    transform: translateY(-50%) scale(0.8);
+}
+
+.shortcuts-calculator-display-frame:has(.shortcuts-calculator-display-info:not([hidden])) .shortcuts-calculator-copy-feedback {
+    top: calc(50% + 10px);
 }
 
 .shortcuts-calculator-copy-feedback[hidden] {
@@ -218,12 +288,251 @@
 
 .shortcuts-calculator-copy-feedback.is-visible {
     opacity: 1;
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(-50%) scale(1);
 }
 
 .shortcuts-calculator-display.is-copying {
     color: transparent;
+}
+
+.shortcuts-calculator-currency-toggle {
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.shortcuts-calculator.is-currency-tools-open .shortcuts-calculator-currency-toggle {
+    display: none;
+}
+
+.shortcuts-calculator-currency-tools {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+    padding: 20px 8px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+
+.shortcuts-calculator-currency-title {
+    position: absolute;
+    top: -0.65em;
+    left: 10px;
+    margin: 0;
+    padding: 0 5px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.shortcuts-calculator-currency-tools[hidden] {
+    display: none;
+}
+
+.shortcuts-calculator-currency-tools select {
+    width: 100%;
+}
+
+.shortcuts-calculator-currency-tools .custom-select {
+    min-width: 0;
+}
+
+.shortcuts-calculator-currency-tools .custom-select-trigger {
+    min-width: 0;
+    height: 40px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 0.82rem;
+}
+
+.shortcuts-calculator-currency-tools .custom-select-option {
+    font-size: 0.82rem;
+}
+
+.shortcuts-calculator-currency-convert {
+    min-width: 42px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 10px;
+}
+
+.shortcuts-calculator-currency-swap {
+    width: 32px;
+    min-width: 32px;
+    height: 40px;
+    padding: 0;
+}
+
+.shortcuts-calculator-currency-swap svg {
+    width: 17px;
+    height: 17px;
+}
+
+.shortcuts-calculator-currency-convert svg {
+    width: 20px;
+    height: 20px;
+}
+
+.shortcuts-calculator-currency-close {
+    position: absolute;
+    top: -10px;
+    right: 6px;
+    display: grid;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background-color: var(--surface) !important;
+    color: var(--muted) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+.shortcuts-calculator-currency-help {
+    position: absolute;
+    top: -10px;
+    right: 34px;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background-color: var(--surface) !important;
+    color: var(--muted) !important;
+    font-size: 0.8rem;
+    font-weight: 800;
+    opacity: 1 !important;
+    z-index: 1;
+}
+
+.shortcuts-calculator-currency-help:hover,
+.shortcuts-calculator-currency-help:focus-visible,
+.shortcuts-calculator-currency-help:active {
+    background-color: var(--surface) !important;
+    color: var(--accent-strong) !important;
+    border-color: var(--accent-border);
+    opacity: 1 !important;
+}
+
+.shortcuts-calculator-currency-rates {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 5;
+    width: min(300px, calc(100vw - 32px));
+    box-sizing: border-box;
+    transform: translateX(-50%);
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.shortcuts-calculator-currency-rates[hidden] {
+    display: none;
+}
+
+.shortcuts-calculator-currency-rates-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.shortcuts-calculator-currency-rates-header h4 {
+    margin: 0;
+    font-size: 0.82rem;
+}
+
+.shortcuts-calculator-currency-rates-close {
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 6px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.shortcuts-calculator-currency-rates-date {
+    margin: 6px 0 8px;
+    color: var(--muted);
+    font-size: 0.68rem;
+}
+
+.shortcuts-calculator-currency-rates-table-wrap {
+    overflow-x: auto;
+}
+
+.shortcuts-calculator-currency-rates table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
+    table-layout: fixed;
+}
+
+.shortcuts-calculator-currency-rates th,
+.shortcuts-calculator-currency-rates td {
+    padding: 4px 5px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+}
+
+.shortcuts-calculator-currency-rates th:last-child,
+.shortcuts-calculator-currency-rates td:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.shortcuts-calculator-currency-rates th:first-child,
+.shortcuts-calculator-currency-rates td:first-child {
+    width: 42px;
+}
+
+.shortcuts-calculator-currency-rates th:nth-child(2),
+.shortcuts-calculator-currency-rates td:nth-child(2) {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.shortcuts-calculator-currency-rates tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.shortcuts-calculator-currency-close svg {
+    width: 13px;
+    height: 13px;
+}
+
+.shortcuts-calculator-currency-close:hover,
+.shortcuts-calculator-currency-close:focus-visible,
+.shortcuts-calculator-currency-close:active {
+    background-color: var(--surface) !important;
+    color: var(--accent-strong) !important;
+    border-color: var(--accent-border);
+    opacity: 1 !important;
+}
+
+.shortcuts-calculator-currency-message {
+    margin: 0;
+    color: var(--danger-strong);
+    font-size: 0.76rem;
+}
+
+.shortcuts-calculator-currency-message[hidden] {
+    display: none;
 }
 
 .shortcuts-calculator-grid {

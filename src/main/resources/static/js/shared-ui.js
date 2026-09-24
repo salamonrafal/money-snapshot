@@ -517,17 +517,41 @@ window.MoneySnapshotUi = (() => {
         let modalScrollTop = 0;
         const focusableSelector = "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
-        function focusableElements() {
+        function isVisibleFocusable(element) {
+            return element instanceof HTMLElement
+                && !element.hidden
+                && !element.closest("[inert]")
+                && element.getClientRects().length > 0;
+        }
+
+        function modalFocusableElements() {
             if (!dialog) {
                 return [];
             }
 
-            return [...dialog.querySelectorAll(focusableSelector)]
-                .filter((element) => element instanceof HTMLElement && !element.hidden && element.offsetParent !== null);
+            return [...dialog.querySelectorAll(focusableSelector)].filter(isVisibleFocusable);
+        }
+
+        function focusableElements() {
+            const modalElements = modalFocusableElements();
+            if (!dialog) {
+                return modalElements;
+            }
+
+            const calculatorButton = document.querySelector("[data-shortcuts-calculator-button]");
+            const calculatorPanel = document.querySelector("[data-shortcuts-calculator-panel]");
+            const calculatorElements = [
+                calculatorButton,
+                ...(calculatorPanel ? [...calculatorPanel.querySelectorAll(focusableSelector)] : [])
+            ].filter((element) => !dialog?.contains(element)).filter(isVisibleFocusable);
+            return [...modalElements, ...calculatorElements].sort((first, second) => {
+                if (first === second) return 0;
+                return first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+            });
         }
 
         function focusFirstElement() {
-            const focusTarget = focusableElements()[0];
+            const focusTarget = modalFocusableElements()[0];
             if (focusTarget instanceof HTMLElement) {
                 focusTarget.focus();
                 return;
@@ -547,6 +571,8 @@ window.MoneySnapshotUi = (() => {
                 inertedElements = [...document.body.children]
                     .filter((element) => element instanceof HTMLElement
                         && element !== modal
+                        && !element.matches("[data-shortcuts-calculator-panel]")
+                        && !element.querySelector("[data-shortcuts-calculator-button]")
                         && !element.contains(modal))
                     .map((element) => ({
                         element,
@@ -637,10 +663,20 @@ window.MoneySnapshotUi = (() => {
         closeButtons.forEach((button) => button.addEventListener("click", close));
 
         modal?.addEventListener("pointerdown", (event) => {
+            if (event.target instanceof Element
+                && event.target.closest("[data-shortcuts-calculator-panel], [data-shortcuts-calculator-button]")) {
+                backdropPointerDown = false;
+                return;
+            }
             backdropPointerDown = event.target === modal;
         });
 
         modal?.addEventListener("click", (event) => {
+            if (event.target instanceof Element
+                && event.target.closest("[data-shortcuts-calculator-panel], [data-shortcuts-calculator-button]")) {
+                backdropPointerDown = false;
+                return;
+            }
             if (backdropPointerDown && event.target === modal) {
                 close();
             }
@@ -653,6 +689,10 @@ window.MoneySnapshotUi = (() => {
             }
 
             if (event.key === "Escape") {
+                if (event.target instanceof Element
+                    && event.target.closest("[data-shortcuts-calculator-panel]")) {
+                    return;
+                }
                 close();
                 return;
             }
