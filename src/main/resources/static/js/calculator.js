@@ -104,6 +104,8 @@
         function close() {
             panel.hidden = true;
             button.setAttribute("aria-expanded", "false");
+            button.dataset.suppressTooltipOnFocusOnce = "true";
+            button.focus();
         }
 
         function open() {
