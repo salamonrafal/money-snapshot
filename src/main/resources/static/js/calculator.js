@@ -325,21 +325,28 @@
             else if (event.key === "Enter" && document.activeElement instanceof HTMLButtonElement) {
                 animateElement(document.activeElement);
             }
-            else if ((event.key === "Enter" || event.key === "=")
-                && !(document.activeElement instanceof HTMLButtonElement)) {
+            else if (event.key === "=") {
+                animateKey("equals");
+                event.preventDefault();
+                calculate();
+            }
+            else if (event.key === "Enter") {
                 animateKey("equals");
                 event.preventDefault();
                 calculate();
             }
             else if (event.key === "Backspace") {
+                event.preventDefault();
                 animateKey("backspace");
                 backspace();
             }
             else if (event.key === ",") {
+                event.preventDefault();
                 animateKey(".");
                 input(".");
             }
             else if (/^[0-9.+\-*/()]$/.test(event.key)) {
+                event.preventDefault();
                 animateKey(event.key);
                 input(event.key);
             }
