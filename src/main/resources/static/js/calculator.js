@@ -135,6 +135,23 @@
             render();
         }
 
+        function animateElement(key) {
+            if (!(key instanceof HTMLElement)) return;
+            key.classList.remove("is-keyboard-pressed");
+            window.requestAnimationFrame(() => {
+                key.classList.add("is-keyboard-pressed");
+                window.setTimeout(() => key.classList.remove("is-keyboard-pressed"), 140);
+            });
+        }
+
+        function animateKey(value) {
+            const key = [...calculator.querySelectorAll("[data-calculator-input], [data-calculator-action]")]
+                .find((element) => element.dataset.calculatorInput === value
+                    || (value === "equals" && element.dataset.calculatorAction === "equals")
+                    || (value === "backspace" && element.dataset.calculatorAction === "backspace"));
+            animateElement(key);
+        }
+
         function calculate() {
             try {
                 const value = evaluateExpression(expression);
@@ -266,11 +283,36 @@
             else input(key.dataset.calculatorInput);
         });
 
-        button.addEventListener("click", () => panel.hidden ? open() : close());
+        button.addEventListener("click", () => {
+            if (panel.hidden) {
+                open();
+            } else if (!calculator.contains(document.activeElement)) {
+                calculator.focus();
+            }
+        });
         closeButton?.addEventListener("click", close);
+        panel.addEventListener("pointerdown", (event) => {
+            if (event.target instanceof Element && !event.target.closest("button")) {
+                event.preventDefault();
+                if (!calculator.contains(document.activeElement)) {
+                    calculator.focus();
+                }
+            }
+        });
+        panel.addEventListener("click", (event) => {
+            if (event.target instanceof Element
+                && !event.target.closest("button")
+                && !calculator.contains(document.activeElement)) {
+                calculator.focus();
+            }
+        });
         document.addEventListener("click", (event) => {
             if (!panel.hidden && event.target instanceof Element
-                && !event.target.closest("[data-shortcuts-calculator-panel], [data-shortcuts-calculator-button]")) close();
+                && !event.target.closest("[data-shortcuts-calculator-panel], [data-shortcuts-calculator-button]")) {
+                if (calculator.contains(document.activeElement)) {
+                    document.activeElement.blur();
+                }
+            }
         });
         document.addEventListener("keydown", (event) => {
             if (panel.hidden) return;
@@ -280,14 +322,27 @@
                 event.preventDefault();
                 copyResult();
             }
+            else if (event.key === "Enter" && document.activeElement instanceof HTMLButtonElement) {
+                animateElement(document.activeElement);
+            }
             else if ((event.key === "Enter" || event.key === "=")
                 && !(document.activeElement instanceof HTMLButtonElement)) {
+                animateKey("equals");
                 event.preventDefault();
                 calculate();
             }
-            else if (event.key === "Backspace") backspace();
-            else if (event.key === ",") input(".");
-            else if (/^[0-9.+\-*/()]$/.test(event.key)) input(event.key);
+            else if (event.key === "Backspace") {
+                animateKey("backspace");
+                backspace();
+            }
+            else if (event.key === ",") {
+                animateKey(".");
+                input(".");
+            }
+            else if (/^[0-9.+\-*/()]$/.test(event.key)) {
+                animateKey(event.key);
+                input(event.key);
+            }
         });
 
         document.addEventListener("money-snapshot:i18n-language-change", async (event) => {
