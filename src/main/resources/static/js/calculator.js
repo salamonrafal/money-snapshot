@@ -160,9 +160,9 @@
         function calculate() {
             try {
                 const value = evaluateExpression(expression);
-                expression = Number.isInteger(value) ? String(value) : String(Number(value.toFixed(10)));
+                expression = String(value);
                 justCalculated = true;
-                render();
+                render(formatDisplayValue(value));
             } catch {
                 display.textContent = calculatorErrorMessage;
                 expression = "";
@@ -178,7 +178,13 @@
         }
 
         function formatValue(value) {
-            return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(10)));
+            return String(value);
+        }
+
+        function formatDisplayValue(value) {
+            if (Number.isInteger(value)) return String(value);
+            const rounded = Number(value.toFixed(10));
+            return rounded === 0 && value !== 0 ? String(value) : String(rounded);
         }
 
         function memoryAction(action) {
@@ -220,7 +226,7 @@
                 hasMemory = true;
                 if (expression && !justCalculated) {
                     expression = formatValue(value);
-                    render();
+                    render(formatDisplayValue(value));
                 }
                 justCalculated = true;
             } catch {
@@ -334,6 +340,9 @@
             else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
                 event.preventDefault();
                 copyResult();
+            }
+            else if (event.ctrlKey || event.metaKey || event.altKey) {
+                return;
             }
             else if (event.key === "Enter" && document.activeElement instanceof HTMLButtonElement) {
                 animateElement(document.activeElement);
