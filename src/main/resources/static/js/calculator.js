@@ -76,6 +76,11 @@
         const closeButton = panel?.querySelector("[data-shortcuts-calculator-close]");
         if (!(button instanceof HTMLElement) || !(panel instanceof HTMLElement) || !(display instanceof HTMLElement)) return;
 
+        const launcherRoot = panel.closest("[data-shortcuts-launcher]");
+        if (launcherRoot instanceof HTMLElement && panel.parentElement !== launcherRoot) {
+            launcherRoot.append(panel);
+        }
+
         let expression = "";
         let justCalculated = false;
         let memoryValue = 0;
@@ -252,15 +257,23 @@
                 if (navigator.clipboard?.writeText) {
                     await navigator.clipboard.writeText(valueToCopy);
                 } else {
-                    const copyField = document.createElement("textarea");
-                    copyField.value = valueToCopy;
-                    copyField.setAttribute("readonly", "");
-                    copyField.style.position = "fixed";
-                    copyField.style.opacity = "0";
-                    document.body.append(copyField);
-                    copyField.select();
-                    if (!document.execCommand("copy")) throw new Error("Copy failed");
-                    copyField.remove();
+                    const previousFocus = document.activeElement instanceof HTMLElement
+                        ? document.activeElement
+                        : calculator;
+                    let copyField = null;
+                    try {
+                        copyField = document.createElement("textarea");
+                        copyField.value = valueToCopy;
+                        copyField.setAttribute("readonly", "");
+                        copyField.style.position = "fixed";
+                        copyField.style.opacity = "0";
+                        document.body.append(copyField);
+                        copyField.select();
+                        if (!document.execCommand("copy")) throw new Error("Copy failed");
+                    } finally {
+                        copyField?.remove();
+                        previousFocus.focus({preventScroll: true});
+                    }
                 }
                 showCopyFeedback();
             } catch {
