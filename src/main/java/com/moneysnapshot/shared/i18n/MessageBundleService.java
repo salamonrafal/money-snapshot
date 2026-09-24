@@ -370,6 +370,7 @@ public class MessageBundleService {
     );
 
     private static final Set<String> CALENDAR_PAGE_KEYS = Set.of(
+            "common.close",
             "calendar.heading.eyebrow",
             "calendar.heading.title",
             "calendar.heading.subtitle",
@@ -401,6 +402,14 @@ public class MessageBundleService {
             "launcher.todayEvents.buttonNoCount",
             "launcher.todayEvents.title",
             "launcher.todayEvents.empty",
+            "launcher.calculator.button",
+            "launcher.calculator.title",
+            "launcher.calculator.error",
+            "launcher.calculator.memoryRecall",
+            "launcher.calculator.memoryClear",
+            "launcher.calculator.memoryAdd",
+            "launcher.calculator.memorySubtract",
+            "launcher.calculator.backspace",
             "calendar.aria.navigation",
             "calendar.aria.grid",
             "calendar.aria.eventList",

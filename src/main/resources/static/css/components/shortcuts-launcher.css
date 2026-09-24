@@ -95,6 +95,187 @@
     height: 100%;
 }
 
+.shortcuts-calculator-anchor {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    flex: 0 0 auto;
+    height: 100%;
+    order: -1;
+}
+
+.shortcuts-calculator-button {
+    width: 56px;
+    height: 100%;
+}
+
+.shortcuts-calculator-panel {
+    position: fixed;
+    box-sizing: border-box;
+    left: var(--page-padding);
+    bottom: calc(52px + 12px + env(safe-area-inset-bottom, 0px));
+    z-index: 35;
+    width: min(320px, calc(100vw - 32px));
+    max-height: min(560px, calc(100dvh - 52px - 28px - env(safe-area-inset-bottom, 0px)));
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    overflow-y: auto;
+    filter: grayscale(1);
+    opacity: 0.72;
+    transition: filter 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
+}
+
+.shortcuts-calculator-panel[hidden] {
+    display: none;
+}
+
+.shortcuts-calculator-panel:focus-within {
+    filter: none;
+    opacity: 1;
+    border-color: var(--accent-border);
+}
+
+.shortcuts-calculator-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.shortcuts-calculator-panel-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.shortcuts-calculator-display-frame {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-height: 48px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--background);
+    padding: 10px 18px;
+}
+
+.shortcuts-calculator-display {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    direction: ltr;
+    color: var(--text);
+    font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.shortcuts-calculator-display::-webkit-scrollbar {
+    display: none;
+}
+
+.shortcuts-calculator {
+    position: relative;
+}
+
+.shortcuts-calculator:focus,
+.shortcuts-calculator:focus-visible {
+    outline: none;
+}
+
+.shortcuts-calculator-copy-feedback {
+    position: absolute;
+    top: 0;
+    right: 12px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    min-height: 48px;
+    color: var(--success-strong);
+    font-size: 1.5rem;
+    font-weight: 800;
+    opacity: 0;
+    transform: translateY(4px) scale(0.8);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.shortcuts-calculator-copy-feedback[hidden] {
+    display: none;
+}
+
+.shortcuts-calculator-copy-feedback.is-visible {
+    opacity: 1;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.shortcuts-calculator-display.is-copying {
+    color: transparent;
+}
+
+.shortcuts-calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+}
+
+.calculator-key {
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--background);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.calculator-key:hover,
+.calculator-key:focus-visible {
+    border-color: var(--accent);
+    background: var(--accent-wash-subtle);
+    color: var(--accent-strong);
+}
+
+.calculator-key.is-keyboard-pressed {
+    border-color: var(--accent);
+    background: var(--accent-wash-subtle);
+    color: var(--accent-strong);
+    transform: translateY(1px) scale(0.96);
+    transition: transform 0.07s ease, background-color 0.07s ease, border-color 0.07s ease, color 0.07s ease;
+}
+
+.calculator-key-operator,
+.calculator-key-function {
+    color: var(--accent-strong);
+}
+
+.calculator-key-memory {
+    min-height: 34px;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.calculator-key-equals {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+}
+
+
 .shortcuts-launcher-events-button {
     position: relative;
     width: 56px;
