@@ -389,6 +389,20 @@
                 panel.querySelector("#shortcuts-calculator-title").textContent = calculatorTitle;
                 panel.querySelector("[data-i18n-aria-label='launcher.calculator.title']")?.setAttribute("aria-label", calculatorTitle);
                 panel.querySelector("[data-shortcuts-calculator-close]")?.setAttribute("aria-label", messages["common.close"] ?? "Zamknij");
+                const controlMessageKeys = {
+                    "memory-read": "launcher.calculator.memoryRecall",
+                    "memory-clear": "launcher.calculator.memoryClear",
+                    "memory-add": "launcher.calculator.memoryAdd",
+                    "memory-subtract": "launcher.calculator.memorySubtract",
+                    backspace: "launcher.calculator.backspace"
+                };
+                Object.entries(controlMessageKeys).forEach(([action, messageKey]) => {
+                    const control = calculator.querySelector(`[data-calculator-action='${action}']`);
+                    const controlLabel = messages[messageKey];
+                    if (!(control instanceof HTMLElement) || !controlLabel) return;
+                    control.setAttribute("title", controlLabel);
+                    if (action === "backspace") control.setAttribute("aria-label", controlLabel);
+                });
             } catch {
                 // Keep the Polish labels from the HTML when translations cannot be loaded.
             }
