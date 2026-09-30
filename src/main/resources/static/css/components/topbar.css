@@ -1,5 +1,10 @@
+html {
+    scrollbar-gutter: stable;
+}
+
 html.shortcuts-launcher-scroll-locked {
-    overflow-y: scroll;
+    overflow-y: hidden;
+    scrollbar-gutter: auto;
 }
 
 body.modal-open .topbar,
@@ -32,6 +37,40 @@ body.shortcuts-launcher-open {
     padding: 24px var(--page-padding);
     background: var(--background);
     box-shadow: var(--topbar-shadow);
+}
+
+.shortcuts-topbar-close {
+    display: none;
+    cursor: pointer !important;
+    pointer-events: auto;
+}
+
+.shortcuts-topbar-close * {
+    cursor: pointer !important;
+}
+
+body.shortcuts-launcher-open .topbar-actions {
+    display: none;
+}
+
+body.shortcuts-launcher-open .topbar {
+    box-shadow: none;
+}
+
+body.shortcuts-launcher-open .shortcuts-topbar-close {
+    display: inline-grid;
+}
+
+body.shortcuts-launcher-open .menu-toggle-bar:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+}
+
+body.shortcuts-launcher-open .menu-toggle-bar:nth-child(2) {
+    opacity: 0;
+}
+
+body.shortcuts-launcher-open .menu-toggle-bar:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
 }
 
 .menu-toggle {
@@ -266,6 +305,10 @@ body.shortcuts-launcher-open {
 }
 
 @media (max-width: 1024px) {
+    body.shortcuts-launcher-open .shortcuts-topbar-close {
+        display: none;
+    }
+
     body.menu-open {
         overflow: hidden;
     }

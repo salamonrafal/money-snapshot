@@ -151,6 +151,16 @@
         });
         displayResizeObserver.observe(display);
 
+        const scrollContent = calculator.querySelector(".shortcuts-calculator-scroll-content");
+        if (scrollContent instanceof HTMLElement) {
+            const scrollResizeObserver = new ResizeObserver(() => {
+                scrollContent.classList.toggle("is-scrollable",
+                    scrollContent.scrollHeight > scrollContent.clientHeight);
+            });
+            scrollResizeObserver.observe(scrollContent);
+            Array.from(scrollContent.children).forEach((child) => scrollResizeObserver.observe(child));
+        }
+
         function close() {
             panel.hidden = true;
             button.setAttribute("aria-expanded", "false");

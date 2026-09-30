@@ -1,5 +1,9 @@
 package com.moneysnapshot.security;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.rememberme.CookieTheftException;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
@@ -32,5 +36,17 @@ public class UserSettingsRememberMeServices extends PersistentTokenBasedRemember
         }
 
         return value.trim();
+    }
+
+    @Override
+    public Authentication autoLogin(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            return super.autoLogin(request, response);
+        } catch (CookieTheftException exception) {
+            // A concurrent request can legitimately present the token just rotated
+            // by another request. Invalidate the stale cookie and continue as logged out.
+            cancelCookie(request, response);
+            return null;
+        }
     }
 }
