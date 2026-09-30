@@ -124,6 +124,8 @@
         const eventsBadge = root.querySelector("[data-shortcuts-events-badge]");
         const eventsLabel = root.querySelector("[data-shortcuts-events-button-label]");
         const eventsTitle = root.querySelector("[data-shortcuts-events-title]");
+        const topbarClose = document.querySelector("[data-shortcuts-topbar-close]");
+        const menuToggle = document.querySelector(".menu-toggle");
 
         if (!(button instanceof HTMLElement) || !(panel instanceof HTMLElement)) {
             return;
@@ -133,7 +135,37 @@
         let inertedElements = [];
         let scrollTop = 0;
         let eventsLoadedDate = null;
+        const menuToggleNavigationState = menuToggle instanceof HTMLElement
+            ? {
+                expanded: menuToggle.getAttribute("aria-expanded"),
+                controls: menuToggle.getAttribute("aria-controls"),
+                label: menuToggle.getAttribute("aria-label"),
+                i18nLabel: menuToggle.getAttribute("data-i18n-aria-label"),
+                title: menuToggle.getAttribute("title")
+            }
+            : null;
         const focusableSelector = "[autofocus], button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+
+        function setMenuToggleShortcutState(isOpen) {
+            if (!(menuToggle instanceof HTMLElement)) return;
+            if (isOpen) {
+                menuToggle.setAttribute("aria-expanded", "true");
+                menuToggle.setAttribute("aria-controls", panel.id);
+                menuToggle.setAttribute("aria-label", "Zamknij menu skrótów");
+                menuToggle.setAttribute("data-i18n-aria-label", "common.shortcuts.close");
+                menuToggle.setAttribute("title", "Zamknij menu skrótów");
+                return;
+            }
+            const restore = (attribute, value) => {
+                if (value === null) menuToggle.removeAttribute(attribute);
+                else menuToggle.setAttribute(attribute, value);
+            };
+            restore("aria-expanded", menuToggleNavigationState?.expanded ?? null);
+            restore("aria-controls", menuToggleNavigationState?.controls ?? null);
+            restore("aria-label", menuToggleNavigationState?.label ?? null);
+            restore("data-i18n-aria-label", menuToggleNavigationState?.i18nLabel ?? null);
+            restore("title", menuToggleNavigationState?.title ?? null);
+        }
 
         function isOpen() {
             return !panel.hidden && panel.classList.contains("is-open");
@@ -294,8 +326,16 @@
         }
 
         function focusableElements() {
-            return [...panel.querySelectorAll(focusableSelector)]
+            const elements = [...panel.querySelectorAll(focusableSelector)]
                 .filter((element) => element instanceof HTMLElement && !element.hidden && element.offsetParent !== null);
+            const relocatedClose = [topbarClose, menuToggle]
+                .find((element) => element instanceof HTMLElement
+                    && !element.hidden
+                    && element.offsetParent !== null);
+            if (relocatedClose instanceof HTMLElement) {
+                elements.unshift(relocatedClose);
+            }
+            return elements;
         }
 
         function focusFirstElement() {
@@ -313,6 +353,7 @@
                 inertedElements = [...document.body.children]
                     .filter((element) => element instanceof HTMLElement
                         && element !== root
+                        && element !== topbarElement
                         && !element.contains(root))
                     .map((element) => ({
                         element,
@@ -349,6 +390,8 @@
             }
             panel.hidden = false;
             document.body.classList.add("shortcuts-launcher-open");
+            topbarClose?.removeAttribute("hidden");
+            setMenuToggleShortcutState(true);
             button.setAttribute("aria-expanded", "true");
             lastTrigger = trigger instanceof HTMLElement ? trigger : button;
             button.blur();
@@ -374,6 +417,8 @@
             setPageInert(false);
             button.setAttribute("aria-expanded", "false");
             document.body.classList.remove("shortcuts-launcher-open");
+            topbarClose?.setAttribute("hidden", "");
+            setMenuToggleShortcutState(false);
             document.documentElement.classList.remove("shortcuts-launcher-scroll-locked");
             document.body.style.removeProperty("--shortcuts-launcher-scroll-top");
             document.body.style.removeProperty("--topbar-lock-height");
@@ -398,6 +443,14 @@
                 });
             }
         }
+
+        topbarClose?.addEventListener("click", () => close());
+        menuToggle?.addEventListener("click", (event) => {
+            if (!isOpen()) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            close();
+        }, true);
 
         button.addEventListener("click", () => {
             if (isOpen()) {

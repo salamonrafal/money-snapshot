@@ -9,6 +9,10 @@
     pointer-events: none;
 }
 
+.shortcuts-launcher-dock:has(.shortcuts-events-panel:not([hidden])) {
+    z-index: 50;
+}
+
 .shortcuts-launcher-dock-bar {
     left: 0;
     right: 0;
@@ -111,19 +115,20 @@
 
 .shortcuts-calculator-panel {
     position: fixed;
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
     left: var(--page-padding);
     bottom: calc(52px + 12px + env(safe-area-inset-bottom, 0px));
-    z-index: 35;
+    z-index: 45;
     width: min(320px, calc(100vw - 32px));
     max-height: min(560px, calc(100dvh - 52px - 28px - env(safe-area-inset-bottom, 0px)));
-    padding: 18px;
+    padding: 0;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--surface);
     box-shadow: var(--shadow);
-    overflow-y: auto;
-    scrollbar-width: none;
+    overflow: hidden;
     filter: grayscale(1);
     opacity: 1;
     transition: filter 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
@@ -162,10 +167,6 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
     display: none;
 }
 
-.shortcuts-calculator-panel::-webkit-scrollbar {
-    display: none;
-}
-
 .shortcuts-calculator-panel:focus-within {
     filter: none;
     opacity: 1;
@@ -183,21 +184,44 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
     opacity: 1;
 }
 
-.shortcuts-calculator-panel-header {
+.shortcuts-calculator-panel-header,
+.shortcuts-events-panel-header {
     display: flex;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    min-height: 41px;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 14px;
+    padding: 4px 12px 4px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--background);
 }
 
-.shortcuts-calculator-panel-header h2 {
+.shortcuts-calculator-panel-header h2,
+.shortcuts-events-panel-header h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
+    line-height: 1.25;
+}
+
+.shortcuts-calculator-panel-header .icon-button,
+.shortcuts-events-panel-header .icon-button {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.shortcuts-calculator-panel-header .icon-button svg,
+.shortcuts-events-panel-header .icon-button svg {
+    width: 14px;
+    height: 14px;
 }
 
 .shortcuts-calculator-display-frame {
     position: relative;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -253,6 +277,24 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
 
 .shortcuts-calculator {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 12px 18px;
+}
+
+.shortcuts-calculator-scroll-content {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--muted) 35%, transparent) transparent;
+    overscroll-behavior-y: contain;
+}
+
+.shortcuts-calculator-scroll-content.is-scrollable {
+    padding-inline: 10px;
+    scrollbar-gutter: stable both-edges;
 }
 
 .shortcuts-calculator:focus,
@@ -310,7 +352,7 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 7px;
-    margin-top: 8px;
+    margin-top: 12px;
     margin-bottom: 12px;
     padding: 20px 8px 8px;
     border: 1px solid var(--line);
@@ -429,7 +471,8 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
     top: calc(100% + 8px);
     left: 50%;
     z-index: 5;
-    width: min(300px, calc(100vw - 32px));
+    width: min(300px, calc(100% - 16px));
+    max-width: calc(100% - 16px);
     box-sizing: border-box;
     transform: translateX(-50%);
     padding: 10px;
@@ -620,12 +663,11 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
     bottom: calc(100% + 12px);
     z-index: 2;
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr);
-    gap: 12px;
+    grid-template-rows: auto minmax(0, 1fr);
     width: min(420px, calc(100vw - 32px));
     max-height: min(560px, calc(100vh - var(--shortcuts-launcher-top, 0px) - 92px));
     min-height: 0;
-    padding: 18px;
+    padding: 0;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--surface);
@@ -635,13 +677,6 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
 
 .shortcuts-events-panel[hidden] {
     display: none;
-}
-
-.shortcuts-events-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
 }
 
 .shortcuts-events-panel-copy {
@@ -656,10 +691,6 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
     margin: 0;
 }
 
-.shortcuts-events-panel-copy h2 {
-    font-size: 1.05rem;
-}
-
 .shortcuts-events-panel-subtitle {
     color: var(--muted);
     line-height: 1.5;
@@ -670,6 +701,7 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
     align-content: start;
     gap: 12px;
     min-height: 0;
+    margin: 12px 18px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -801,11 +833,19 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     transition: opacity 0.16s ease, visibility 0s linear 0.16s;
 }
 
+body.shortcuts-launcher-open .shortcuts-calculator-panel {
+    z-index: 30;
+}
+
 .shortcuts-launcher-button svg {
     display: block;
     flex: 0 0 auto;
     width: 16px;
     height: 16px;
+}
+
+.shortcuts-launcher-close-icon {
+    display: none !important;
 }
 
 .shortcuts-launcher-button span {
@@ -816,17 +856,20 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
 
 .shortcuts-launcher-panel {
     position: fixed;
-    inset: var(--shortcuts-launcher-top, 0px) 0 0;
+    inset: calc(var(--shortcuts-launcher-top, 0px) - 4px) 0 0;
+    width: 100vw;
+    max-width: 100vw;
     z-index: 34;
     overflow: hidden;
-    padding: 8px 0 0;
+    padding: 0;
     background: var(--background);
-    opacity: 0;
+    opacity: 1;
     pointer-events: none;
-    transition: opacity 0.22s ease;
+    transition: none;
 }
 
 .shortcuts-launcher-panel.is-open {
+    z-index: 46;
     opacity: 1;
     pointer-events: auto;
 }
@@ -840,13 +883,13 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
     width: 100%;
     height: 100%;
     margin: 0 auto;
-    padding: 12px 0 16px;
+    padding: 4px 0 16px;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-gutter: stable;
-    transform: translateY(56px);
+    transform: none;
     opacity: 0;
-    transition: transform 0.26s ease, opacity 0.22s ease;
+    transition: opacity 0.22s ease;
 }
 
 .shortcuts-launcher-content {
@@ -967,8 +1010,11 @@ body.shortcuts-launcher-open .shortcuts-launcher-bar {
 
 @media (max-width: 560px) {
     .shortcuts-events-panel {
-        left: 0;
-        width: min(420px, calc(100vw - 32px));
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        bottom: calc(52px + 12px + env(safe-area-inset-bottom, 0px));
+        width: auto;
         max-height: min(60vh, 520px);
     }
 }

@@ -33,10 +33,13 @@
                 <input data-role="bulk-snapshot-date" name="snapshotDate" type="date" required>
                 <span class="bulk-input-error" data-role="bulk-snapshot-date-error" data-validation-role="date" aria-live="polite" hidden></span>
             </label>
-            <label class="field bulk-snapshot-control-note">
-                <span data-i18n="snapshots.bulk.commonNote">Wspólna notatka</span>
-                <textarea data-role="bulk-snapshot-note" name="note" maxlength="500" rows="3"></textarea>
-            </label>
+            <details class="bulk-snapshot-control-note">
+                <summary th:id="${formId + '-note-label'}" data-i18n="snapshots.bulk.commonNote">Wspólna notatka</summary>
+                <div class="field">
+                    <textarea data-role="bulk-snapshot-note" name="note" maxlength="500" rows="3"
+                              th:attr="aria-labelledby=${formId + '-note-label'}"></textarea>
+                </div>
+            </details>
         </div>
         <div class="table-wrap bulk-snapshot-table-wrap">
             <table class="bulk-snapshot-table">

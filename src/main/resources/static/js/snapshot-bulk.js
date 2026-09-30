@@ -170,8 +170,12 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             const meta = document.createElement("span");
             name.className = "bulk-account-name";
             name.textContent = formatAccountName(account);
+            MoneySnapshotUi.setTooltip(name, name.textContent);
+            name.tabIndex = 0;
             meta.className = "bulk-account-meta";
             meta.textContent = formatAccountMeta(account);
+            MoneySnapshotUi.setTooltip(meta, meta.textContent);
+            if (meta.textContent) meta.tabIndex = 0;
             cell.append(name, meta);
             return cell;
         }
@@ -195,7 +199,6 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
 
         function createBalanceInputCell(account, previousAccount, compact = false) {
             const cell = document.createElement("td");
-            const spacer = document.createElement("span");
             const balanceInput = document.createElement("input");
             const error = document.createElement("span");
             const lastBalance = document.createElement("span");
@@ -204,9 +207,6 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             const lastBalanceAmount = document.createElement("span");
 
             cell.className = `bulk-balance-cell bulk-value-cell${compact ? " bulk-compact-value-cell" : ""}`;
-            spacer.className = "bulk-balance-spacer";
-            spacer.setAttribute("aria-hidden", "true");
-            spacer.textContent = currentMessages["snapshots.form.balance"] ?? "Saldo";
             balanceInput.className = "table-input";
             balanceInput.type = "number";
             balanceInput.step = "0.0001";
@@ -237,7 +237,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
                 lastBalanceAmount.hidden = true;
             }
             lastBalance.append(lastBalanceDate, lastBalanceSeparator, lastBalanceAmount);
-            cell.append(spacer, balanceInput, error, lastBalance);
+            cell.append(balanceInput, error, lastBalance);
             return cell;
         }
 
@@ -263,8 +263,12 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
                 const meta = document.createElement("span");
                 name.className = "bulk-account-name";
                 name.textContent = formatAccountName(account);
+                MoneySnapshotUi.setTooltip(name, name.textContent);
+                name.tabIndex = 0;
                 meta.className = "bulk-account-meta";
                 meta.textContent = formatAccountMeta(account);
+                MoneySnapshotUi.setTooltip(meta, meta.textContent);
+                if (meta.textContent) meta.tabIndex = 0;
                 heading.append(name, meta);
                 row.append(heading, createBalanceInputCell(account, previousAccounts.get(account.id), true));
                 return row;
@@ -547,6 +551,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             snapshotTypeSelect.value = "";
             snapshotTypeCustomSelect.refresh();
             noteInput.value = "";
+            noteInput.closest("details")?.removeAttribute("open");
             clearValidationErrors();
             setFormMessage("");
             renderAccounts();
