@@ -543,12 +543,12 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             }
         }
 
-        function resetForm() {
+        function resetForm({snapshotType = ""} = {}) {
             draftSnapshotDate = MoneySnapshotUi.localIsoDate();
             draftBalances.clear();
             bulkSnapshotForm.reset();
             snapshotDateInput.value = draftSnapshotDate;
-            snapshotTypeSelect.value = "";
+            snapshotTypeSelect.value = ["FINAL", "PARTIAL"].includes(snapshotType) ? snapshotType : "";
             snapshotTypeCustomSelect.refresh();
             noteInput.value = "";
             noteInput.closest("details")?.removeAttribute("open");
@@ -670,6 +670,10 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
 
         if (autoPrepare) {
             await controller.prepare();
+            const snapshotType = new URLSearchParams(window.location.search).get("type");
+            if (["FINAL", "PARTIAL"].includes(snapshotType)) {
+                controller.resetForm({snapshotType});
+            }
         }
         return controller;
     }

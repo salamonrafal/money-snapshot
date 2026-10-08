@@ -1,0 +1,62 @@
+.bulk-snapshot-split-button {
+    display: inline-flex;
+    position: relative;
+    width: max-content;
+}
+
+.bulk-snapshot-split-button > .button {
+    border-radius: 8px 0 0 8px;
+    border-right: 0;
+}
+
+.bulk-snapshot-type-picker {
+    flex: 0 0 48px;
+    height: 48px;
+    min-width: 0;
+    width: 48px;
+}
+
+.bulk-snapshot-type-picker > summary {
+    display: inline-flex;
+    height: 100%;
+    width: 48px;
+    padding: 0 12px;
+    border-left: 1px solid var(--line);
+    border-radius: 0 8px 8px 0;
+    list-style: none;
+}
+
+.bulk-snapshot-type-picker > summary::-webkit-details-marker { display: none; }
+.bulk-snapshot-type-picker > summary svg { transition: transform 160ms ease; }
+.bulk-snapshot-type-picker[open] > summary svg { transform: rotate(180deg); }
+
+.bulk-snapshot-type-options {
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 0;
+    z-index: 10;
+    width: 100%;
+    max-width: 100%;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 0 0 8px 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.bulk-snapshot-split-button:has(.bulk-snapshot-type-picker[open]) > .button,
+.bulk-snapshot-split-button:has(.bulk-snapshot-type-picker[open]) > .bulk-snapshot-type-picker > summary {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.bulk-snapshot-type-options a {
+    display: block;
+    padding: 12px 16px;
+    border-radius: 4px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.bulk-snapshot-type-options a:hover,
+.bulk-snapshot-type-options a:focus-visible { background: var(--line); }

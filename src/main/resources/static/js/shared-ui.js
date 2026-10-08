@@ -1052,3 +1052,23 @@ window.MoneySnapshotUi = (() => {
         shouldReserveScrollbarSpace
     };
 })();
+
+// Reusable split-button dropdown behavior.
+document.querySelectorAll("[data-split-button]").forEach((splitButton) => {
+    const picker = splitButton.querySelector(".split-button-picker");
+    const summary = picker?.querySelector("summary");
+    if (!picker || !summary) {
+        return;
+    }
+    document.addEventListener("click", (event) => {
+        if (!splitButton.contains(event.target)) {
+            picker.open = false;
+        }
+    });
+    summary.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && picker.open) {
+            picker.open = false;
+            summary.focus();
+        }
+    });
+});

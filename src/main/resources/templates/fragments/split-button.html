@@ -1,0 +1,18 @@
+<div th:fragment="splitButton(buttonId, labelKey, labelText, primaryHref, finalHref, partialHref, finalLabelKey, partialLabelKey, shortcutAction)"
+     class="bulk-snapshot-split-button split-button"
+     data-split-button>
+    <a class="button secondary split-button-primary"
+       th:id="${buttonId}"
+       th:href="${primaryHref}"
+       th:attr="data-shortcut-action=${shortcutAction},data-snapshot-type='PARTIAL',data-i18n=${labelKey}"
+       th:text="${labelText}">Dodaj</a>
+    <details class="bulk-snapshot-type-picker split-button-picker">
+        <summary class="button secondary" aria-label="Wybierz opcję">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="bulk-snapshot-type-options split-button-options">
+            <a th:href="${finalHref}" th:attr="data-shortcut-action=${shortcutAction},data-snapshot-type='FINAL',data-i18n=${finalLabelKey}">Finalne</a>
+            <a th:href="${partialHref}" th:attr="data-shortcut-action=${shortcutAction},data-snapshot-type='PARTIAL',data-i18n=${partialLabelKey}">Cząstkowe</a>
+        </div>
+    </details>
+</div>
