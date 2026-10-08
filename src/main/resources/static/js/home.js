@@ -1048,6 +1048,20 @@ openSnapshotFormModalButton?.addEventListener("click", async (event) => {
     }
 });
 
+const bulkSnapshotTypePicker = document.getElementById("open-bulk-snapshot-form-modal")
+    ?.closest("[data-split-button]")?.querySelector(".split-button-picker");
+document.addEventListener("click", (event) => {
+    if (bulkSnapshotTypePicker && !bulkSnapshotTypePicker.contains(event.target)) {
+        bulkSnapshotTypePicker.open = false;
+    }
+});
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && bulkSnapshotTypePicker?.open) {
+        bulkSnapshotTypePicker.open = false;
+        bulkSnapshotTypePicker.querySelector("summary").focus();
+    }
+});
+
 openBulkSnapshotFormModalButtons.forEach((trigger) => {
     trigger.addEventListener("click", async (event) => {
         if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
@@ -1055,6 +1069,7 @@ openBulkSnapshotFormModalButtons.forEach((trigger) => {
         }
 
         event.preventDefault();
+        if (bulkSnapshotTypePicker) bulkSnapshotTypePicker.open = false;
 
         try {
             const controller = await ensureBulkSnapshotFormController();
@@ -1064,10 +1079,11 @@ openBulkSnapshotFormModalButtons.forEach((trigger) => {
             }
 
             await controller.prepare({forceReload: true});
-            controller.resetForm();
+            controller.resetForm({snapshotType: trigger.dataset.snapshotType ?? "PARTIAL"});
             controller.clearMessage();
             bulkSnapshotFormModal.open({
-                trigger
+                trigger: trigger.closest(".split-button-picker")
+                    ? bulkSnapshotTypePicker.querySelector("summary") : trigger
             });
             window.requestAnimationFrame(() => {
                 controller.focus();

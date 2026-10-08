@@ -298,11 +298,12 @@
     .home-main .hero {
         grid-template-columns: minmax(0, 1fr) minmax(360px, 0.92fr);
         gap: 40px;
-        align-self: start;
+        align-self: center;
         margin-top: 0;
-        min-height: auto;
+        min-height: calc(100dvh - 88px - 52px - 64px);
         padding-top: 0;
         padding-bottom: 0;
+        align-items: center;
     }
 
     .home-main .hero-content {

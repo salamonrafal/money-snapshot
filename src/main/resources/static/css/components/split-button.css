@@ -1,0 +1,62 @@
+.split-button {
+    display: inline-flex;
+    position: relative;
+    width: max-content;
+}
+
+.split-button > .split-button-primary {
+    border-radius: 8px 0 0 8px;
+    border-right: 0;
+}
+
+.split-button-picker {
+    flex: 0 0 48px;
+    height: 48px;
+    min-width: 0;
+    width: 48px;
+}
+
+.split-button-picker > summary {
+    display: inline-flex;
+    height: 100%;
+    width: 48px;
+    padding: 0 12px;
+    border-left: 1px solid var(--line);
+    border-radius: 0 8px 8px 0;
+    list-style: none;
+}
+
+.split-button-picker > summary::-webkit-details-marker { display: none; }
+.split-button-picker > summary svg { transition: transform 160ms ease; }
+.split-button-picker[open] > summary svg { transform: rotate(180deg); }
+
+.split-button-options {
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 0;
+    z-index: 10;
+    width: 100%;
+    max-width: 100%;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 0 0 8px 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.split-button:has(.split-button-picker[open]) > .split-button-primary,
+.split-button:has(.split-button-picker[open]) > .split-button-picker > summary {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.split-button-options a {
+    display: block;
+    padding: 12px 16px;
+    border-radius: 4px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.split-button-options a:hover,
+.split-button-options a:focus-visible { background: var(--line); }
