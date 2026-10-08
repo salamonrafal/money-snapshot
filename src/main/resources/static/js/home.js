@@ -1048,7 +1048,8 @@ openSnapshotFormModalButton?.addEventListener("click", async (event) => {
     }
 });
 
-const bulkSnapshotTypePicker = document.querySelector(".bulk-snapshot-type-picker");
+const bulkSnapshotTypePicker = document.getElementById("open-bulk-snapshot-form-modal")
+    ?.closest("[data-split-button]")?.querySelector(".split-button-picker");
 document.addEventListener("click", (event) => {
     if (bulkSnapshotTypePicker && !bulkSnapshotTypePicker.contains(event.target)) {
         bulkSnapshotTypePicker.open = false;
@@ -1081,7 +1082,7 @@ openBulkSnapshotFormModalButtons.forEach((trigger) => {
             controller.resetForm({snapshotType: trigger.dataset.snapshotType ?? "PARTIAL"});
             controller.clearMessage();
             bulkSnapshotFormModal.open({
-                trigger: trigger.closest(".bulk-snapshot-type-picker")
+                trigger: trigger.closest(".split-button-picker")
                     ? bulkSnapshotTypePicker.querySelector("summary") : trigger
             });
             window.requestAnimationFrame(() => {
