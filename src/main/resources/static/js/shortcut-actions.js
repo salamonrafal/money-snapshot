@@ -1,8 +1,9 @@
 (() => {
     const bulkSnapshotTriggers = document.querySelectorAll("[data-launchbar-shortcut-action='bulk-snapshots']");
     const liabilityRepaymentTriggers = document.querySelectorAll("[data-launchbar-shortcut-action='liability-repayment']");
+    const transactionAnalyzerTriggers = document.querySelectorAll("[data-launchbar-shortcut-action='transaction-analyzer']");
 
-    if (bulkSnapshotTriggers.length === 0 && liabilityRepaymentTriggers.length === 0) {
+    if (bulkSnapshotTriggers.length === 0 && liabilityRepaymentTriggers.length === 0 && transactionAnalyzerTriggers.length === 0) {
         return;
     }
 
@@ -13,6 +14,7 @@
     let bulkSnapshotController = null;
     let bulkSnapshotControllerPromise = null;
     let liabilityRepaymentMessages = {};
+    let transactionAnalyzerMessages = {};
     let cachedLiabilities = [];
     let selectedLiabilityId = "";
 
@@ -49,6 +51,20 @@
         sourceType: repaymentSourceTypeInput,
         sourceAmount: repaymentSourceAmountInput
     };
+
+    const transactionAnalyzerModalElement = document.getElementById("shortcut-transaction-analyzer-modal");
+    const transactionAnalyzerModal = transactionAnalyzerModalElement
+        ? MoneySnapshotUi.createModal({
+            modalSelector: "#shortcut-transaction-analyzer-modal",
+            closeSelectors: ["#shortcut-transaction-analyzer-modal [data-shortcut-transaction-analyzer-modal-close]"]
+        })
+        : null;
+    const transactionAnalyzerForm = document.getElementById("shortcut-transaction-analyzer-form");
+    const transactionAnalyzerFileInput = document.getElementById("shortcut-transaction-analyzer-file");
+    const transactionAnalyzerFileDropzone = document.querySelector("[data-shortcut-transaction-file-dropzone]");
+    const transactionAnalyzerFileStatus = document.getElementById("shortcut-transaction-analyzer-file-status");
+    const transactionAnalyzerMessage = document.getElementById("shortcut-transaction-analyzer-message");
+    const transactionAnalyzerBankHelpButton = document.getElementById("shortcut-transaction-analyzer-bank-help");
 
     function currentLanguage() {
         const savedLanguage = window.localStorage.getItem("money-snapshot-language");
@@ -105,6 +121,22 @@
         const messages = await response.json();
         messagesCache.set(cacheKey, messages);
         return messages;
+    }
+
+    function transactionAnalyzerText(key, fallback) {
+        return transactionAnalyzerMessages[key] ?? fallback;
+    }
+
+    async function refreshTransactionAnalyzerTranslations() {
+        transactionAnalyzerMessages = await loadMessages("/api/transaction-analyzer/messages");
+        MoneySnapshotI18n.applyMessages(transactionAnalyzerMessages, currentLanguage(), document.querySelectorAll(
+            "[data-launchbar-shortcut-action='transaction-analyzer'][data-i18n], #shortcut-transaction-analyzer-modal [data-i18n], #shortcut-transaction-analyzer-modal [data-i18n-aria-label]"
+        ));
+        MoneySnapshotUi.setTooltip(transactionAnalyzerBankHelpButton, transactionAnalyzerText(
+            "transactionAnalyzer.bank.help",
+            "Wybór banku pozwoli dobrać właściwy schemat pliku."
+        ));
+        updateTransactionAnalyzerFileStatus(transactionAnalyzerFileInput?.files, {clearMessage: false});
     }
 
     function userSettings() {
@@ -538,5 +570,73 @@
                 window.location.href = trigger.href;
             }
         });
+    });
+
+    function updateTransactionAnalyzerFileStatus(files = transactionAnalyzerFileInput?.files, {clearMessage = true} = {}) {
+        const [file] = files ?? [];
+        if (transactionAnalyzerFileStatus) {
+            transactionAnalyzerFileStatus.textContent = file
+                ? transactionAnalyzerText("transactionAnalyzer.upload.selectedFile", "Wybrany plik: {fileName}").replace("{fileName}", file.name)
+                : transactionAnalyzerText("transactionAnalyzer.upload.noFile", "Nie wybrano pliku.");
+        }
+        if (clearMessage && transactionAnalyzerMessage) {
+            transactionAnalyzerMessage.textContent = "";
+            delete transactionAnalyzerMessage.dataset.type;
+        }
+    }
+
+    transactionAnalyzerFileInput?.addEventListener("change", () => {
+        updateTransactionAnalyzerFileStatus();
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+        transactionAnalyzerFileDropzone?.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            transactionAnalyzerFileDropzone.classList.add("is-dragging");
+        });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+        transactionAnalyzerFileDropzone?.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            transactionAnalyzerFileDropzone.classList.remove("is-dragging");
+        });
+    });
+
+    transactionAnalyzerFileDropzone?.addEventListener("drop", (event) => {
+        const files = event.dataTransfer?.files;
+        if (!files?.length || !transactionAnalyzerFileInput) {
+            return;
+        }
+
+        transactionAnalyzerFileInput.files = files;
+        updateTransactionAnalyzerFileStatus(files);
+    });
+
+    transactionAnalyzerForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (transactionAnalyzerMessage) {
+            transactionAnalyzerMessage.textContent = transactionAnalyzerText(
+                "transactionAnalyzer.upload.mockMessage",
+                "Analiza pliku będzie dostępna w kolejnym etapie."
+            );
+            transactionAnalyzerMessage.dataset.type = "success";
+        }
+    });
+
+    transactionAnalyzerTriggers.forEach((trigger) => {
+        trigger.addEventListener("click", (event) => {
+            if (!shouldOpenModalFromClick(event) || !transactionAnalyzerModal) {
+                return;
+            }
+
+            event.preventDefault();
+            window.setTimeout(() => transactionAnalyzerModal.open({trigger}), 0);
+        });
+    });
+
+    refreshTransactionAnalyzerTranslations().catch(console.error);
+    document.addEventListener("money-snapshot:i18n-language-change", () => {
+        refreshTransactionAnalyzerTranslations().catch(console.error);
     });
 })();

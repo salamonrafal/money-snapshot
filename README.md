@@ -19,11 +19,9 @@ Start PostgreSQL and create a database named `money_snapshot`.
 
 The repository includes a Docker Compose setup with:
 
-- `web` - Spring Boot application started with Maven.
+- `web` - Spring Boot application built into a Docker image.
 - `postgres` - PostgreSQL from the pinned `postgres:18.4` image, exposed on the host as `localhost:5456`.
 - `money-snapshot-postgres-data` - persistent PostgreSQL data volume.
-- `money-snapshot-maven-cache` - Maven dependency cache volume.
-- `money-snapshot-maven-target` - Maven build output volume, mounted at `/app/target` so Docker does not create root-owned `target/` files in the working tree.
 
 Create a local `.env` file before starting Docker Compose:
 
@@ -36,13 +34,13 @@ Then edit `.env` and set the local database credentials. The `.env` file is igno
 Start the full stack:
 
 ```bash
-docker compose up
+docker compose up --build
 ```
 
 Start it in the background:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 Open the application at `http://localhost:5081`.
@@ -80,8 +78,37 @@ docker compose down
 Rebuild/recreate containers after configuration changes:
 
 ```bash
-docker compose up -d --force-recreate
+docker compose up -d --build --force-recreate
 ```
+
+## Application environments
+
+The application uses Spring profiles for environment-specific configuration. Available profiles are `develop` and `production`; `develop` is the default when no profile is set.
+
+Choose the profile at startup with `SPRING_PROFILES_ACTIVE`:
+
+```bash
+SPRING_PROFILES_ACTIVE=develop mvn spring-boot:run
+SPRING_PROFILES_ACTIVE=production mvn spring-boot:run
+```
+
+For Docker Compose, set the value in `.env` or pass it with the command:
+
+```bash
+SPRING_PROFILES_ACTIVE=production docker compose up -d --build
+```
+
+Profile files live in `src/main/resources/application-develop.yml` and `src/main/resources/application-production.yml`. They expose the selected environment and feature flags to server-rendered templates as `applicationEnvironment`.
+
+For example, a diagnostic section visible only in development can use:
+
+```html
+<section th:if="${applicationEnvironment.featureEnabled('diagnostic-tools')}">
+    Narzędzia diagnostyczne
+</section>
+```
+
+The flag is configured as `app.environment.features.diagnostic-tools`: it is enabled in `develop` and disabled in `production`. Add more flags to the profile files as the application gains environment-specific behavior. For bean-level differences, use Spring's `@Profile("develop")` or `@Profile("production")`.
 
 Remove containers and the PostgreSQL data volume:
 

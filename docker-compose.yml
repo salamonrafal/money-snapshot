@@ -3,9 +3,10 @@ name: money-snapshot
 services:
   web:
     container_name: money-snapshot-web
-    image: maven:3.9-eclipse-temurin-17
-    working_dir: /app
-    command: mvn spring-boot:run
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: money-snapshot-web
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
@@ -19,10 +20,7 @@ services:
       ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
       REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
       REMEMBER_ME_DAYS: ${REMEMBER_ME_DAYS:-30}
-    volumes:
-      - .:/app
-      - maven_target:/app/target
-      - maven_cache:/root/.m2
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-develop}
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider \"http://127.0.0.1:$${SERVER_PORT}/login\""]
       interval: 10s
@@ -62,7 +60,3 @@ services:
 volumes:
   postgres_data:
     name: money-snapshot-postgres-data
-  maven_cache:
-    name: money-snapshot-maven-cache
-  maven_target:
-    name: money-snapshot-maven-target

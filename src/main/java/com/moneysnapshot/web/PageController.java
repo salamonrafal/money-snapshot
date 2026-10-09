@@ -1,18 +1,26 @@
 package com.moneysnapshot.web;
 
+import com.moneysnapshot.ApplicationEnvironmentProperties;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.server.ResponseStatusException;
 
 @Controller
 public class PageController {
 
     private final boolean rememberMeEnabled;
+    private final ApplicationEnvironmentProperties applicationEnvironmentProperties;
 
-    public PageController(@Value("${app.security.remember-me-key:${REMEMBER_ME_KEY:}}") String rememberMeKey) {
+    public PageController(
+            @Value("${app.security.remember-me-key:${REMEMBER_ME_KEY:}}") String rememberMeKey,
+            ApplicationEnvironmentProperties applicationEnvironmentProperties
+    ) {
         this.rememberMeEnabled = rememberMeKey != null && !rememberMeKey.isBlank();
+        this.applicationEnvironmentProperties = applicationEnvironmentProperties;
     }
 
     @GetMapping("/")
@@ -70,6 +78,14 @@ public class PageController {
     @GetMapping("/counterparties.html")
     public String counterparties() {
         return "counterparties";
+    }
+
+    @GetMapping("/transaction-analyzer.html")
+    public String transactionAnalyzer() {
+        if (!applicationEnvironmentProperties.featureEnabled("transaction-analyzer")) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return "transaction-analyzer";
     }
 
     @GetMapping("/counterparties/new.html")

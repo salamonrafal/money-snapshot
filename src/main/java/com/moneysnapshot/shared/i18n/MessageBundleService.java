@@ -50,6 +50,9 @@ public class MessageBundleService {
             "home.feature.counterparties.title",
             "home.feature.counterparties.description",
             "home.feature.counterparties.action",
+            "home.feature.transactionAnalyzer.title",
+            "home.feature.transactionAnalyzer.description",
+            "home.feature.transactionAnalyzer.action",
             "home.feature.reports.title",
             "home.feature.reports.description",
             "home.feature.calendar.title",
@@ -912,6 +915,33 @@ public class MessageBundleService {
             "counterpartyForm.error.loadCounterparty"
     );
 
+    private static final Set<String> TRANSACTION_ANALYZER_PAGE_KEYS = Set.of(
+            "transactionAnalyzer.heading.eyebrow",
+            "transactionAnalyzer.heading.title",
+            "transactionAnalyzer.heading.subtitle",
+            "transactionAnalyzer.form.aria",
+            "transactionAnalyzer.upload.title",
+            "transactionAnalyzer.upload.description",
+            "transactionAnalyzer.upload.chooseFile",
+            "transactionAnalyzer.upload.fileLabel",
+            "transactionAnalyzer.upload.fileHint",
+            "transactionAnalyzer.upload.dropHint",
+            "transactionAnalyzer.upload.noFile",
+            "transactionAnalyzer.upload.selectedFile",
+            "transactionAnalyzer.upload.submit",
+            "transactionAnalyzer.upload.mockMessage",
+            "transactionAnalyzer.bank.label",
+            "transactionAnalyzer.bank.ing",
+            "transactionAnalyzer.bank.help",
+            "transactionAnalyzer.bank.helpAria",
+            "transactionAnalyzer.format.open",
+            "transactionAnalyzer.format.title",
+            "transactionAnalyzer.format.description",
+            "transactionAnalyzer.format.columnsTitle",
+            "transactionAnalyzer.format.columns",
+            "transactionAnalyzer.format.note"
+    );
+
     private static final Set<String> BILLS_PAGE_KEYS = Set.of(
             "bills.aria.toolbar",
             "bills.actions.add",
@@ -1331,6 +1361,10 @@ public class MessageBundleService {
 
     public Map<String, String> counterpartyFormPageMessages(Locale locale) {
         return messages(COUNTERPARTY_FORM_PAGE_KEYS, locale);
+    }
+
+    public Map<String, String> transactionAnalyzerPageMessages(Locale locale) {
+        return messages(TRANSACTION_ANALYZER_PAGE_KEYS, locale);
     }
 
     public Map<String, String> billsPageMessages(Locale locale) {
