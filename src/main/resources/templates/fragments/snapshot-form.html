@@ -1,10 +1,24 @@
 <!doctype html>
 <html lang="pl" xmlns:th="http://www.thymeleaf.org">
 <body>
+<div th:fragment="registeredFinalWarning" class="snapshot-form-final-warning"
+     data-role="snapshot-final-warning" role="status" aria-live="polite" hidden>
+    <span class="snapshot-form-final-warning-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 10v6"></path>
+            <path d="M12 7h.01"></path>
+        </svg>
+    </span>
+    <div class="snapshot-form-final-warning-copy" data-role="snapshot-final-warning-copy"></div>
+</div>
 <th:block th:fragment="snapshotForm(mode, cancelHref, snapshotId, closeButton, formId)">
     <form class="snapshot-form"
           data-snapshot-form
           th:attr="id=${formId},data-mode=${mode},data-snapshot-id=${snapshotId}">
+        <th:block th:if="${mode == 'create'}">
+            <th:block th:replace="~{fragments/snapshot-form :: registeredFinalWarning}"></th:block>
+        </th:block>
         <div class="form-grid">
             <div class="field">
                 <span th:id="${(formId != null ? formId : 'snapshot-' + mode) + '-account-label'}" data-i18n="snapshots.form.account">Konto</span>

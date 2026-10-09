@@ -511,6 +511,38 @@ async function loadBillsSummary() {
     return response.json();
 }
 
+async function updateBulkSnapshotAvailability() {
+    const primaryAction = document.getElementById("open-bulk-snapshot-form-modal");
+    if (!primaryAction) return;
+
+    const [finalsResponse, accountsResponse] = await Promise.all([
+        fetch(`/api/snapshots/registered-finals?snapshotDate=${MoneySnapshotUi.localIsoDate()}`),
+        fetch("/api/accounts/snapshots")
+    ]);
+    if (!finalsResponse.ok || !accountsResponse.ok) {
+        throw new Error(homeMessages["snapshots.error.load"]);
+    }
+    const [finals, accounts] = await Promise.all([finalsResponse.json(), accountsResponse.json()]);
+    const accountIds = new Set(accounts.map((account) => account.id));
+    const hasFinalSnapshots = finals.accounts.some((account) => accountIds.has(account.accountId));
+    const snapshotType = hasFinalSnapshots ? "PARTIAL" : "FINAL";
+    primaryAction.dataset.snapshotType = snapshotType;
+    primaryAction.href = `/snapshots/bulk.html?type=${snapshotType}`;
+
+    const finalAction = primaryAction.closest("[data-split-button]")
+        ?.querySelector(".split-button-options [data-snapshot-type='FINAL']");
+    if (finalAction) {
+        finalAction.setAttribute("aria-disabled", String(hasFinalSnapshots));
+        if (hasFinalSnapshots) {
+            finalAction.removeAttribute("href");
+            finalAction.tabIndex = -1;
+        } else {
+            finalAction.href = "/snapshots/bulk.html?type=FINAL";
+            finalAction.removeAttribute("tabindex");
+        }
+    }
+}
+
 async function loadHomeData() {
     const [panel, liabilitiesSummary, billsSummary] = await Promise.all([
         loadSnapshotPanel(),
@@ -521,6 +553,9 @@ async function loadHomeData() {
         loadBillsSummary().catch((error) => {
             console.error(error);
             return null;
+        }),
+        updateBulkSnapshotAvailability().catch((error) => {
+            console.error(error);
         })
     ]);
 
@@ -1064,6 +1099,10 @@ document.addEventListener("keydown", (event) => {
 
 openBulkSnapshotFormModalButtons.forEach((trigger) => {
     trigger.addEventListener("click", async (event) => {
+        if (trigger.getAttribute("aria-disabled") === "true") {
+            event.preventDefault();
+            return;
+        }
         if (!bulkSnapshotFormModal || !bulkSnapshotFormElement || !window.MoneySnapshotBulkSnapshotForm) {
             return;
         }
@@ -1072,6 +1111,8 @@ openBulkSnapshotFormModalButtons.forEach((trigger) => {
         if (bulkSnapshotTypePicker) bulkSnapshotTypePicker.open = false;
 
         try {
+            await updateBulkSnapshotAvailability();
+            if (trigger.getAttribute("aria-disabled") === "true") return;
             const controller = await ensureBulkSnapshotFormController();
             if (!controller) {
                 window.location.href = trigger.href;

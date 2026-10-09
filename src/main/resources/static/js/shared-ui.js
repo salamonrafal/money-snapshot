@@ -1072,3 +1072,36 @@ document.querySelectorAll("[data-split-button]").forEach((splitButton) => {
         }
     });
 });
+
+// Warning shared by single and bulk snapshot forms.
+window.MoneySnapshotRegisteredFinalWarning = {
+    create(root) {
+        const panel = root.querySelector("[data-role='snapshot-final-warning']");
+        const copy = panel?.querySelector("[data-role='snapshot-final-warning-copy']");
+        let requestVersion = 0;
+
+        return async function update({snapshotDate, snapshotType, accountIds, messages}) {
+            if (!panel || !copy) return;
+            const version = ++requestVersion;
+            panel.hidden = true;
+            copy.replaceChildren();
+            if (snapshotType !== "FINAL" || !snapshotDate || accountIds.length === 0) return;
+
+            try {
+                const response = await fetch(`/api/snapshots/registered-finals?snapshotDate=${encodeURIComponent(snapshotDate)}`);
+                if (!response.ok) throw new Error("Cannot load registered final snapshots");
+                const data = await response.json();
+                if (version !== requestVersion) return;
+                const accounts = data.accounts.filter((account) => accountIds.includes(account.accountId));
+                if (accounts.length === 0) return;
+
+                copy.textContent = messages[accounts.length === 1
+                    ? "snapshots.warning.registeredFinal"
+                    : "snapshots.warning.registeredFinals"] ?? "";
+                panel.hidden = false;
+            } catch (error) {
+                console.warn("Cannot load registered final snapshots", error);
+            }
+        };
+    }
+};

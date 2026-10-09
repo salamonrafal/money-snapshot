@@ -4,7 +4,7 @@
     <a class="button secondary split-button-primary"
        th:id="${buttonId}"
        th:href="${primaryHref}"
-       th:attr="data-shortcut-action=${shortcutAction},data-snapshot-type='PARTIAL',data-i18n=${labelKey}"
+       th:attr="data-shortcut-action=${shortcutAction},data-snapshot-type=${#strings.contains(primaryHref, 'type=FINAL') ? 'FINAL' : 'PARTIAL'},data-i18n=${labelKey}"
        th:text="${labelText}">Dodaj</a>
     <details class="split-button-picker">
         <summary class="button secondary" aria-label="Wybierz opcję">

@@ -71,6 +71,11 @@ public class AccountSnapshotController {
         return snapshotFinalWarningQueryService.warnings();
     }
 
+    @GetMapping("/registered-finals")
+    public SnapshotFinalWarningsResponse.RegisteredFinals registeredFinals(@RequestParam LocalDate snapshotDate) {
+        return snapshotFinalWarningQueryService.registeredFinals(snapshotDate);
+    }
+
     @PostMapping
     public ResponseEntity<AccountSnapshotResponse> createSnapshot(@Valid @RequestBody CreateAccountSnapshotRequest request) {
         AccountSnapshotResponse response = AccountSnapshotResponse.from(snapshotService.createSnapshot(request));

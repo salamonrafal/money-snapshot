@@ -49,6 +49,25 @@ public class SnapshotFinalWarningQueryService {
         this.clock = clock;
     }
 
+    public SnapshotFinalWarningsResponse.RegisteredFinals registeredFinals(LocalDate snapshotDate) {
+        UUID ownerId = currentUserService.currentUserId();
+        int endDay = userSettingsService.currentUserSettings().billingMonthStartDay();
+        LocalDate start = resolvePeriodStart(snapshotDate, endDay);
+        LocalDate end = resolvePeriodEnd(start, endDay);
+        Map<UUID, List<AccountSnapshot>> finalsByAccount = snapshotRepository
+                .findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId).stream()
+                .filter(snapshot -> snapshot.getSnapshotType() == SnapshotType.FINAL)
+                .filter(snapshot -> !snapshot.getSnapshotDate().isBefore(start)
+                        && !snapshot.getSnapshotDate().isAfter(end))
+                .collect(java.util.stream.Collectors.groupingBy(snapshot -> snapshot.getAccount().getId()));
+        var accounts = finalsByAccount.entrySet().stream()
+                .map(entry -> new SnapshotFinalWarningsResponse.RegisteredAccount(
+                        entry.getKey(), entry.getValue().get(0).getAccount().getName(), entry.getValue().size()))
+                .sorted(Comparator.comparing(SnapshotFinalWarningsResponse.RegisteredAccount::accountName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        return new SnapshotFinalWarningsResponse.RegisteredFinals(start, end, accounts);
+    }
+
     public SnapshotFinalWarningsResponse warnings() {
         UUID ownerId = currentUserService.currentUserId();
         int billingMonthEndDay = userSettingsService.currentUserSettings().billingMonthStartDay();
