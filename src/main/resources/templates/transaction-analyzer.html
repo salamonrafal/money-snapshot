@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Analizator transakcji | Money Snapshot', 'transaction-analyzer.js', 'transaction-analyzer')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('transaction-analyzer')}"></header>
+
+<main class="workspace workspace-with-sticky-launcher">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="transactionAnalyzer.heading.eyebrow">Historia z banku</p>
+        <h1 data-i18n="transactionAnalyzer.heading.title">Analizator transakcji</h1>
+        <p data-i18n="transactionAnalyzer.heading.subtitle">Dodaj plik z historią operacji bankowych, aby w przyszłości znaleźć płatności cykliczne.</p>
+    </section>
+
+    <section class="management-layout single-column" data-i18n-aria-label="transactionAnalyzer.form.aria" aria-label="Dodawanie pliku z transakcjami">
+        <form class="editor-panel wide-panel transaction-analyzer-panel" id="transaction-analyzer-form">
+            <div class="transaction-analyzer-panel-heading">
+                <div>
+                    <h2 data-i18n="transactionAnalyzer.upload.title">Dodaj plik z transakcjami</h2>
+                    <p data-i18n="transactionAnalyzer.upload.description">Na początek obsługiwany będzie plik CSV. Plik pozostaje na Twoim urządzeniu, dopóki analiza nie zostanie udostępniona.</p>
+                </div>
+            </div>
+
+                <div class="field transaction-analyzer-bank-field">
+                    <span id="transaction-analyzer-bank-label" data-i18n="transactionAnalyzer.bank.label">Bank</span>
+                    <div class="transaction-analyzer-bank-control">
+                        <select id="transaction-analyzer-bank" data-custom-select aria-labelledby="transaction-analyzer-bank-label">
+                            <option value="ing" data-i18n="transactionAnalyzer.bank.ing">ING Bank Śląski</option>
+                        </select>
+                        <button type="button" class="icon-button secondary transaction-analyzer-bank-help" id="transaction-analyzer-bank-help" data-i18n-aria-label="transactionAnalyzer.bank.helpAria" aria-label="Pomoc dotycząca wyboru banku">?</button>
+                    </div>
+                </div>
+
+            <label class="transaction-file-picker" for="transaction-analyzer-file">
+                <span class="transaction-file-picker-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 16V4"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                        <path d="M5 20h14"></path>
+                    </svg>
+                </span>
+                <span class="transaction-file-picker-copy">
+                    <strong data-i18n="transactionAnalyzer.upload.fileLabel">Plik CSV z historią transakcji</strong>
+                    <span data-i18n="transactionAnalyzer.upload.fileHint">Wybierz eksport historii rachunku pobrany z banku.</span>
+                </span>
+                <span class="button secondary compact" aria-hidden="true" data-i18n="transactionAnalyzer.upload.chooseFile">Wybierz plik CSV</span>
+                <input id="transaction-analyzer-file" type="file" accept=".csv,text/csv">
+            </label>
+
+            <p class="transaction-file-status" id="transaction-analyzer-file-status" role="status" data-i18n="transactionAnalyzer.upload.noFile">Nie wybrano pliku.</p>
+            <div class="transaction-analyzer-actions">
+                <button type="submit" class="button primary" data-i18n="transactionAnalyzer.upload.submit">Przeanalizuj płatności</button>
+            </div>
+            <p class="form-message" id="transaction-analyzer-message" role="status"></p>
+        </form>
+    </section>
+</main>
+
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+</body>
+</html>

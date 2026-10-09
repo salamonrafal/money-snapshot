@@ -1,0 +1,114 @@
+.transaction-analyzer-panel {
+    display: grid;
+    gap: 22px;
+}
+
+.transaction-analyzer-panel-heading {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.transaction-analyzer-panel-heading h2,
+.transaction-analyzer-format-body h3 {
+    margin: 0;
+}
+
+.transaction-analyzer-panel-heading p,
+.transaction-analyzer-format-body p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.transaction-file-picker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 132px;
+    border: 1px dashed var(--accent);
+    border-radius: 12px;
+    background: var(--accent-wash-faint);
+    padding: 20px;
+    cursor: pointer;
+}
+
+.transaction-file-picker:focus-within {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
+}
+
+.transaction-file-picker-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--accent);
+}
+
+.transaction-file-picker-icon svg {
+    width: 25px;
+    height: 25px;
+}
+
+.transaction-file-picker-copy {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+}
+
+.transaction-file-picker-copy strong {
+    color: var(--text);
+}
+
+.transaction-file-picker-copy span,
+.transaction-file-status {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.transaction-file-picker input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+
+.transaction-file-status {
+    min-height: 1.5em;
+    margin: -8px 0 0;
+    font-weight: 700;
+}
+
+.transaction-analyzer-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.transaction-analyzer-format-note {
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+}
+
+@media (max-width: 640px) {
+    .transaction-analyzer-panel-heading,
+    .transaction-file-picker {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .transaction-file-picker > .button,
+    .transaction-analyzer-panel-heading > .button,
+    .transaction-analyzer-actions .button {
+        width: 100%;
+    }
+}

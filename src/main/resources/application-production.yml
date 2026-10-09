@@ -1,0 +1,6 @@
+app:
+  environment:
+    name: production
+    features:
+      diagnostic-tools: false
+      transaction-analyzer: false

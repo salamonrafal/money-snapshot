@@ -72,6 +72,11 @@ public class PageController {
         return "counterparties";
     }
 
+    @GetMapping("/transaction-analyzer.html")
+    public String transactionAnalyzer() {
+        return "transaction-analyzer";
+    }
+
     @GetMapping("/counterparties/new.html")
     public String newCounterparty() {
         return "counterparty-form";

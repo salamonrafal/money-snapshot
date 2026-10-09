@@ -1,0 +1,6 @@
+app:
+  environment:
+    name: develop
+    features:
+      diagnostic-tools: true
+      transaction-analyzer: true

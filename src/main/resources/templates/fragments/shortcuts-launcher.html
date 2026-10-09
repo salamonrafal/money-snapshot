@@ -36,6 +36,26 @@
                                data-i18n="snapshots.actions.addBulk">Dodaj wiele migawek</a>
                         </div>
                     </article>
+                    <article th:if="${applicationEnvironment.featureEnabled('transaction-analyzer')}">
+                        <div class="feature-heading">
+                            <span class="feature-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 19V5"></path>
+                                    <path d="M4 19h16"></path>
+                                    <path d="M7 15l3-3 3 2 5-6"></path>
+                                    <path d="M16 8h2v2"></path>
+                                </svg>
+                            </span>
+                            <h2 data-i18n="home.feature.transactionAnalyzer.title">Analizator transakcji</h2>
+                        </div>
+                        <p data-i18n="home.feature.transactionAnalyzer.description">Wczytaj historię transakcji z banku, aby przygotować analizę płatności cyklicznych.</p>
+                        <div class="feature-actions">
+                            <a href="/transaction-analyzer.html"
+                               class="button secondary feature-action"
+                               data-launchbar-shortcut-action="transaction-analyzer"
+                               data-i18n="home.feature.transactionAnalyzer.action">Otwórz analizator</a>
+                        </div>
+                    </article>
                     <article>
                         <div class="feature-heading">
                             <span class="feature-icon" aria-hidden="true">
@@ -289,6 +309,59 @@
                             class="button primary snapshot-form-modal-action-button"
                             id="shortcut-liability-repayment-submit"
                             data-i18n="liabilityRepayment.form.submit">Zarejestruj spłatę</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="shortcut-transaction-analyzer-modal" hidden>
+        <div class="modal snapshot-form-modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="shortcut-transaction-analyzer-modal-title">
+            <div class="snapshot-form-modal-header">
+                <div class="snapshot-form-modal-copy">
+                    <h2 id="shortcut-transaction-analyzer-modal-title" data-i18n="transactionAnalyzer.heading.title">Analizator transakcji</h2>
+                    <p data-i18n="transactionAnalyzer.heading.subtitle">Dodaj plik z historią operacji bankowych, aby w przyszłości znaleźć płatności cykliczne.</p>
+                </div>
+                <button type="button" class="icon-button secondary snapshot-form-modal-close" data-shortcut-transaction-analyzer-modal-close data-i18n-aria-label="common.close" aria-label="Zamknij">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="snapshot-form-modal-body">
+                <form class="snapshot-form" id="shortcut-transaction-analyzer-form">
+                    <div class="field">
+                        <span id="shortcut-transaction-analyzer-bank-label" data-i18n="transactionAnalyzer.bank.label">Bank</span>
+                        <div class="transaction-analyzer-bank-control">
+                            <select id="shortcut-transaction-analyzer-bank" data-custom-select aria-labelledby="shortcut-transaction-analyzer-bank-label">
+                                <option value="ing" data-i18n="transactionAnalyzer.bank.ing">ING Bank Śląski</option>
+                            </select>
+                            <button type="button" class="icon-button secondary transaction-analyzer-bank-help" id="shortcut-transaction-analyzer-bank-help" data-i18n-aria-label="transactionAnalyzer.bank.helpAria" aria-label="Pomoc dotycząca wyboru banku">?</button>
+                        </div>
+                    </div>
+                    <label class="transaction-file-picker shortcut-transaction-file-picker" for="shortcut-transaction-analyzer-file" data-shortcut-transaction-file-dropzone>
+                        <span class="transaction-file-picker-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 16V4"></path>
+                                <path d="m7 9 5-5 5 5"></path>
+                                <path d="M5 20h14"></path>
+                            </svg>
+                        </span>
+                        <span class="transaction-file-picker-copy">
+                            <strong data-i18n="transactionAnalyzer.upload.fileLabel">Plik CSV z historią transakcji</strong>
+                            <span data-i18n="transactionAnalyzer.upload.dropHint">Upuść plik tutaj albo wybierz eksport historii rachunku pobrany z banku.</span>
+                        </span>
+                        <span class="button secondary compact" aria-hidden="true" data-i18n="transactionAnalyzer.upload.chooseFile">Wybierz plik CSV</span>
+                        <input id="shortcut-transaction-analyzer-file" type="file" accept=".csv,text/csv">
+                    </label>
+                    <p class="transaction-file-status" id="shortcut-transaction-analyzer-file-status" role="status" data-i18n="transactionAnalyzer.upload.noFile">Nie wybrano pliku.</p>
+                    <p class="form-message" id="shortcut-transaction-analyzer-message" role="status"></p>
+                </form>
+            </div>
+            <div class="snapshot-form-modal-footer">
+                <div class="snapshot-form-modal-actions">
+                    <button type="button" class="button secondary snapshot-form-modal-action-button" data-shortcut-transaction-analyzer-modal-close data-i18n="common.close">Zamknij</button>
+                    <button type="submit" form="shortcut-transaction-analyzer-form" class="button primary snapshot-form-modal-action-button" data-i18n="transactionAnalyzer.upload.submit">Przeanalizuj płatności</button>
                 </div>
             </div>
         </div>

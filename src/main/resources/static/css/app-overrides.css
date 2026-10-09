@@ -194,3 +194,106 @@
     }
 
 }
+/* Shared with the standalone transaction analyzer page so it also works from the shortcuts modal. */
+.transaction-analyzer-bank-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.transaction-analyzer-bank-field,
+#shortcut-transaction-analyzer-form > .field {
+    margin-bottom: 24px;
+}
+
+.transaction-analyzer-bank-control > .custom-select,
+.transaction-analyzer-bank-control > select {
+    min-width: 0;
+    flex: 1;
+}
+
+.transaction-analyzer-bank-help {
+    flex: 0 0 auto;
+    border-radius: 50%;
+    font-weight: 900;
+    font-size: 1rem;
+}
+
+.shortcut-transaction-file-picker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 132px;
+    border: 1px dashed var(--accent);
+    border-radius: 12px;
+    background: var(--accent-wash-faint);
+    padding: 20px;
+    cursor: pointer;
+}
+
+.shortcut-transaction-file-picker:focus-within,
+.shortcut-transaction-file-picker.is-dragging {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
+}
+
+.shortcut-transaction-file-picker .transaction-file-picker-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--accent);
+}
+
+.shortcut-transaction-file-picker .transaction-file-picker-icon svg {
+    width: 25px;
+    height: 25px;
+}
+
+.shortcut-transaction-file-picker .transaction-file-picker-copy {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    flex: 1;
+}
+
+.shortcut-transaction-file-picker .transaction-file-picker-copy strong {
+    color: var(--text);
+}
+
+.shortcut-transaction-file-picker .transaction-file-picker-copy span,
+#shortcut-transaction-analyzer-file-status {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.shortcut-transaction-file-picker input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+
+#shortcut-transaction-analyzer-file-status {
+    min-height: 1.5em;
+    margin: 16px 0 0;
+    font-weight: 700;
+}
+
+@media (max-width: 640px) {
+    .shortcut-transaction-file-picker {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .shortcut-transaction-file-picker > .button {
+        width: 100%;
+    }
+}

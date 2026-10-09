@@ -137,6 +137,14 @@ public class HomeController {
         return messageBundleService.counterpartyPageMessages(resolveLocale(lang, acceptLanguage));
     }
 
+    @GetMapping("/transaction-analyzer/messages")
+    public Map<String, String> transactionAnalyzerMessages(
+            @RequestParam(required = false) String lang,
+            @RequestHeader(name = "Accept-Language", required = false) String acceptLanguage
+    ) {
+        return messageBundleService.transactionAnalyzerPageMessages(resolveLocale(lang, acceptLanguage));
+    }
+
     @GetMapping("/counterparty-form/messages")
     public Map<String, String> counterpartyFormMessages(
             @RequestParam(required = false) String lang,

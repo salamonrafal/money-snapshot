@@ -3,6 +3,8 @@ spring:
     import: optional:file:.env[.properties]
   application:
     name: money-snapshot
+  profiles:
+    default: develop
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5456/money_snapshot}
     username: ${DB_USERNAME:money_snapshot}
