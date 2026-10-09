@@ -192,6 +192,62 @@ class SnapshotFinalWarningQueryServiceTest {
         assertThat(response.multipleFinalPeriods()).isEmpty();
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "15, 2026-03-15, 2026-02-16, 2026-03-15",
+            "15, 2026-03-16, 2026-03-16, 2026-04-15",
+            "31, 2026-02-28, 2026-02-01, 2026-02-28",
+            "31, 2024-02-29, 2024-02-01, 2024-02-29"
+    })
+    void registeredFinalsCountOnlyFinalSnapshotsWithinSelectedBillingPeriod(
+            int endDay, LocalDate date, LocalDate start, LocalDate end) {
+        UUID ownerId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        UUID otherAccountId = UUID.randomUUID();
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(userSettingsService.currentUserSettings()).thenReturn(new UserSettingsResponse(
+                "PLN", "light", "Y-m-d H:m", "### ###,00 zl", endDay, Map.of()));
+        List<AccountSnapshot> history = List.of(
+                snapshot(accountId, start.minusDays(1), "10", SnapshotType.FINAL),
+                snapshot(accountId, start, "20", SnapshotType.FINAL),
+                snapshot(accountId, end, "30", SnapshotType.FINAL),
+                snapshot(accountId, end.plusDays(1), "40", SnapshotType.FINAL),
+                snapshot(accountId, date, "50", SnapshotType.PARTIAL),
+                snapshot(otherAccountId, date, "60", SnapshotType.FINAL)
+        );
+        when(snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId)).thenReturn(history);
+        var service = new SnapshotFinalWarningQueryService(
+                snapshotRepository, accountRepository, currentUserService, userSettingsService);
+
+        var response = service.registeredFinals(date);
+
+        assertThat(response.periodStartDate()).isEqualTo(start);
+        assertThat(response.periodEndDate()).isEqualTo(end);
+        assertThat(response.accounts()).hasSize(2);
+        assertThat(response.accounts()).anySatisfy(account -> {
+            assertThat(account.accountId()).isEqualTo(accountId);
+            assertThat(account.finalSnapshots()).isEqualTo(2);
+        });
+        assertThat(response.accounts()).anySatisfy(account -> {
+            assertThat(account.accountId()).isEqualTo(otherAccountId);
+            assertThat(account.finalSnapshots()).isEqualTo(1);
+        });
+    }
+
+    @Test
+    void registeredFinalsReturnNoAccountsWhenPeriodHasNoFinalSnapshots() {
+        UUID ownerId = UUID.randomUUID();
+        when(currentUserService.currentUserId()).thenReturn(ownerId);
+        when(userSettingsService.currentUserSettings()).thenReturn(new UserSettingsResponse(
+                "PLN", "light", "Y-m-d H:m", "### ###,00 zl", 15, Map.of()));
+        var partial = snapshot(UUID.randomUUID(), LocalDate.of(2026, 3, 20), "10", SnapshotType.PARTIAL);
+        when(snapshotRepository.findAllByOwnerIdWithAccountOrderBySnapshotDateAsc(ownerId)).thenReturn(List.of(partial));
+        var service = new SnapshotFinalWarningQueryService(
+                snapshotRepository, accountRepository, currentUserService, userSettingsService);
+
+        assertThat(service.registeredFinals(LocalDate.of(2026, 3, 20)).accounts()).isEmpty();
+    }
+
     private AccountSnapshot snapshot(UUID accountId, LocalDate date, String balance, SnapshotType type) {
         AccountSnapshot snapshot = mock(AccountSnapshot.class);
         Account account = account(accountId, "Main");

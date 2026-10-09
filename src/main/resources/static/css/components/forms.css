@@ -131,3 +131,40 @@
     height: 18px;
     accent-color: var(--accent);
 }
+
+.snapshot-form-final-warning {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--warning-line);
+    border-radius: 12px;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.snapshot-form-final-warning[hidden] {
+    display: none;
+}
+
+.snapshot-form-final-warning-icon {
+    display: inline-flex;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+}
+
+.snapshot-form-final-warning-icon svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+.snapshot-form-final-warning-copy {
+    min-width: 0;
+}
+
+.snapshot-form-modal-body .snapshot-form-final-warning {
+    margin-top: 0;
+}

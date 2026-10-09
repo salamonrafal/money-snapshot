@@ -16,6 +16,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
         onSuccess = null
     } = {}) {
         const bulkSnapshotForm = root;
+        const updateRegisteredFinalWarning = window.MoneySnapshotRegisteredFinalWarning.create(bulkSnapshotForm);
         const modalRoot = bulkSnapshotForm.closest(".snapshot-bulk-modal");
         const modalBackdrop = modalRoot?.closest(".modal-backdrop") ?? null;
         const noteInput = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-note']");
@@ -305,7 +306,18 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             modalRoot.style.setProperty("--bulk-snapshot-modal-width", `${Math.round(nextWidth)}px`);
         }
 
+        function updateFinalWarning() {
+            updateRegisteredFinalWarning({
+                snapshotDate: snapshotDateInput.value,
+                snapshotType: snapshotTypeSelect.value,
+                accountIds: accounts.map((account) => account.id),
+                messages: currentMessages,
+                userSettings: currentUserSettings
+            });
+        }
+
         function renderAccounts() {
+            updateFinalWarning();
             if (accounts.length === 0) {
                 renderEmpty(currentMessages["snapshots.bulk.empty"] ?? "");
                 return;
@@ -560,6 +572,7 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
         function setSnapshotType(snapshotType) {
             snapshotTypeSelect.value = ["FINAL", "PARTIAL"].includes(snapshotType) ? snapshotType : "";
             snapshotTypeCustomSelect.refresh();
+            updateFinalWarning();
         }
 
         function focus() {
@@ -611,10 +624,12 @@ window.MoneySnapshotBulkSnapshotForm = (() => {
             snapshotDateInput.value = defaultSnapshotDate();
             snapshotDateInput.addEventListener("input", () => {
                 draftSnapshotDate = snapshotDateInput.value;
+                updateFinalWarning();
                 const error = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-date-error']");
                 clearInputError(snapshotDateInput, error);
             });
             snapshotTypeSelect.addEventListener("change", () => {
+                updateFinalWarning();
                 const error = bulkSnapshotForm.querySelector("[data-role='bulk-snapshot-type-error']");
                 clearInputError(snapshotTypeSelect, error);
             });

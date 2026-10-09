@@ -52,6 +52,7 @@ window.MoneySnapshotSnapshotForm = (() => {
         const submitButton = snapshotForm.querySelector("button[type='submit']")
             ?? modalRoot?.querySelector(`[form='${snapshotForm.id}'][type='submit']`)
             ?? document.querySelector(`[form='${snapshotForm.id}'][type='submit']`);
+        const updateRegisteredFinalWarning = window.MoneySnapshotRegisteredFinalWarning.create(snapshotForm);
         const formMode = snapshotForm.dataset.mode;
         let currentSnapshotId = snapshotForm.dataset.snapshotId ?? "";
 
@@ -159,7 +160,19 @@ window.MoneySnapshotSnapshotForm = (() => {
             snapshotDateInput.value = lastSnapshot?.snapshotDate ?? MoneySnapshotUi.localIsoDate();
         }
 
+        function updateFinalWarning() {
+            if (formMode !== "create") return;
+            updateRegisteredFinalWarning({
+                snapshotDate: snapshotDateInput.value,
+                snapshotType: snapshotTypeSelect.value,
+                accountIds: accountSelect.value ? [accountSelect.value] : [],
+                messages: currentMessages,
+                userSettings: currentUserSettings
+            });
+        }
+
         function updateLastSnapshotSummary() {
+            updateFinalWarning();
             if (!lastSnapshotSummary || !lastSnapshotSummaryValue) {
                 return;
             }
@@ -384,6 +397,8 @@ window.MoneySnapshotSnapshotForm = (() => {
                 updateLastSnapshotSummary();
             });
 
+            snapshotTypeSelect.addEventListener("change", updateFinalWarning);
+            snapshotDateInput.addEventListener("input", updateFinalWarning);
             snapshotForm.addEventListener("submit", handleSubmit);
 
             await loadAccounts();

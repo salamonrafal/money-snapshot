@@ -18,6 +18,7 @@
             </span>
             <p class="form-message" data-role="bulk-snapshot-message" role="alert"></p>
         </div>
+        <th:block th:replace="~{fragments/snapshot-form :: registeredFinalWarning}"></th:block>
         <div class="bulk-snapshot-controls">
             <div class="field bulk-snapshot-control-type">
                 <span th:id="${formId + '-type-label'}" data-i18n="snapshots.form.type">Typ migawki</span>

@@ -60,3 +60,13 @@
 
 .split-button-options a:hover,
 .split-button-options a:focus-visible { background: var(--line); }
+
+.split-button-options a[aria-disabled="true"] {
+    color: var(--muted);
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.split-button-options a[aria-disabled="true"]:hover {
+    background: transparent;
+}
