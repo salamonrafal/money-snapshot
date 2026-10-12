@@ -1,6 +1,9 @@
 package com.moneysnapshot.transactionanalyzer.web;
 
 import com.moneysnapshot.ApplicationEnvironmentProperties;
+import com.moneysnapshot.transactionanalyzer.RecurringTransactionAnalysis;
+import com.moneysnapshot.transactionanalyzer.TransactionBank;
+import com.moneysnapshot.transactionanalyzer.TransactionFileAnalysisService;
 import com.moneysnapshot.transactionanalyzer.TransactionFileStorageService;
 import com.moneysnapshot.transactionanalyzer.TransactionFileStorageService.DownloadedTransactionFile;
 import com.moneysnapshot.transactionanalyzer.TransactionFileStorageService.StoredTransactionFile;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,13 +33,25 @@ public class TransactionFileUploadController {
 
     private final ApplicationEnvironmentProperties applicationEnvironmentProperties;
     private final TransactionFileStorageService storageService;
+    private final TransactionFileAnalysisService analysisService;
 
     public TransactionFileUploadController(
             ApplicationEnvironmentProperties applicationEnvironmentProperties,
-            TransactionFileStorageService storageService
+            TransactionFileStorageService storageService,
+            TransactionFileAnalysisService analysisService
     ) {
         this.applicationEnvironmentProperties = applicationEnvironmentProperties;
         this.storageService = storageService;
+        this.analysisService = analysisService;
+    }
+
+    @PostMapping(value = "/analysis", consumes = "multipart/form-data")
+    public RecurringTransactionAnalysis analyze(
+            @RequestParam TransactionBank bank,
+            @RequestPart("file") MultipartFile file
+    ) {
+        ensureFeatureEnabled();
+        return analysisService.analyze(bank, file);
     }
 
     @PostMapping(consumes = "multipart/form-data")

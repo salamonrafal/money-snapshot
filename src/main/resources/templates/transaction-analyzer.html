@@ -11,24 +11,24 @@
         <p data-i18n="transactionAnalyzer.heading.subtitle">Dodaj plik z historią operacji bankowych, aby w przyszłości znaleźć płatności cykliczne.</p>
     </section>
 
-    <section class="management-layout single-column" data-i18n-aria-label="transactionAnalyzer.form.aria" aria-label="Dodawanie pliku z transakcjami">
-        <form class="editor-panel wide-panel transaction-analyzer-panel" id="transaction-analyzer-form" action="/api/transaction-analyzer/uploads" method="post" enctype="multipart/form-data">
-            <div class="transaction-analyzer-panel-heading">
-                <div>
-                    <h2 data-i18n="transactionAnalyzer.upload.title">Dodaj plik z transakcjami</h2>
-                    <p data-i18n="transactionAnalyzer.upload.description">Na początek obsługiwany będzie plik CSV. Po przesłaniu plik zostanie zapisany bez uruchamiania analizy.</p>
+    <section class="table-panel table-panel-wide" data-i18n-aria-label="transactionAnalyzer.form.aria" aria-label="Dodawanie pliku z transakcjami">
+        <div class="section-header">
+            <div>
+                <h2 data-i18n="transactionAnalyzer.upload.title">Dodaj plik z transakcjami</h2>
+                <p data-i18n="transactionAnalyzer.upload.description">Wybierz plik CSV, aby znaleźć powtarzalne transakcje. Plik nie zostanie zapisany.</p>
+            </div>
+        </div>
+        <form class="transaction-analyzer-panel" id="transaction-analyzer-form" action="/api/transaction-analyzer/uploads/analysis" method="post" enctype="multipart/form-data">
+
+            <div class="field transaction-analyzer-bank-field">
+                <span id="transaction-analyzer-bank-label" data-i18n="transactionAnalyzer.bank.label">Bank</span>
+                <div class="transaction-analyzer-bank-control">
+                    <select id="transaction-analyzer-bank" name="bank" data-custom-select aria-labelledby="transaction-analyzer-bank-label">
+                        <option value="ING" data-i18n="transactionAnalyzer.bank.ing">ING Bank Śląski</option>
+                    </select>
+                    <button type="button" class="icon-button secondary transaction-analyzer-bank-help" id="transaction-analyzer-bank-help" data-i18n-aria-label="transactionAnalyzer.bank.helpAria" aria-label="Pomoc dotycząca wyboru banku">?</button>
                 </div>
             </div>
-
-                <div class="field transaction-analyzer-bank-field">
-                    <span id="transaction-analyzer-bank-label" data-i18n="transactionAnalyzer.bank.label">Bank</span>
-                    <div class="transaction-analyzer-bank-control">
-                        <select id="transaction-analyzer-bank" data-custom-select aria-labelledby="transaction-analyzer-bank-label">
-                            <option value="ing" data-i18n="transactionAnalyzer.bank.ing">ING Bank Śląski</option>
-                        </select>
-                        <button type="button" class="icon-button secondary transaction-analyzer-bank-help" id="transaction-analyzer-bank-help" data-i18n-aria-label="transactionAnalyzer.bank.helpAria" aria-label="Pomoc dotycząca wyboru banku">?</button>
-                    </div>
-                </div>
 
             <label class="transaction-file-picker" for="transaction-analyzer-file">
                 <span class="transaction-file-picker-icon" aria-hidden="true">
@@ -52,17 +52,6 @@
             </div>
             <p class="form-message" id="transaction-analyzer-message" role="status"></p>
         </form>
-
-        <section class="editor-panel wide-panel transaction-analyzer-panel" aria-labelledby="transaction-analyzer-files-title">
-            <div class="transaction-analyzer-panel-heading">
-                <div>
-                    <h2 id="transaction-analyzer-files-title" data-i18n="transactionAnalyzer.files.title">Przesłane pliki</h2>
-                    <p data-i18n="transactionAnalyzer.files.description">Pliki są przechowywane w skonfigurowanym katalogu i możesz je ponownie pobrać.</p>
-                </div>
-            </div>
-            <p class="transaction-file-status" id="transaction-analyzer-files-empty" data-i18n="transactionAnalyzer.files.empty">Nie masz jeszcze przesłanych plików.</p>
-            <ul id="transaction-analyzer-files" hidden></ul>
-        </section>
     </section>
 </main>
 

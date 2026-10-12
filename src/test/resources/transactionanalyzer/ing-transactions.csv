@@ -1,0 +1,26 @@
+"Transaction list";;;;;"ING Bank Slaski";;;;;;;;;;;;;;
+"Document no 0000000000_000000";
+"Generated: 2026-10-31, 12:00";;;;;;;;;;;;;;;;;;;;
+
+"User details:";
+"TEST USER";
+
+"Selected accounts:";
+"Virtual ING card (PLN)";;"69 1050 1025 1000 0098 2767 9656";
+
+"Selection criteria";;;;;"Summary";;
+
+"Zakres dat:";"2026-07-01 - 2026-10-31";"Transaction types:";"all";;"Transaction count:";6;
+
+;;;;;"Credits:";200,00;PLN;;;;;;;;;;;;;
+
+"Balance hidden";;;;;"Debits:";297,00;PLN;;;;;;;;;;;;;
+
+"Data transakcji";"Posting date";"Counterparty details";"Title";"Account number";"Bank name";"Details";"Transaction number";"Transaction amount";"Currency";;;;;;
+2026-10-07;2026-10-07;"OPENAI *CHATGPT";"Card payment 07.10.2026
+Card no 4779xx7922";"'1915031/19730'";;;"'1'";-99,00;PLN
+2026-09-07;2026-09-07;"OPENAI *CHATGPT";"Card payment 07.09.2026 Card no 4779xx7922";"'1915031/19730'";;;"'2'";-99,0;PLN
+2026-08-07;2026-08-07;"OPENAI *CHATGPT";"Card payment 07.08.2026 Card no 4779xx7922";"'1915031/19730'";;;"'3'";-99,00;PLN
+2026-10-03;2026-10-03;"TEST USER";"gym";"'8110501025'";;;"'4'";200,00;PLN
+2026-09-03;2026-09-03;"TEST USER";"gym";"'8110501025'";;;"'5'";200,00;PLN
+2026-08-03;2026-08-03;"TEST USER";"gym";"'8110501025'";;;"'6'";200,00;PLN

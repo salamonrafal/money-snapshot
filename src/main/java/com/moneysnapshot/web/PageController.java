@@ -88,6 +88,14 @@ public class PageController {
         return "transaction-analyzer";
     }
 
+    @GetMapping("/transaction-analyzer/results.html")
+    public String transactionAnalyzerResults() {
+        if (!applicationEnvironmentProperties.featureEnabled("transaction-analyzer")) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return "transaction-analyzer-results";
+    }
+
     @GetMapping("/counterparties/new.html")
     public String newCounterparty() {
         return "counterparty-form";

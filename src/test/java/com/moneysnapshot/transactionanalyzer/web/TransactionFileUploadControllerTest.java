@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.moneysnapshot.ApplicationEnvironmentProperties;
 import com.moneysnapshot.transactionanalyzer.TransactionFileStorageService;
+import com.moneysnapshot.transactionanalyzer.TransactionFileAnalysisService;
 import com.moneysnapshot.transactionanalyzer.TransactionFileStorageService.StoredTransactionFile;
 import java.util.Map;
 import java.util.UUID;
@@ -39,13 +40,14 @@ class TransactionFileUploadControllerTest {
 
     private TransactionFileUploadController controller(boolean transactionAnalyzerEnabled) {
         storageService = mock(TransactionFileStorageService.class);
+        TransactionFileAnalysisService analysisService = mock(TransactionFileAnalysisService.class);
         when(storageService.store(org.mockito.ArgumentMatchers.any())).thenReturn(
                 new StoredTransactionFile("historia-20261012-142301-123.csv", "historia.csv")
         );
         return new TransactionFileUploadController(new ApplicationEnvironmentProperties(
                 "test",
                 Map.of("transaction-analyzer", transactionAnalyzerEnabled)
-        ), storageService);
+        ), storageService, analysisService);
     }
 
     private TransactionFileStorageService storageService;

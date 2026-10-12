@@ -329,12 +329,12 @@
                 </button>
             </div>
             <div class="snapshot-form-modal-body">
-                <form class="snapshot-form" id="shortcut-transaction-analyzer-form" action="/api/transaction-analyzer/uploads" method="post" enctype="multipart/form-data">
+                <form class="snapshot-form" id="shortcut-transaction-analyzer-form" action="/api/transaction-analyzer/uploads/analysis" method="post" enctype="multipart/form-data">
                     <div class="field">
                         <span id="shortcut-transaction-analyzer-bank-label" data-i18n="transactionAnalyzer.bank.label">Bank</span>
                         <div class="transaction-analyzer-bank-control">
-                            <select id="shortcut-transaction-analyzer-bank" data-custom-select aria-labelledby="shortcut-transaction-analyzer-bank-label">
-                                <option value="ing" data-i18n="transactionAnalyzer.bank.ing">ING Bank Śląski</option>
+                            <select id="shortcut-transaction-analyzer-bank" name="bank" data-custom-select aria-labelledby="shortcut-transaction-analyzer-bank-label">
+                                <option value="ING" data-i18n="transactionAnalyzer.bank.ing">ING Bank Śląski</option>
                             </select>
                             <button type="button" class="icon-button secondary transaction-analyzer-bank-help" id="shortcut-transaction-analyzer-bank-help" data-i18n-aria-label="transactionAnalyzer.bank.helpAria" aria-label="Pomoc dotycząca wyboru banku">?</button>
                         </div>

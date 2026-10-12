@@ -3,6 +3,92 @@
     overflow-y: hidden;
 }
 
+.transaction-analysis-details-button {
+    min-width: 30px;
+    padding: 0;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.transaction-analysis-operation-count {
+    white-space: nowrap;
+}
+
+.transaction-analysis-operation-count .transaction-analysis-details-button {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.transaction-analysis-dates-cell {
+    white-space: normal;
+    color: var(--muted);
+}
+
+.transaction-analysis-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin: 12px 0 0;
+}
+
+.transaction-analysis-details > div {
+    flex: 0 1 auto;
+    max-width: 100%;
+}
+
+.transaction-analysis-details dt {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.transaction-analysis-details dd {
+    margin: 3px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.transaction-analysis-table th:nth-child(1),
+.transaction-analysis-table td:nth-child(1) {
+    width: 138px;
+    white-space: nowrap;
+}
+
+.transaction-analysis-table th:nth-child(2),
+.transaction-analysis-table td:nth-child(2) {
+    width: 24%;
+}
+
+.transaction-analysis-table th:nth-child(3),
+.transaction-analysis-table td:nth-child(3) {
+    width: auto;
+}
+
+.transaction-analysis-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.transaction-analysis-table {
+    min-width: 700px;
+}
+
+.transaction-analysis-result-row.is-expanded td {
+    border-bottom: 0;
+}
+
+.transaction-analysis-result-row.is-last:not(.is-expanded) td,
+.transaction-analysis-dates-row.is-last td {
+    border-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .transaction-analysis-table th,
+    .transaction-analysis-table td {
+        padding: 10px 8px;
+        font-size: 0.82rem;
+    }
+}
+
 @media (max-width: 860px) {
     .liability-form-header {
         flex-direction: column;

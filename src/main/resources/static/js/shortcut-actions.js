@@ -65,6 +65,16 @@
     const transactionAnalyzerFileStatus = document.getElementById("shortcut-transaction-analyzer-file-status");
     const transactionAnalyzerMessage = document.getElementById("shortcut-transaction-analyzer-message");
     const transactionAnalyzerBankHelpButton = document.getElementById("shortcut-transaction-analyzer-bank-help");
+    const transactionAnalysisStorageKey = "transaction-analyzer-result";
+
+    async function storeTransactionAnalysisForCurrentUser(analysis) {
+        const response = await fetch("/api/users/me");
+        if (!response.ok) {
+            throw new Error("Could not identify current user");
+        }
+        const user = await response.json();
+        sessionStorage.setItem(transactionAnalysisStorageKey, JSON.stringify({ownerId: user.id, analysis}));
+    }
 
     function currentLanguage() {
         const savedLanguage = window.localStorage.getItem("money-snapshot-language");
@@ -624,23 +634,11 @@
                 method: transactionAnalyzerForm.method,
                 body: new FormData(transactionAnalyzerForm)
             });
-            if (response.status !== 201 || response.redirected) {
-                throw new Error("Upload failed");
+            if (!response.ok || response.redirected) {
+                throw new Error("Analysis failed");
             }
-            const uploadedFile = await response.json();
-            if (!uploadedFile?.id || !uploadedFile?.downloadUrl) {
-                throw new Error("Upload failed");
-            }
-
-            transactionAnalyzerForm.reset();
-            updateTransactionAnalyzerFileStatus(undefined, {clearMessage: false});
-            if (transactionAnalyzerMessage) {
-                transactionAnalyzerMessage.textContent = transactionAnalyzerText(
-                    "transactionAnalyzer.upload.success",
-                    "Plik został przesłany. Analiza będzie dostępna w kolejnym etapie."
-                );
-                transactionAnalyzerMessage.dataset.type = "success";
-            }
+            await storeTransactionAnalysisForCurrentUser(await response.json());
+            window.location.assign("/transaction-analyzer/results.html");
         } catch (error) {
             console.error(error);
             if (transactionAnalyzerMessage) {
