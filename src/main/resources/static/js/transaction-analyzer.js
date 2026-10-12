@@ -85,9 +85,14 @@ form?.addEventListener("submit", async (event) => {
 
         form.reset();
         renderFileStatus();
-        await loadStoredFiles();
         message.textContent = textFor("transactionAnalyzer.upload.success", "Plik został przesłany. Analiza będzie dostępna w kolejnym etapie.");
         message.dataset.type = "success";
+
+        try {
+            await loadStoredFiles();
+        } catch (error) {
+            console.error(error);
+        }
     } catch (error) {
         console.error(error);
         message.textContent = textFor("transactionAnalyzer.upload.error", "Nie udało się przesłać pliku. Spróbuj ponownie.");
