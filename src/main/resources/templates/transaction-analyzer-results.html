@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/page :: head('Wyniki analizy transakcji | Money Snapshot', 'transaction-analysis-results.js', 'transaction-analyzer')}"></head>
+<body>
+<header th:replace="~{fragments/page :: header('transaction-analyzer')}"></header>
+
+<main class="workspace workspace-with-sticky-launcher">
+    <section class="page-heading">
+        <p class="eyebrow" data-i18n="transactionAnalyzer.heading.eyebrow">Historia z banku</p>
+        <h1 data-i18n="transactionAnalyzer.results.pageTitle">Wyniki analizy</h1>
+        <p data-i18n="transactionAnalyzer.results.pageSubtitle">Powtarzalne transakcje znalezione w przesłanym pliku.</p>
+    </section>
+
+    <section class="table-panel table-panel-wide" aria-labelledby="transaction-analyzer-results-title">
+        <div class="section-header">
+            <div>
+                <h2 id="transaction-analyzer-results-title" data-i18n="transactionAnalyzer.results.title">Powtarzalne transakcje</h2>
+                <dl class="transaction-analysis-details" id="transaction-analyzer-details"></dl>
+            </div>
+        </div>
+        <p class="transaction-file-status" id="transaction-analyzer-results-empty" hidden data-i18n="transactionAnalyzer.results.empty">Nie znaleziono powtarzalnych transakcji.</p>
+        <div class="table-wrap transaction-analysis-table-wrap" id="transaction-analyzer-results-table-wrap">
+            <table class="transaction-analysis-table">
+                <thead><tr>
+                    <th data-i18n="transactionAnalyzer.results.operationCount">Liczba operacji</th>
+                    <th data-i18n="transactionAnalyzer.results.titleColumn">Tytuł</th>
+                    <th data-i18n="transactionAnalyzer.results.counterparty">Dane kontrahenta</th>
+                    <th data-i18n="transactionAnalyzer.results.amount">Kwota</th>
+                    <th data-i18n="transactionAnalyzer.results.currency">Waluta</th>
+                </tr></thead>
+                <tbody id="transaction-analyzer-results-body"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>
+</body>
+</html>
