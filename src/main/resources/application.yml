@@ -42,3 +42,5 @@ app:
     last-name: ${ADMIN_LAST_NAME:User}
   security:
     remember-me-days: ${REMEMBER_ME_DAYS:30}
+  transaction-analyzer:
+    storage-directory: ${TRANSACTION_ANALYZER_STORAGE_DIRECTORY:./data/transaction-analyzer}

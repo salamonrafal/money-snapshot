@@ -81,35 +81,6 @@ Rebuild/recreate containers after configuration changes:
 docker compose up -d --build --force-recreate
 ```
 
-## Application environments
-
-The application uses Spring profiles for environment-specific configuration. Available profiles are `develop` and `production`; `develop` is the default when no profile is set.
-
-Choose the profile at startup with `SPRING_PROFILES_ACTIVE`:
-
-```bash
-SPRING_PROFILES_ACTIVE=develop mvn spring-boot:run
-SPRING_PROFILES_ACTIVE=production mvn spring-boot:run
-```
-
-For Docker Compose, set the value in `.env` or pass it with the command:
-
-```bash
-SPRING_PROFILES_ACTIVE=production docker compose up -d --build
-```
-
-Profile files live in `src/main/resources/application-develop.yml` and `src/main/resources/application-production.yml`. They expose the selected environment and feature flags to server-rendered templates as `applicationEnvironment`.
-
-For example, a diagnostic section visible only in development can use:
-
-```html
-<section th:if="${applicationEnvironment.featureEnabled('diagnostic-tools')}">
-    Narzędzia diagnostyczne
-</section>
-```
-
-The flag is configured as `app.environment.features.diagnostic-tools`: it is enabled in `develop` and disabled in `production`. Add more flags to the profile files as the application gains environment-specific behavior. For bean-level differences, use Spring's `@Profile("develop")` or `@Profile("production")`.
-
 Remove containers and the PostgreSQL data volume:
 
 ```bash
@@ -167,6 +138,47 @@ docker compose up -d
 ```
 
 Make sure the dump file is stored on the host before running `docker compose down -v`. Files stored only inside containers are removed with the containers.
+
+## Transaction file storage
+
+Uploaded transaction files are stored on the host, outside the database. Set `TRANSACTION_ANALYZER_STORAGE_HOST_DIRECTORY` in `.env` to select the host directory; the default is `./data/transaction-analyzer`. Docker Compose mounts it in the application container at `/var/lib/money-snapshot/transaction-analyzer`.
+
+For example:
+
+```bash
+TRANSACTION_ANALYZER_STORAGE_HOST_DIRECTORY=/srv/money-snapshot/transaction-files
+```
+
+Files are separated by the logged-in user and are available for download from the Transaction analyzer page.
+
+## Application environments
+
+The application uses Spring profiles for environment-specific configuration. Available profiles are `develop` and `production`; `develop` is the default when no profile is set.
+
+Choose the profile at startup with `SPRING_PROFILES_ACTIVE`:
+
+```bash
+SPRING_PROFILES_ACTIVE=develop mvn spring-boot:run
+SPRING_PROFILES_ACTIVE=production mvn spring-boot:run
+```
+
+For Docker Compose, set the value in `.env` or pass it with the command:
+
+```bash
+SPRING_PROFILES_ACTIVE=production docker compose up -d --build
+```
+
+Profile files live in `src/main/resources/application-develop.yml` and `src/main/resources/application-production.yml`. They expose the selected environment and feature flags to server-rendered templates as `applicationEnvironment`.
+
+For example, a diagnostic section visible only in development can use:
+
+```html
+<section th:if="${applicationEnvironment.featureEnabled('diagnostic-tools')}">
+    Narzędzia diagnostyczne
+</section>
+```
+
+The flag is configured as `app.environment.features.diagnostic-tools`: it is enabled in `develop` and disabled in `production`. Add more flags to the profile files as the application gains environment-specific behavior. For bean-level differences, use Spring's `@Profile("develop")` or `@Profile("production")`.
 
 ## Database setup
 

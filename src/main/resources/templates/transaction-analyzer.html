@@ -12,11 +12,11 @@
     </section>
 
     <section class="management-layout single-column" data-i18n-aria-label="transactionAnalyzer.form.aria" aria-label="Dodawanie pliku z transakcjami">
-        <form class="editor-panel wide-panel transaction-analyzer-panel" id="transaction-analyzer-form">
+        <form class="editor-panel wide-panel transaction-analyzer-panel" id="transaction-analyzer-form" action="/api/transaction-analyzer/uploads" method="post" enctype="multipart/form-data">
             <div class="transaction-analyzer-panel-heading">
                 <div>
                     <h2 data-i18n="transactionAnalyzer.upload.title">Dodaj plik z transakcjami</h2>
-                    <p data-i18n="transactionAnalyzer.upload.description">Na początek obsługiwany będzie plik CSV. Plik pozostaje na Twoim urządzeniu, dopóki analiza nie zostanie udostępniona.</p>
+                    <p data-i18n="transactionAnalyzer.upload.description">Na początek obsługiwany będzie plik CSV. Po przesłaniu plik zostanie zapisany bez uruchamiania analizy.</p>
                 </div>
             </div>
 
@@ -43,15 +43,26 @@
                     <span data-i18n="transactionAnalyzer.upload.fileHint">Wybierz eksport historii rachunku pobrany z banku.</span>
                 </span>
                 <span class="button secondary compact" aria-hidden="true" data-i18n="transactionAnalyzer.upload.chooseFile">Wybierz plik CSV</span>
-                <input id="transaction-analyzer-file" type="file" accept=".csv,text/csv">
+                <input id="transaction-analyzer-file" name="file" type="file" accept=".csv,text/csv" required>
             </label>
 
             <p class="transaction-file-status" id="transaction-analyzer-file-status" role="status" data-i18n="transactionAnalyzer.upload.noFile">Nie wybrano pliku.</p>
             <div class="transaction-analyzer-actions">
-                <button type="submit" class="button primary" data-i18n="transactionAnalyzer.upload.submit">Przeanalizuj płatności</button>
+                <button type="submit" class="button primary" data-i18n="transactionAnalyzer.upload.submit">Prześlij plik</button>
             </div>
             <p class="form-message" id="transaction-analyzer-message" role="status"></p>
         </form>
+
+        <section class="editor-panel wide-panel transaction-analyzer-panel" aria-labelledby="transaction-analyzer-files-title">
+            <div class="transaction-analyzer-panel-heading">
+                <div>
+                    <h2 id="transaction-analyzer-files-title" data-i18n="transactionAnalyzer.files.title">Przesłane pliki</h2>
+                    <p data-i18n="transactionAnalyzer.files.description">Pliki są przechowywane w skonfigurowanym katalogu i możesz je ponownie pobrać.</p>
+                </div>
+            </div>
+            <p class="transaction-file-status" id="transaction-analyzer-files-empty" data-i18n="transactionAnalyzer.files.empty">Nie masz jeszcze przesłanych plików.</p>
+            <ul id="transaction-analyzer-files" hidden></ul>
+        </section>
     </section>
 </main>
 

@@ -20,7 +20,10 @@ services:
       ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-User}
       REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
       REMEMBER_ME_DAYS: ${REMEMBER_ME_DAYS:-30}
+      TRANSACTION_ANALYZER_STORAGE_DIRECTORY: /var/lib/money-snapshot/transaction-analyzer
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-develop}
+    volumes:
+      - ${TRANSACTION_ANALYZER_STORAGE_HOST_DIRECTORY:-./data/transaction-analyzer}:/var/lib/money-snapshot/transaction-analyzer
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider \"http://127.0.0.1:$${SERVER_PORT}/login\""]
       interval: 10s

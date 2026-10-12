@@ -329,7 +329,7 @@
                 </button>
             </div>
             <div class="snapshot-form-modal-body">
-                <form class="snapshot-form" id="shortcut-transaction-analyzer-form">
+                <form class="snapshot-form" id="shortcut-transaction-analyzer-form" action="/api/transaction-analyzer/uploads" method="post" enctype="multipart/form-data">
                     <div class="field">
                         <span id="shortcut-transaction-analyzer-bank-label" data-i18n="transactionAnalyzer.bank.label">Bank</span>
                         <div class="transaction-analyzer-bank-control">
@@ -352,7 +352,7 @@
                             <span data-i18n="transactionAnalyzer.upload.dropHint">Upuść plik tutaj albo wybierz eksport historii rachunku pobrany z banku.</span>
                         </span>
                         <span class="button secondary compact" aria-hidden="true" data-i18n="transactionAnalyzer.upload.chooseFile">Wybierz plik CSV</span>
-                        <input id="shortcut-transaction-analyzer-file" type="file" accept=".csv,text/csv">
+                        <input id="shortcut-transaction-analyzer-file" name="file" type="file" accept=".csv,text/csv" required>
                     </label>
                     <p class="transaction-file-status" id="shortcut-transaction-analyzer-file-status" role="status" data-i18n="transactionAnalyzer.upload.noFile">Nie wybrano pliku.</p>
                     <p class="form-message" id="shortcut-transaction-analyzer-message" role="status"></p>
@@ -361,7 +361,7 @@
             <div class="snapshot-form-modal-footer">
                 <div class="snapshot-form-modal-actions">
                     <button type="button" class="button secondary snapshot-form-modal-action-button" data-shortcut-transaction-analyzer-modal-close data-i18n="common.close">Zamknij</button>
-                    <button type="submit" form="shortcut-transaction-analyzer-form" class="button primary snapshot-form-modal-action-button" data-i18n="transactionAnalyzer.upload.submit">Przeanalizuj płatności</button>
+                    <button type="submit" form="shortcut-transaction-analyzer-form" class="button primary snapshot-form-modal-action-button" data-i18n="transactionAnalyzer.upload.submit">Prześlij plik</button>
                 </div>
             </div>
         </div>
