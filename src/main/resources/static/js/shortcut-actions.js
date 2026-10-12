@@ -613,14 +613,43 @@
         updateTransactionAnalyzerFileStatus(files);
     });
 
-    transactionAnalyzerForm?.addEventListener("submit", (event) => {
+    transactionAnalyzerForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
-        if (transactionAnalyzerMessage) {
-            transactionAnalyzerMessage.textContent = transactionAnalyzerText(
-                "transactionAnalyzer.upload.mockMessage",
-                "Analiza pliku będzie dostępna w kolejnym etapie."
-            );
-            transactionAnalyzerMessage.dataset.type = "success";
+        if (!transactionAnalyzerForm.reportValidity()) {
+            return;
+        }
+
+        try {
+            const response = await fetch(transactionAnalyzerForm.action, {
+                method: transactionAnalyzerForm.method,
+                body: new FormData(transactionAnalyzerForm)
+            });
+            if (response.status !== 201 || response.redirected) {
+                throw new Error("Upload failed");
+            }
+            const uploadedFile = await response.json();
+            if (!uploadedFile?.id || !uploadedFile?.downloadUrl) {
+                throw new Error("Upload failed");
+            }
+
+            transactionAnalyzerForm.reset();
+            updateTransactionAnalyzerFileStatus(undefined, {clearMessage: false});
+            if (transactionAnalyzerMessage) {
+                transactionAnalyzerMessage.textContent = transactionAnalyzerText(
+                    "transactionAnalyzer.upload.success",
+                    "Plik został przesłany. Analiza będzie dostępna w kolejnym etapie."
+                );
+                transactionAnalyzerMessage.dataset.type = "success";
+            }
+        } catch (error) {
+            console.error(error);
+            if (transactionAnalyzerMessage) {
+                transactionAnalyzerMessage.textContent = transactionAnalyzerText(
+                    "transactionAnalyzer.upload.error",
+                    "Nie udało się przesłać pliku. Spróbuj ponownie."
+                );
+                transactionAnalyzerMessage.dataset.type = "error";
+            }
         }
     });
 

@@ -1,0 +1,4 @@
+*
+!.gitignore
+!transaction-analyzer/
+!transaction-analyzer/.gitignore

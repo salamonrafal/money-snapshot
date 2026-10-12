@@ -63,6 +63,18 @@ To create the first administrator during startup:
 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='change-this-password' docker compose up
 ```
 
+### Transaction file storage
+
+Uploaded transaction files are stored on the host, outside the database. Set `TRANSACTION_ANALYZER_STORAGE_HOST_DIRECTORY` in `.env` to select the host directory; the default is `./data/transaction-analyzer`. Docker Compose mounts it in the application container at `/var/lib/money-snapshot/transaction-analyzer`.
+
+For example:
+
+```bash
+TRANSACTION_ANALYZER_STORAGE_HOST_DIRECTORY=/srv/money-snapshot/transaction-files
+```
+
+Files are separated by the logged-in user and are available for download from the Transaction analyzer page.
+
 Common management commands:
 
 ```bash
