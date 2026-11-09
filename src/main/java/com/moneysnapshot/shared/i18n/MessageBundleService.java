@@ -1296,6 +1296,8 @@ public class MessageBundleService {
             "upcomingPayments.title",
             "upcomingPayments.subtitle",
             "upcomingPayments.empty",
+            "upcomingPayments.overdue.title",
+            "upcomingPayments.current.title",
             "billSchedule.heading.title",
             "billSchedule.heading.subtitle",
             "billSchedule.summary.title",

@@ -147,8 +147,8 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shor
 }
 
 body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-launcher-bar::before {
-    border-top: 0;
-    background: transparent;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
@@ -161,6 +161,29 @@ body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) > .sh
 
 body.modal-open .shortcuts-launcher-dock:has(.shortcuts-calculator-button) .shortcuts-calculator-button {
     pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    color: var(--text);
+}
+
+/* Keep the calculator control readable on mobile browsers that do not apply :has(). */
+body.modal-open .shortcuts-launcher-dock-bar .shortcuts-launcher-bar {
+    isolation: isolate;
+}
+
+body.modal-open .shortcuts-launcher-dock-bar .shortcuts-launcher-bar::before {
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.modal-open .shortcuts-launcher-dock-bar .shortcuts-calculator-button {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    color: var(--text);
 }
 
 .shortcuts-calculator-panel[hidden] {

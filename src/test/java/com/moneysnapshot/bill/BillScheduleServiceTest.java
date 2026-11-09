@@ -64,7 +64,7 @@ class BillScheduleServiceTest {
         when(billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)).thenReturn(List.of(bill));
         when(billScheduleEntryRepository.countByBillId(billId)).thenReturn(1L);
         var entry = new BillScheduleEntry(null, bill, 1, LocalDate.of(2026, 9, 10), new BigDecimal("100.00"), "PLN");
-        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END)).thenReturn(List.of(entry));
+        when(billScheduleEntryRepository.findPendingUpToPeriodEndByOwnerId(ownerId, PERIOD_END)).thenReturn(List.of(entry));
 
         var result = new BillScheduleService(billRepository, billScheduleEntryRepository, currentUserService)
                 .listUpcomingPayments(PERIOD_START, PERIOD_END);
@@ -76,7 +76,7 @@ class BillScheduleServiceTest {
         assertThat(result.get(0).counterpartyName()).isEqualTo("Provider");
         assertThat(result.get(0).payment().amount()).isEqualByComparingTo("100.00");
         assertThat(result.get(0).payment().currencyCode()).isEqualTo("PLN");
-        verify(billScheduleEntryRepository).findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END);
+        verify(billScheduleEntryRepository).findPendingUpToPeriodEndByOwnerId(ownerId, PERIOD_END);
         verify(billScheduleEntryRepository, never()).saveAll(any());
     }
 
@@ -89,7 +89,7 @@ class BillScheduleServiceTest {
         when(completed.getStatus()).thenReturn(BillStatus.COMPLETED);
         when(currentUserService.currentUserId()).thenReturn(ownerId);
         when(billRepository.findAllByOwnerIdOrderByRepaymentDayAndName(ownerId)).thenReturn(List.of(suspended, completed));
-        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END)).thenReturn(List.of());
+        when(billScheduleEntryRepository.findPendingUpToPeriodEndByOwnerId(ownerId, PERIOD_END)).thenReturn(List.of());
 
         assertThat(new BillScheduleService(billRepository, billScheduleEntryRepository, currentUserService)
                 .listUpcomingPayments(PERIOD_START, PERIOD_END)).isEmpty();
@@ -157,7 +157,7 @@ class BillScheduleServiceTest {
         when(billRepository.findByIdAndOwnerIdForUpdate(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(billId))
                 .thenReturn(List.of(lastEntry));
-        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END)).thenReturn(List.of());
+        when(billScheduleEntryRepository.findPendingUpToPeriodEndByOwnerId(ownerId, PERIOD_END)).thenReturn(List.of());
 
         service.listUpcomingPayments(PERIOD_START, PERIOD_END);
 
@@ -233,7 +233,7 @@ class BillScheduleServiceTest {
         when(billRepository.findByIdAndOwnerIdForUpdate(billId, ownerId)).thenReturn(Optional.of(bill));
         when(billScheduleEntryRepository.findAllByBillIdOrderByDueDateAscInstallmentNumberAsc(billId))
                 .thenReturn(List.of(lastEntry));
-        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, periodStart, periodEnd)).thenReturn(List.of());
+        when(billScheduleEntryRepository.findPendingUpToPeriodEndByOwnerId(ownerId, periodEnd)).thenReturn(List.of());
 
         service.listUpcomingPayments(periodStart, periodEnd);
 
@@ -289,7 +289,7 @@ class BillScheduleServiceTest {
                 return added;
             });
         }
-        when(billScheduleEntryRepository.findPendingByOwnerId(ownerId, PERIOD_START, PERIOD_END))
+        when(billScheduleEntryRepository.findPendingUpToPeriodEndByOwnerId(ownerId, PERIOD_END))
                 .thenAnswer(invocation -> stored.stream().filter(entry -> !entry.isPaid()
                         && !entry.getDueDate().isBefore(PERIOD_START) && !entry.getDueDate().isAfter(PERIOD_END)).toList());
         var service = new BillScheduleService(billRepository, billScheduleEntryRepository, currentUserService,

@@ -7,7 +7,7 @@
     <section class="page-heading">
         <p class="eyebrow" data-i18n="home.feature.bills.title">Rachunki</p>
         <h1 id="payments-title" data-i18n="upcomingPayments.title">Nadchodzące płatności</h1>
-        <p data-i18n="upcomingPayments.subtitle">Przeglądaj płatności z bieżącego okresu rozliczeniowego i oznaczaj je jako opłacone.</p>
+        <p data-i18n="upcomingPayments.subtitle">Przeglądaj zaległe i bieżące płatności oraz oznaczaj je jako opłacone.</p>
     </section>
     <section class="table-panel wide-panel upcoming-payments-panel" aria-labelledby="payments-title">
         <div class="section-header">
@@ -30,7 +30,26 @@
             </div>
         </div>
         <p class="visually-hidden" id="payments-message" role="status"></p>
-        <div class="table-wrap bills-table-wrap">
+        <p id="payments-empty" class="upcoming-payments-empty" data-i18n="upcomingPayments.empty" hidden>Brak nieopłaconych płatności.</p>
+        <section class="upcoming-payment-group" id="overdue-payments-group" aria-labelledby="overdue-payments-title" hidden>
+            <h2 id="overdue-payments-title" data-i18n="upcomingPayments.overdue.title">Zaległe płatności</h2>
+            <div class="table-wrap bills-table-wrap">
+                <table class="reports-table bill-schedule-table" data-i18n-aria-label="upcomingPayments.overdue.title">
+                    <thead><tr>
+                        <th data-i18n="billSchedule.table.dueDate">Termin spłaty</th>
+                        <th data-i18n="home.feature.bills.title">Rachunki</th>
+                        <th data-i18n="billSchedule.summary.counterparty">Kontrahent</th>
+                        <th data-i18n="billSchedule.summary.account">Z konta</th>
+                        <th data-i18n="billSchedule.table.amount">Kwota</th>
+                        <th data-i18n="billSchedule.table.actions">Akcje</th>
+                    </tr></thead>
+                    <tbody id="overdue-payments-body"></tbody>
+                </table>
+            </div>
+        </section>
+        <section class="upcoming-payment-group" id="current-payments-group" aria-labelledby="current-payments-title" hidden>
+            <h2 id="current-payments-title" data-i18n="upcomingPayments.current.title">Płatności w bieżącym okresie</h2>
+            <div class="table-wrap bills-table-wrap">
             <table class="reports-table bill-schedule-table" data-i18n-aria-label="upcomingPayments.title">
                 <thead><tr>
                     <th data-i18n="billSchedule.table.dueDate">Termin spłaty</th>
@@ -40,9 +59,10 @@
                     <th data-i18n="billSchedule.table.amount">Kwota</th>
                     <th data-i18n="billSchedule.table.actions">Akcje</th>
                 </tr></thead>
-                <tbody id="payments-body"></tbody>
+                <tbody id="current-payments-body"></tbody>
             </table>
         </div>
+        </section>
     </section>
 </main>
 <th:block th:replace="~{fragments/shortcuts-launcher :: launcherStickyBar}"></th:block>

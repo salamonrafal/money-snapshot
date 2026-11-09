@@ -1,10 +1,15 @@
-const paymentsBody = document.querySelector("#payments-body");
+const overduePaymentsBody = document.querySelector("#overdue-payments-body");
+const currentPaymentsBody = document.querySelector("#current-payments-body");
+const overduePaymentsGroup = document.querySelector("#overdue-payments-group");
+const currentPaymentsGroup = document.querySelector("#current-payments-group");
+const paymentsEmpty = document.querySelector("#payments-empty");
 const paymentsMessage = document.querySelector("#payments-message");
 const refreshButton = document.querySelector("#payments-refresh");
 const toastManager = MoneySnapshotUi.createToastManager({durationMs: 5000});
 let messages = {};
 let userSettings = null;
-let payments = [];
+let overduePayments = [];
+let currentPayments = [];
 let ready = false;
 let busy = false;
 
@@ -16,16 +21,17 @@ function showMessage(key, type = "error") {
 
 function renderPayments() {
     document.title = `${messages["upcomingPayments.title"]} | ${messages["app.name"]}`;
-    paymentsBody.replaceChildren();
-    if (!payments.length) {
-        const row = paymentsBody.insertRow();
-        const cell = row.insertCell();
-        cell.colSpan = 6;
-        cell.textContent = messages["upcomingPayments.empty"];
-        return;
-    }
-    payments.forEach(({billId, billName, counterpartyName, accountName, payment}) => {
-        const row = paymentsBody.insertRow();
+    overduePaymentsGroup.hidden = !overduePayments.length;
+    currentPaymentsGroup.hidden = !currentPayments.length;
+    paymentsEmpty.hidden = overduePayments.length + currentPayments.length > 0;
+    renderPaymentRows(overduePaymentsBody, overduePayments);
+    renderPaymentRows(currentPaymentsBody, currentPayments);
+}
+
+function renderPaymentRows(body, paymentItems) {
+    body.replaceChildren();
+    paymentItems.forEach(({billId, billName, counterpartyName, accountName, payment}) => {
+        const row = body.insertRow();
         row.insertCell().textContent = MoneySnapshotUi.formatDateValue(payment.dueDate, userSettings);
         const link = document.createElement("a");
         link.href = `/bills/${encodeURIComponent(billId)}/schedule.html`;
@@ -49,7 +55,9 @@ function renderPayments() {
 async function loadPayments() {
     const response = await fetch("/api/bills/upcoming-payments");
     if (!response.ok) throw new Error("load");
-    payments = await response.json();
+    const result = await response.json();
+    overduePayments = result.overduePayments;
+    currentPayments = result.currentPeriodPayments;
     renderPayments();
 }
 
@@ -67,7 +75,8 @@ async function markPaid(billId, entryId) {
             body: JSON.stringify({paid: true})
         });
         if (!response.ok) throw new Error("update");
-        payments = payments.filter(item => item.payment.id !== entryId);
+        overduePayments = overduePayments.filter(item => item.payment.id !== entryId);
+        currentPayments = currentPayments.filter(item => item.payment.id !== entryId);
         showMessage("billSchedule.update.success", "success");
     } catch {
         showMessage("billSchedule.error.update");

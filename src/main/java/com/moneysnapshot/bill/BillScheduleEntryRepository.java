@@ -22,11 +22,11 @@ public interface BillScheduleEntryRepository extends JpaRepository<BillScheduleE
             join fetch bill.counterparty
             where entry.owner.id = :ownerId and bill.owner.id = :ownerId
               and entry.paid = false and bill.status = com.moneysnapshot.bill.BillStatus.ACTIVE
-              and entry.dueDate between :periodStart and :periodEnd
+              and entry.dueDate <= :periodEnd
             order by entry.dueDate asc, bill.name asc, entry.id asc
             """)
-    List<BillScheduleEntry> findPendingByOwnerId(@Param("ownerId") UUID ownerId,
-            @Param("periodStart") LocalDate periodStart, @Param("periodEnd") LocalDate periodEnd);
+    List<BillScheduleEntry> findPendingUpToPeriodEndByOwnerId(@Param("ownerId") UUID ownerId,
+            @Param("periodEnd") LocalDate periodEnd);
 
     @Query("""
             select entry

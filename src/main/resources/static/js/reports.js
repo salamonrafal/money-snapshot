@@ -505,12 +505,11 @@ function setPlanningMessage(text, type = "") {
 }
 
 function updateReportsNavActiveState() {
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    const topbarElement = document.querySelector(".topbar");
+    const activationLine = (topbarElement?.getBoundingClientRect().bottom ?? 0) + 24;
     let activeTarget = "";
-    let largestVisibleHeight = 0;
     let nearestTarget = "";
     let nearestDistance = Number.POSITIVE_INFINITY;
-    const viewportCenterY = viewportHeight / 2;
 
     reportsNavLinks.forEach((link) => {
         const targetId = link.dataset.target ?? "";
@@ -520,25 +519,25 @@ function updateReportsNavActiveState() {
         }
 
         const rect = section.getBoundingClientRect();
-        const visibleTop = Math.max(rect.top, 0);
-        const visibleBottom = Math.min(rect.bottom, viewportHeight);
-        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-        const sectionCenterY = rect.top + (rect.height / 2);
-        const distanceToCenter = Math.abs(sectionCenterY - viewportCenterY);
-
-        if (visibleHeight > largestVisibleHeight) {
-            largestVisibleHeight = visibleHeight;
+        if (rect.top <= activationLine && rect.bottom > activationLine) {
             activeTarget = targetId;
         }
 
-        if (distanceToCenter < nearestDistance) {
-            nearestDistance = distanceToCenter;
+        const distanceToActivationLine = Math.abs(rect.top - activationLine);
+        if (distanceToActivationLine < nearestDistance) {
+            nearestDistance = distanceToActivationLine;
             nearestTarget = targetId;
         }
     });
 
     if (!activeTarget) {
         activeTarget = nearestTarget;
+    }
+
+    const reachedDocumentEnd = window.scrollY + window.innerHeight
+        >= document.documentElement.scrollHeight - 2;
+    if (reachedDocumentEnd) {
+        activeTarget = reportsNavLinks[reportsNavLinks.length - 1]?.dataset.target ?? activeTarget;
     }
 
     reportsNavLinks.forEach((link) => {
