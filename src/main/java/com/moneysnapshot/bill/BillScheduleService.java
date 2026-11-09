@@ -125,7 +125,7 @@ public class BillScheduleService {
                 regenerateSchedule(bill, false);
             }
         }
-        return billScheduleEntryRepository.findPendingByOwnerId(ownerId, periodStart, periodEnd).stream()
+        return billScheduleEntryRepository.findPendingUpToPeriodEndByOwnerId(ownerId, periodEnd).stream()
                 .map(UpcomingBillPaymentResponse::from)
                 .toList();
     }
